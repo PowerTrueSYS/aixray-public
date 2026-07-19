@@ -1,0 +1,20 @@
+{
+  "id": "ck-vg-capacity",
+  "pillar": "stability",
+  "category": "storage",
+  "finding_ids": [
+    "vg_capacity"
+  ],
+  "captures": [
+    "cap-lsvg-o"
+  ],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "lsvg -o",
+    "lsvg <vg>"
+  ],
+  "tags": [],
+  "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+  "artifact": "checks/ck-vg-capacity/ck-vg-capacity.ksh"
+}

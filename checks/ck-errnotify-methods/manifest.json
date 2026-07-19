@@ -1,0 +1,19 @@
+{
+  "id": "ck-errnotify-methods",
+  "pillar": "stability",
+  "category": "errors",
+  "finding_ids": [
+    "errnotify_methods"
+  ],
+  "captures": [
+    "cap-errnotify-decode"
+  ],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "odmget errnotify"
+  ],
+  "tags": [],
+  "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+  "artifact": "checks/ck-errnotify-methods/ck-errnotify-methods.ksh"
+}

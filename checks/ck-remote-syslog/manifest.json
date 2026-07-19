@@ -1,0 +1,19 @@
+{
+  "id": "ck-remote-syslog",
+  "pillar": "operational-readiness",
+  "category": "monitoring",
+  "finding_ids": [
+    "remote_syslog"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "grep @ /etc/syslog.conf"
+  ],
+  "tags": [
+    "ffiec:II.C.22"
+  ],
+  "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+  "artifact": "checks/ck-remote-syslog/ck-remote-syslog.ksh"
+}

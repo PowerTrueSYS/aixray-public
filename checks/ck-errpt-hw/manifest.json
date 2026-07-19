@@ -1,0 +1,17 @@
+{
+  "id": "ck-errpt-hw",
+  "pillar": "stability",
+  "category": "errors",
+  "finding_ids": [
+    "errpt_hw"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "errpt -d H -T PERM -s <cutoff>"
+  ],
+  "tags": [],
+  "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+  "artifact": "checks/ck-errpt-hw/ck-errpt-hw.ksh"
+}

@@ -1,0 +1,26 @@
+{
+  "id": "ck-alt-disk-recoverability",
+  "pillar": "backup",
+  "category": "resilience",
+  "finding_ids": [
+    "alt_disk"
+  ],
+  "captures": [],
+  "requires_root": true,
+  "read_only": true,
+  "commands": [
+    "lspv",
+    "lsvg rootvg",
+    "lsvg -l rootvg",
+    "lsdev -Cc disk -F name:status",
+    "getconf DISK_SIZE /dev/<disk>",
+    "alt_rootvg_op -q -d <disk>",
+    "bootinfo -B <disk>",
+    "bootlist -m normal -o",
+    "oslevel -s",
+    "cat /var/adm/ras/alt_disk_inst.log"
+  ],
+  "tags": [],
+  "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+  "artifact": "checks/ck-alt-disk-recoverability/ck-alt-disk-recoverability.ksh"
+}

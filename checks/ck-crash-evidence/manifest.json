@@ -1,0 +1,17 @@
+{
+  "id": "ck-crash-evidence",
+  "pillar": "stability",
+  "category": "errors",
+  "finding_ids": [
+    "crash_evidence"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "find /var/adm/ras -name vmcore* -mtime -30 -print"
+  ],
+  "tags": [],
+  "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+  "artifact": "checks/ck-crash-evidence/ck-crash-evidence.ksh"
+}

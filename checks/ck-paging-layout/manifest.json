@@ -1,0 +1,25 @@
+{
+  "id": "ck-paging-layout",
+  "pillar": "stability",
+  "category": "storage",
+  "finding_ids": [
+    "paging_layout"
+  ],
+  "captures": [
+    "cap-lsvg-o",
+    "cap-lsps-a",
+    "cap-prtconf"
+  ],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "lsvg -o",
+    "lsps -a",
+    "prtconf"
+  ],
+  "tags": [
+    "ffiec:II.C.11"
+  ],
+  "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+  "artifact": "checks/ck-paging-layout/ck-paging-layout.ksh"
+}

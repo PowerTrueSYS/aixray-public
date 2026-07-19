@@ -1,0 +1,20 @@
+{
+  "id": "ck-multibos-residue",
+  "pillar": "stability",
+  "category": "storage",
+  "finding_ids": [
+    "multibos_residue"
+  ],
+  "captures": [
+    "cap-lsvg-l-rootvg"
+  ],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "lsvg -l rootvg",
+    "mount"
+  ],
+  "tags": [],
+  "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+  "artifact": "checks/ck-multibos-residue/ck-multibos-residue.ksh"
+}

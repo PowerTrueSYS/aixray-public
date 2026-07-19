@@ -1,0 +1,641 @@
+{
+  "schema_version": 1,
+  "tool_version": "0.1.0",
+  "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+  "generated_from": "checks/*/manifest.json",
+  "check_count": 31,
+  "checks": [
+    {
+      "id": "ck-adapter-microcode",
+      "pillar": "currency",
+      "category": "lifecycle",
+      "finding_ids": [],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "lsdev -Cc adapter",
+        "lsmcode -A",
+        "lscfg -vpl <device>"
+      ],
+      "tags": [],
+      "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+      "artifact": "checks/ck-adapter-microcode/ck-adapter-microcode.ksh",
+      "sha256": "da677a8a5c3850cac2f90845552c4d91e91f45300647fccbd3346fe41ab9b1ee"
+    },
+    {
+      "id": "ck-alt-disk-recoverability",
+      "pillar": "backup",
+      "category": "resilience",
+      "finding_ids": [
+        "alt_disk"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "lspv",
+        "lsvg rootvg",
+        "lsvg -l rootvg",
+        "lsdev -Cc disk -F name:status",
+        "getconf DISK_SIZE /dev/<disk>",
+        "alt_rootvg_op -q -d <disk>",
+        "bootinfo -B <disk>",
+        "bootlist -m normal -o",
+        "oslevel -s",
+        "cat /var/adm/ras/alt_disk_inst.log"
+      ],
+      "tags": [],
+      "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+      "artifact": "checks/ck-alt-disk-recoverability/ck-alt-disk-recoverability.ksh",
+      "sha256": "d5ec4116d278847ff62926e1816beacb5d1f74a2089d672bab9e74233929592c"
+    },
+    {
+      "id": "ck-backup-job",
+      "pillar": "backup",
+      "category": "monitoring",
+      "finding_ids": [
+        "backup_job"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "crontab -l"
+      ],
+      "tags": [],
+      "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+      "artifact": "checks/ck-backup-job/ck-backup-job.ksh",
+      "sha256": "96ec0de3209924cf36ea61bb791b6cc1933a8a885d919a99d49c847df8bbe85f"
+    },
+    {
+      "id": "ck-crash-evidence",
+      "pillar": "stability",
+      "category": "errors",
+      "finding_ids": [
+        "crash_evidence"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "find /var/adm/ras -name vmcore* -mtime -30 -print"
+      ],
+      "tags": [],
+      "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+      "artifact": "checks/ck-crash-evidence/ck-crash-evidence.ksh",
+      "sha256": "bfbfcfc197a925ced47dab77ee5524f3156b4aad507a9bb300122cbb21315589"
+    },
+    {
+      "id": "ck-dump-history",
+      "pillar": "stability",
+      "category": "errors",
+      "finding_ids": [
+        "dump_history"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "sysdumpdev -L"
+      ],
+      "tags": [],
+      "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+      "artifact": "checks/ck-dump-history/ck-dump-history.ksh",
+      "sha256": "cfd917a321ac6f9912f963441e18a8ee3968ea6bb501b9d6ae752a28fa801e43"
+    },
+    {
+      "id": "ck-errdemon-health",
+      "pillar": "stability",
+      "category": "errors",
+      "finding_ids": [
+        "errdemon_health"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "ps -e -o comm",
+        "/usr/lib/errdemon -l"
+      ],
+      "tags": [],
+      "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+      "artifact": "checks/ck-errdemon-health/ck-errdemon-health.ksh",
+      "sha256": "96425d9853dbcf3ae8c493cfe088012af71ed03edd00e8c4a43e973627817cd4"
+    },
+    {
+      "id": "ck-errnotify-methods",
+      "pillar": "stability",
+      "category": "errors",
+      "finding_ids": [
+        "errnotify_methods"
+      ],
+      "captures": [
+        "cap-errnotify-decode"
+      ],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "odmget errnotify"
+      ],
+      "tags": [],
+      "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+      "artifact": "checks/ck-errnotify-methods/ck-errnotify-methods.ksh",
+      "sha256": "e730af45fa8d07c3f21c3aab86e4da6c7931b20bbd733f91b34884f1be444122"
+    },
+    {
+      "id": "ck-errpt-decode",
+      "pillar": "stability",
+      "category": "errors",
+      "finding_ids": [
+        "errpt_decode"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "errpt -a -s <cutoff>"
+      ],
+      "tags": [],
+      "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+      "artifact": "checks/ck-errpt-decode/ck-errpt-decode.ksh",
+      "sha256": "18dc757e61f5b1873f436124bf520ee6103339fb057d663f3c321416d1878199"
+    },
+    {
+      "id": "ck-errpt-hw",
+      "pillar": "stability",
+      "category": "errors",
+      "finding_ids": [
+        "errpt_hw"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "errpt -d H -T PERM -s <cutoff>"
+      ],
+      "tags": [],
+      "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+      "artifact": "checks/ck-errpt-hw/ck-errpt-hw.ksh",
+      "sha256": "a73e7414f876d2fe5153b509a0180a1711054a3e35212d71b0797160842cc904"
+    },
+    {
+      "id": "ck-errpt-notify",
+      "pillar": "operational-readiness",
+      "category": "monitoring",
+      "finding_ids": [
+        "errpt_notify"
+      ],
+      "captures": [
+        "cap-errnotify-decode"
+      ],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "odmget errnotify"
+      ],
+      "tags": [],
+      "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+      "artifact": "checks/ck-errpt-notify/ck-errpt-notify.ksh",
+      "sha256": "de99e4c78191d004e0ed4e192c0870b086dd2a680a4d4145a07711956948995c"
+    },
+    {
+      "id": "ck-errpt-recent",
+      "pillar": "stability",
+      "category": "errors",
+      "finding_ids": [
+        "errpt_recent"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "odmget errnotify",
+        "errpt -s <cutoff>"
+      ],
+      "tags": [],
+      "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+      "artifact": "checks/ck-errpt-recent/ck-errpt-recent.ksh",
+      "sha256": "0f6de3b5cf8cc80266405156c940374238bdf612a3efce207995ba4e0caed360"
+    },
+    {
+      "id": "ck-errpt-signatures",
+      "pillar": "stability",
+      "category": "errors",
+      "finding_ids": [
+        "errpt_signatures"
+      ],
+      "captures": [
+        "cap-errpt-a7"
+      ],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "errpt -a -s <cutoff>"
+      ],
+      "tags": [],
+      "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+      "artifact": "checks/ck-errpt-signatures/ck-errpt-signatures.ksh",
+      "sha256": "186ba799af6ece05bd0b146ed97942d7a6c0e8dd6a6bcb160889b2fbd38db1f8"
+    },
+    {
+      "id": "ck-fc-errors",
+      "pillar": "resiliency",
+      "category": "storage",
+      "finding_ids": [
+        "fc_errors"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "lsdev -c adapter",
+        "fcstat <adapter>"
+      ],
+      "tags": [],
+      "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+      "artifact": "checks/ck-fc-errors/ck-fc-errors.ksh",
+      "sha256": "4976a6cc3dd31097fd21281db05e4c64f4abecdce9fa37385a9a634e08f0c695"
+    },
+    {
+      "id": "ck-fs-full",
+      "pillar": "stability",
+      "category": "storage",
+      "finding_ids": [
+        "fs_/",
+        "fs_/var",
+        "fs_/tmp",
+        "fs_other",
+        "fs_inodes"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "df -g"
+      ],
+      "tags": [],
+      "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+      "artifact": "checks/ck-fs-full/ck-fs-full.ksh",
+      "sha256": "7e15070b530ed71fe14de97f74ec6422a70bb364c9d8abe4cdf920b122972aa9"
+    },
+    {
+      "id": "ck-fs-lv-slack",
+      "pillar": "stability",
+      "category": "storage",
+      "finding_ids": [
+        "fs_lv_slack"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "lsfs -q"
+      ],
+      "tags": [
+        "ffiec:II.C.11"
+      ],
+      "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+      "artifact": "checks/ck-fs-lv-slack/ck-fs-lv-slack.ksh",
+      "sha256": "77fd1e65dddd185adf3e178f080052d8a7fa1ae0803c9e107c3395d1ac84b6c4"
+    },
+    {
+      "id": "ck-hd5-sizing",
+      "pillar": "stability",
+      "category": "storage",
+      "finding_ids": [
+        "vg_stale",
+        "vg_pvs",
+        "hd5_sizing"
+      ],
+      "captures": [
+        "cap-lsvg-o"
+      ],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "lsvg -o",
+        "lspv",
+        "lsvg -l <vg>",
+        "lsvg -p <vg>",
+        "lsvg rootvg",
+        "lslv -m hd5",
+        "lspv -M <pv>"
+      ],
+      "tags": [],
+      "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+      "artifact": "checks/ck-hd5-sizing/ck-hd5-sizing.ksh",
+      "sha256": "5ac238acf7501b7abc84a51c74779b0e28bfbbd3b6ae82830558615dd30bf209"
+    },
+    {
+      "id": "ck-jfs-legacy",
+      "pillar": "stability",
+      "category": "storage",
+      "finding_ids": [
+        "jfs_legacy"
+      ],
+      "captures": [
+        "cap-lsfs-q"
+      ],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "lsfs -q"
+      ],
+      "tags": [
+        "ffiec:II.C.11"
+      ],
+      "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+      "artifact": "checks/ck-jfs-legacy/ck-jfs-legacy.ksh",
+      "sha256": "7e928924718f3baf0721108a8073a105cf980da8b194e4da262ded22bfe78df5"
+    },
+    {
+      "id": "ck-lv-mirror-placement",
+      "pillar": "resiliency",
+      "category": "storage",
+      "finding_ids": [
+        "vg_geometry",
+        "lv_policy"
+      ],
+      "captures": [
+        "cap-lsvg-o",
+        "cap-prtconf"
+      ],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "lsvg -o",
+        "prtconf",
+        "lsvg <vg>",
+        "lsvg -l <vg>",
+        "lslv <lv>"
+      ],
+      "tags": [
+        "ffiec:II.C.11"
+      ],
+      "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+      "artifact": "checks/ck-lv-mirror-placement/ck-lv-mirror-placement.ksh",
+      "sha256": "ea5798f10c68d015c32ef5d8360f6319a1adc680f3e56c63318605c2139ec0c1"
+    },
+    {
+      "id": "ck-monitoring-agent",
+      "pillar": "operational-readiness",
+      "category": "monitoring",
+      "finding_ids": [
+        "monitoring_agent"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ps -e -o comm"
+      ],
+      "tags": [
+        "ffiec:III.B"
+      ],
+      "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+      "artifact": "checks/ck-monitoring-agent/ck-monitoring-agent.ksh",
+      "sha256": "c26f3cacabac353d21f146eaf01705cc09fe70a70fca741cefd1decdc05d1dc3"
+    },
+    {
+      "id": "ck-mount-options",
+      "pillar": "operational-readiness",
+      "category": "storage",
+      "finding_ids": [
+        "mount_options"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "mount"
+      ],
+      "tags": [
+        "ffiec:II.C.11"
+      ],
+      "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+      "artifact": "checks/ck-mount-options/ck-mount-options.ksh",
+      "sha256": "9a6d4c0e97970b50c43dbd5c63dcb38447df8566ed66d3c486ac8ebb2dde959b"
+    },
+    {
+      "id": "ck-mpio-paths",
+      "pillar": "resiliency",
+      "category": "storage",
+      "finding_ids": [
+        "mpio"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "lspath"
+      ],
+      "tags": [],
+      "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+      "artifact": "checks/ck-mpio-paths/ck-mpio-paths.ksh",
+      "sha256": "66fe6915553b1fe267d0e5c865e670c415327a1b2756800c04ad666f3ebaa70f"
+    },
+    {
+      "id": "ck-multibos-residue",
+      "pillar": "stability",
+      "category": "storage",
+      "finding_ids": [
+        "multibos_residue"
+      ],
+      "captures": [
+        "cap-lsvg-l-rootvg"
+      ],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "lsvg -l rootvg",
+        "mount"
+      ],
+      "tags": [],
+      "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+      "artifact": "checks/ck-multibos-residue/ck-multibos-residue.ksh",
+      "sha256": "30f12ac690f83d1b3a37724c2f171e48ee91c2ded85c248e44621b5a56ecdd54"
+    },
+    {
+      "id": "ck-network-inventory",
+      "pillar": "operational-readiness",
+      "category": "config",
+      "finding_ids": [],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ifconfig -a",
+        "lsattr -El <interface>",
+        "entstat -d <adapter>",
+        "netstat -rn",
+        "cat /etc/resolv.conf"
+      ],
+      "tags": [],
+      "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+      "artifact": "checks/ck-network-inventory/ck-network-inventory.ksh",
+      "sha256": "ade38aaddb4959aeb84ed17d8f003c6ede96e092b1dc5997c7c8eead126de6c4"
+    },
+    {
+      "id": "ck-paging",
+      "pillar": "stability",
+      "category": "storage",
+      "finding_ids": [
+        "paging"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "lsvg -o",
+        "lsps -a"
+      ],
+      "tags": [],
+      "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+      "artifact": "checks/ck-paging/ck-paging.ksh",
+      "sha256": "3e3d9e24345839df63d8f0b14d5b70a2fb7846fa44795c653bfa5fdea4f4b815"
+    },
+    {
+      "id": "ck-paging-layout",
+      "pillar": "stability",
+      "category": "storage",
+      "finding_ids": [
+        "paging_layout"
+      ],
+      "captures": [
+        "cap-lsvg-o",
+        "cap-lsps-a",
+        "cap-prtconf"
+      ],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "lsvg -o",
+        "lsps -a",
+        "prtconf"
+      ],
+      "tags": [
+        "ffiec:II.C.11"
+      ],
+      "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+      "artifact": "checks/ck-paging-layout/ck-paging-layout.ksh",
+      "sha256": "7f39bbf6a38b298ada1b4e84b212d92a350ccda71af19449cc4e87fa67602f14"
+    },
+    {
+      "id": "ck-perf-history",
+      "pillar": "operational-readiness",
+      "category": "monitoring",
+      "finding_ids": [
+        "perf_history"
+      ],
+      "captures": [
+        "cap-ps-e"
+      ],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ps -e -o comm"
+      ],
+      "tags": [],
+      "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+      "artifact": "checks/ck-perf-history/ck-perf-history.ksh",
+      "sha256": "4317dcecd53aafb553fb597fa1ce74d14eb4b258f39098c224ccc750cdeffe62"
+    },
+    {
+      "id": "ck-remote-syslog",
+      "pillar": "operational-readiness",
+      "category": "monitoring",
+      "finding_ids": [
+        "remote_syslog"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "grep @ /etc/syslog.conf"
+      ],
+      "tags": [
+        "ffiec:II.C.22"
+      ],
+      "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+      "artifact": "checks/ck-remote-syslog/ck-remote-syslog.ksh",
+      "sha256": "cef651bc6c2423ee71a91317f6808c6c4978f6d2cefcd87690761856a3daf99d"
+    },
+    {
+      "id": "ck-software-inventory",
+      "pillar": "currency",
+      "category": "patch",
+      "finding_ids": [],
+      "captures": [
+        "cap-lslpp-qcl"
+      ],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "lslpp -qcL"
+      ],
+      "tags": [],
+      "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+      "artifact": "checks/ck-software-inventory/ck-software-inventory.ksh",
+      "sha256": "9e0e001a51618c06a65f42b237225e3a64aad066b0a5b40946c7cba80ad2a731"
+    },
+    {
+      "id": "ck-storage-layout",
+      "pillar": "resiliency",
+      "category": "storage",
+      "finding_ids": [],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "lspv",
+        "lsdev -Cc disk -F name:status:description",
+        "lspath -F name parent path_id status",
+        "getconf DISK_SIZE /dev/<disk>"
+      ],
+      "tags": [],
+      "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+      "artifact": "checks/ck-storage-layout/ck-storage-layout.ksh",
+      "sha256": "1c0c62b10765edf471f4bc14f2cb7c78ab0b941dccb0a5b40c88ea4beb7ef865"
+    },
+    {
+      "id": "ck-sysdump",
+      "pillar": "stability",
+      "category": "errors",
+      "finding_ids": [
+        "sysdump"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "sysdumpdev -l"
+      ],
+      "tags": [],
+      "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+      "artifact": "checks/ck-sysdump/ck-sysdump.ksh",
+      "sha256": "a118e8d8c5b7880d65d5d4b93394120cc2772065dff9d823ac09e4f956b10b22"
+    },
+    {
+      "id": "ck-vg-capacity",
+      "pillar": "stability",
+      "category": "storage",
+      "finding_ids": [
+        "vg_capacity"
+      ],
+      "captures": [
+        "cap-lsvg-o"
+      ],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "lsvg -o",
+        "lsvg <vg>"
+      ],
+      "tags": [],
+      "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+      "artifact": "checks/ck-vg-capacity/ck-vg-capacity.ksh",
+      "sha256": "50ddfe8190c19ca69f021ebe404823fc9406abfe01fc3f8bcabbcb1bbd954a22"
+    }
+  ]
+}

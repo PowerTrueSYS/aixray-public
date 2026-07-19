@@ -1,0 +1,18 @@
+{
+  "id": "ck-storage-layout",
+  "pillar": "resiliency",
+  "category": "storage",
+  "finding_ids": [],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "lspv",
+    "lsdev -Cc disk -F name:status:description",
+    "lspath -F name parent path_id status",
+    "getconf DISK_SIZE /dev/<disk>"
+  ],
+  "tags": [],
+  "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+  "artifact": "checks/ck-storage-layout/ck-storage-layout.ksh"
+}

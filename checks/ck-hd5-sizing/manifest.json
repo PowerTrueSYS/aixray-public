@@ -1,0 +1,27 @@
+{
+  "id": "ck-hd5-sizing",
+  "pillar": "stability",
+  "category": "storage",
+  "finding_ids": [
+    "vg_stale",
+    "vg_pvs",
+    "hd5_sizing"
+  ],
+  "captures": [
+    "cap-lsvg-o"
+  ],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "lsvg -o",
+    "lspv",
+    "lsvg -l <vg>",
+    "lsvg -p <vg>",
+    "lsvg rootvg",
+    "lslv -m hd5",
+    "lspv -M <pv>"
+  ],
+  "tags": [],
+  "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+  "artifact": "checks/ck-hd5-sizing/ck-hd5-sizing.ksh"
+}

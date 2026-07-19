@@ -1,0 +1,19 @@
+{
+  "id": "ck-monitoring-agent",
+  "pillar": "operational-readiness",
+  "category": "monitoring",
+  "finding_ids": [
+    "monitoring_agent"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "ps -e -o comm"
+  ],
+  "tags": [
+    "ffiec:III.B"
+  ],
+  "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+  "artifact": "checks/ck-monitoring-agent/ck-monitoring-agent.ksh"
+}

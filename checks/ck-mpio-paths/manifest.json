@@ -1,0 +1,17 @@
+{
+  "id": "ck-mpio-paths",
+  "pillar": "resiliency",
+  "category": "storage",
+  "finding_ids": [
+    "mpio"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "lspath"
+  ],
+  "tags": [],
+  "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+  "artifact": "checks/ck-mpio-paths/ck-mpio-paths.ksh"
+}

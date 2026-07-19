@@ -1,0 +1,21 @@
+{
+  "id": "ck-fs-full",
+  "pillar": "stability",
+  "category": "storage",
+  "finding_ids": [
+    "fs_/",
+    "fs_/var",
+    "fs_/tmp",
+    "fs_other",
+    "fs_inodes"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "df -g"
+  ],
+  "tags": [],
+  "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+  "artifact": "checks/ck-fs-full/ck-fs-full.ksh"
+}

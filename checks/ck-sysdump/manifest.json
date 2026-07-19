@@ -1,0 +1,17 @@
+{
+  "id": "ck-sysdump",
+  "pillar": "stability",
+  "category": "errors",
+  "finding_ids": [
+    "sysdump"
+  ],
+  "captures": [],
+  "requires_root": true,
+  "read_only": true,
+  "commands": [
+    "sysdumpdev -l"
+  ],
+  "tags": [],
+  "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+  "artifact": "checks/ck-sysdump/ck-sysdump.ksh"
+}

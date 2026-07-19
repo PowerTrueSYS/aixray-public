@@ -1,0 +1,18 @@
+{
+  "id": "ck-fc-errors",
+  "pillar": "resiliency",
+  "category": "storage",
+  "finding_ids": [
+    "fc_errors"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "lsdev -c adapter",
+    "fcstat <adapter>"
+  ],
+  "tags": [],
+  "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+  "artifact": "checks/ck-fc-errors/ck-fc-errors.ksh"
+}

@@ -1,0 +1,19 @@
+{
+  "id": "ck-network-inventory",
+  "pillar": "operational-readiness",
+  "category": "config",
+  "finding_ids": [],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "ifconfig -a",
+    "lsattr -El <interface>",
+    "entstat -d <adapter>",
+    "netstat -rn",
+    "cat /etc/resolv.conf"
+  ],
+  "tags": [],
+  "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+  "artifact": "checks/ck-network-inventory/ck-network-inventory.ksh"
+}

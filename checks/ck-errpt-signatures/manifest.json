@@ -1,0 +1,19 @@
+{
+  "id": "ck-errpt-signatures",
+  "pillar": "stability",
+  "category": "errors",
+  "finding_ids": [
+    "errpt_signatures"
+  ],
+  "captures": [
+    "cap-errpt-a7"
+  ],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "errpt -a -s <cutoff>"
+  ],
+  "tags": [],
+  "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+  "artifact": "checks/ck-errpt-signatures/ck-errpt-signatures.ksh"
+}

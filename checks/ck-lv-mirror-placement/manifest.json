@@ -1,0 +1,27 @@
+{
+  "id": "ck-lv-mirror-placement",
+  "pillar": "resiliency",
+  "category": "storage",
+  "finding_ids": [
+    "vg_geometry",
+    "lv_policy"
+  ],
+  "captures": [
+    "cap-lsvg-o",
+    "cap-prtconf"
+  ],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "lsvg -o",
+    "prtconf",
+    "lsvg <vg>",
+    "lsvg -l <vg>",
+    "lslv <lv>"
+  ],
+  "tags": [
+    "ffiec:II.C.11"
+  ],
+  "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+  "artifact": "checks/ck-lv-mirror-placement/ck-lv-mirror-placement.ksh"
+}

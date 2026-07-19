@@ -1,0 +1,19 @@
+{
+  "id": "ck-mount-options",
+  "pillar": "operational-readiness",
+  "category": "storage",
+  "finding_ids": [
+    "mount_options"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "mount"
+  ],
+  "tags": [
+    "ffiec:II.C.11"
+  ],
+  "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+  "artifact": "checks/ck-mount-options/ck-mount-options.ksh"
+}

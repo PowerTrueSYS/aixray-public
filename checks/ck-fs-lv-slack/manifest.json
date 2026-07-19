@@ -1,0 +1,19 @@
+{
+  "id": "ck-fs-lv-slack",
+  "pillar": "stability",
+  "category": "storage",
+  "finding_ids": [
+    "fs_lv_slack"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "lsfs -q"
+  ],
+  "tags": [
+    "ffiec:II.C.11"
+  ],
+  "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+  "artifact": "checks/ck-fs-lv-slack/ck-fs-lv-slack.ksh"
+}

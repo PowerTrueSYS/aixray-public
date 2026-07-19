@@ -1,0 +1,59 @@
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "@id": "https://powertruesystems.com/aixray#software",
+  "name": "AIXray",
+  "alternateName": "AIXray AIX and VIOS posture assessment",
+  "description": "A source-available, read-only IBM AIX and VIOS posture assessment delivered as a single ksh88-compatible shell file with zero egress during assessment execution and explicit NOT_ASSESSED results when evidence is unavailable.",
+  "url": "https://powertruesystems.com/aixray",
+  "codeRepository": "https://github.com/PowerTrueSYS/aixray-public",
+  "downloadUrl": "https://github.com/PowerTrueSYS/aixray-public/releases/latest/download/aixray-aix.sh",
+  "softwareVersion": "0.1.0",
+  "applicationCategory": "System administration and security assessment",
+  "applicationSubCategory": "IBM AIX health check and VIOS posture assessment",
+  "operatingSystem": [
+    "IBM AIX 7.2",
+    "IBM AIX 7.3",
+    "IBM VIOS"
+  ],
+  "programmingLanguage": "KornShell (ksh88-compatible AIX /bin/sh)",
+  "softwareRequirements": "AIX /bin/sh and standard AIX userland; no bash, Python, GNU userland, package installation, or assessment-time network access required.",
+  "license": "https://polyformproject.org/licenses/internal-use/1.0.0",
+  "provider": {
+    "@type": "Organization",
+    "@id": "https://powertruesystems.com/#org",
+    "name": "PowerTrue Systems",
+    "url": "https://powertruesystems.com"
+  },
+  "featureList": [
+    "Read-only system posture assessment",
+    "Zero network egress during assessment execution",
+    "HTML and JSON reports",
+    "Supported compliance-oriented views",
+    "Explicit NOT_ASSESSED status for unavailable evidence",
+    "31 standalone check tools with machine-readable manifests"
+  ],
+  "keywords": "IBM AIX health check, VIOS assessment, IBM Power security audit, AIX posture assessment, AIX risk scanner, ksh88, read-only, zero egress",
+  "additionalProperty": [
+    {
+      "@type": "PropertyValue",
+      "name": "licenseExpression",
+      "value": "LicenseRef-PolyForm-Internal-Use-1.0.0"
+    },
+    {
+      "@type": "PropertyValue",
+      "name": "standaloneCheckCount",
+      "value": 31
+    },
+    {
+      "@type": "PropertyValue",
+      "name": "configurationEffect",
+      "value": "read-only"
+    },
+    {
+      "@type": "PropertyValue",
+      "name": "assessmentNetworkEgress",
+      "value": "none"
+    }
+  ]
+}

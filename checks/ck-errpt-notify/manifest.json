@@ -1,0 +1,19 @@
+{
+  "id": "ck-errpt-notify",
+  "pillar": "operational-readiness",
+  "category": "monitoring",
+  "finding_ids": [
+    "errpt_notify"
+  ],
+  "captures": [
+    "cap-errnotify-decode"
+  ],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "odmget errnotify"
+  ],
+  "tags": [],
+  "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+  "artifact": "checks/ck-errpt-notify/ck-errpt-notify.ksh"
+}

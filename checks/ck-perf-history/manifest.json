@@ -1,0 +1,19 @@
+{
+  "id": "ck-perf-history",
+  "pillar": "operational-readiness",
+  "category": "monitoring",
+  "finding_ids": [
+    "perf_history"
+  ],
+  "captures": [
+    "cap-ps-e"
+  ],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "ps -e -o comm"
+  ],
+  "tags": [],
+  "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+  "artifact": "checks/ck-perf-history/ck-perf-history.ksh"
+}

@@ -1,0 +1,18 @@
+{
+  "id": "ck-errdemon-health",
+  "pillar": "stability",
+  "category": "errors",
+  "finding_ids": [
+    "errdemon_health"
+  ],
+  "captures": [],
+  "requires_root": true,
+  "read_only": true,
+  "commands": [
+    "ps -e -o comm",
+    "/usr/lib/errdemon -l"
+  ],
+  "tags": [],
+  "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+  "artifact": "checks/ck-errdemon-health/ck-errdemon-health.ksh"
+}

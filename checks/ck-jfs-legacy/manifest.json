@@ -1,0 +1,21 @@
+{
+  "id": "ck-jfs-legacy",
+  "pillar": "stability",
+  "category": "storage",
+  "finding_ids": [
+    "jfs_legacy"
+  ],
+  "captures": [
+    "cap-lsfs-q"
+  ],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "lsfs -q"
+  ],
+  "tags": [
+    "ffiec:II.C.11"
+  ],
+  "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+  "artifact": "checks/ck-jfs-legacy/ck-jfs-legacy.ksh"
+}

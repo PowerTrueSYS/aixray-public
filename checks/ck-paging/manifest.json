@@ -1,0 +1,18 @@
+{
+  "id": "ck-paging",
+  "pillar": "stability",
+  "category": "storage",
+  "finding_ids": [
+    "paging"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "lsvg -o",
+    "lsps -a"
+  ],
+  "tags": [],
+  "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+  "artifact": "checks/ck-paging/ck-paging.ksh"
+}
