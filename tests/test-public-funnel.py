@@ -22,14 +22,9 @@ import urllib.request
 ROOT = Path(__file__).resolve().parents[1]
 SITE = ROOT / "site"
 SCANNER = ROOT / "aixray-aix.sh"
-FIXTURE = Path(
-    os.environ.get(
-        "AIXRAY_FIXTURE_ROOT",
-        "/private/tmp/aixray-d81-dev/tests/fixtures/powervs-aix73",
-    )
-)
-DEV_ROOT = Path(os.environ.get("AIXRAY_DEV_ROOT", "/private/tmp/aixray-d81-dev"))
-EGRESS_LINTER = DEV_ROOT / "tools" / "ci" / "egress-lint.sh"
+FIXTURE_ROOT = os.environ.get("AIXRAY_FIXTURE_ROOT")
+FIXTURE = Path(FIXTURE_ROOT) if FIXTURE_ROOT else None
+EGRESS_LINTER = ROOT / "tools" / "ci" / "egress-lint.sh"
 DOWNLOAD_PAGE_URL = "https://powertruesystems.com/aixray/"
 DIRECT_ASSET_URL = "https://powertruesystems.com/aixray/aixray-aix.sh"
 REVIEW_CTA = (
@@ -61,6 +56,8 @@ def sha256(path: Path) -> str:
 
 
 def run_scanner(*args: str, cwd: Path = ROOT) -> subprocess.CompletedProcess[str]:
+    if FIXTURE is None:
+        raise RuntimeError("set AIXRAY_FIXTURE_ROOT to run fixture tests")
     env = os.environ.copy()
     env["AIXRAY_FIXTURES"] = f"{FIXTURE}/"
     env["AIXRAY_TODAY"] = "2026-07-01"
@@ -381,7 +378,12 @@ class PublicFunnelTests(unittest.TestCase):
         ):
             self.assertNotIn(dev_only, header)
 
+    @unittest.skipUnless(
+        os.environ.get("AIXRAY_FIXTURE_ROOT"),
+        "set AIXRAY_FIXTURE_ROOT to run fixture tests",
+    )
     def test_bare_run_completes_the_newcomer_drill(self) -> None:
+        assert FIXTURE is not None
         self.assertTrue(FIXTURE.is_dir(), f"fixture is missing: {FIXTURE}")
         with tempfile.TemporaryDirectory(prefix="aixray-public-newcomer-") as temp:
             cwd = Path(temp)
@@ -473,7 +475,12 @@ class PublicFunnelTests(unittest.TestCase):
                     " ".join(str(rendered["fix"]).split()),
                 )
 
+    @unittest.skipUnless(
+        os.environ.get("AIXRAY_FIXTURE_ROOT"),
+        "set AIXRAY_FIXTURE_ROOT to run fixture tests",
+    )
     def test_start_here_renders_honest_zero_actionable_guidance(self) -> None:
+        assert FIXTURE is not None
         source = SCANNER.read_text(encoding="utf-8")
         needle = '\nSTART_HERE_ITEMS=""\n'
         self.assertEqual(1, source.count(needle))
@@ -512,6 +519,10 @@ START_HERE_ITEMS=""
         self.assertIn("No actionable FAIL or WARN finding", guidance)
         self.assertIn("NOT_ASSESSED", guidance)
 
+    @unittest.skipUnless(
+        os.environ.get("AIXRAY_FIXTURE_ROOT"),
+        "set AIXRAY_FIXTURE_ROOT to run fixture tests",
+    )
     def test_explicit_html_remains_a_stdout_mode(self) -> None:
         result = run_scanner("--html")
         self.assertEqual(0, result.returncode, result.stderr)
@@ -535,8 +546,6 @@ START_HERE_ITEMS=""
 
     def test_scanner_has_no_egress_command_primitive(self) -> None:
         self.assertTrue(EGRESS_LINTER.is_file(), f"missing linter: {EGRESS_LINTER}")
-        if not EGRESS_LINTER.is_file():
-            return
 
         def lint(path: Path) -> subprocess.CompletedProcess[str]:
             return subprocess.run(
@@ -556,6 +565,17 @@ START_HERE_ITEMS=""
             "/usr/bin/curl https://example.invalid",
             "host example.invalid",
             "command nslookup example.invalid",
+            "tftp example.invalid",
+            "sftp example.invalid",
+            "rcp local-file example.invalid:/tmp/remote-file",
+            "rsh example.invalid true",
+            "rexec example.invalid true",
+            "socat TCP:example.invalid:443 -",
+            "ping example.invalid",
+            "traceroute example.invalid",
+            "sendmail recipient@example.invalid",
+            "exec 3<>/dev/tcp/example.invalid/443",
+            "exec 4<>/dev/udp/example.invalid/53",
         )
         source = SCANNER.read_text(encoding="utf-8")
         with tempfile.TemporaryDirectory(prefix="aixray-public-egress-") as temp:

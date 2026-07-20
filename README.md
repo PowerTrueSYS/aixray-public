@@ -88,7 +88,7 @@ For a supported compliance view on stdout:
 Published SHA-256 for the assembled `aixray-aix.sh` scanner:
 
 ```text
-c4d5835f8554177097d54e45a69f351d6989a35380b6b0d158ef2ee41779a392
+b29039b427057be30d10e06e79854d6c23e9011bc1413be1273d2dc82858c639
 ```
 
 The `assembled_scanner.sha256` value in [`catalog.json`](catalog.json) records the same hash. Each standalone check entry in the catalog also records the SHA-256 of its own shell artifact.

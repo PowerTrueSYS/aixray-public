@@ -11,10 +11,10 @@
 #
 # Runs under AIX /bin/sh (ksh88). No bash, no python, no GNU tools required.
 #
-# Easy run: ./aixray-aix.sh --out .
+# Easy run: ./aixray-aix.sh
 # Stdout:   ./aixray-aix.sh [--html|--json] > report.html
 #   Best run as root — a few reads (emgr -l, sysdumpdev -l, bootlist) need it.
-#   Unprivileged runs degrade those checks to WARN and say so.
+#   Unprivileged runs degrade those checks to WARN or NOT_ASSESSED and say so.
 #
 # Test hooks (used by tests/ on a dev box; harmless in production):
 #   AIXRAY_FIXTURES=<dir>   read command output from <dir>/<key>.out instead of executing
@@ -43,6 +43,20 @@ flrtvc_ksh_version=''
 apar_csv_b64=''
 apar_csv_sha256=''
 apar_csv_vintage=''
+
+# PowerTrue's curated crosswalk is deliberately numeric-only. The assembler
+# validates its two-field schema before embedding source-id|control-number rows.
+cis_l1_map='finding:nfs_exports|4.4.1.6
+finding:pw_hashing|5.2.8
+stig:V-215269|4.1.1.3
+stig:V-215274|4.1.1.2
+stig:V-215275|4.1.1.2
+stig:V-215282|4.1.1.2
+stig:V-215263|4.5.6
+stig:V-215265|4.5.7
+stig:V-215399|4.5.3
+stig:V-215430|4.5.2
+'
 
 # AIXray owns and redistributes these OFL-licensed report fonts. The assembler
 # reads only the committed assets/fonts copies and stores their base64 once in
@@ -225,6 +239,7 @@ FV_PROVENANCE_REAL=0
 COMPLIANCE=""
 FLRT_EXPORT=""
 OUT_DIR=""
+OUT_EXPLICIT=0
 [ "$#" -eq 0 ] && OUT_DIR=.
 USAGE="usage: $0 [--html|--json|--compliance stig|cis-l1|ffiec] [--out <dir>] [--flrtvc-ksh <script> --flrtvc-apar-csv <file> | --flrtvc-report <file>] [--flrt-export <dir>]"
 while [ "$#" -gt 0 ]; do
@@ -260,6 +275,7 @@ while [ "$#" -gt 0 ]; do
       if [ -z "$FLRT_EXPORT" ]; then echo "$USAGE" >&2; echo "aixray: --flrt-export needs an output directory" >&2; exit 2; fi
       ;;
     --out)
+      OUT_EXPLICIT=1
       shift
       OUT_DIR=${1:-}
       case "$OUT_DIR" in
@@ -462,6 +478,7 @@ V-215430|no|bcastping|eq|0
 #   STIG service list; it does NOT duplicate the inetd_cleartext check (which flags cleartext-
 #   LOGIN daemons enabled). Every row transcribed from the DISA STIG Check/Fix text via the
 #   cyber.trackr.live structured API (verbatim XCCDF). HONEST count: 30 inetd.conf disable
+# network-lint: allow-next=4 -- STIG explanatory prose, not network command invocations
 #   rules; the AIX 7.x STIG V2R2/V3R2 has ZERO pure lssrc-subsystem disable rules (the engine
 #   still supports the lssrc type for completeness). The inetd first-field TOKEN is used, not
 #   the daemon name (rexec's token is 'exec', rsh's is 'shell', rlogin's is 'login'). NOTES:
@@ -475,7 +492,7 @@ V-215430|no|bcastping|eq|0
 # STIG service-name DATA table (V-ID|subsystem|service-token) below: read-only reference
 # text this script checks a local /etc/inetd.conf capture against; never a network call.
 # Trailing comments on the data lines themselves would corrupt the table.
-# network-lint: allow-next=4 -- covers the telnet/ftp rows immediately below
+# network-lint: allow-next=39 -- embedded STIG service-name data table immediately below
 R_SVCOFF="
 V-215257|inetd|exec
 V-215258|inetd|telnet
@@ -931,18 +948,30 @@ set -A CF 0 0 0 0 0 0 0 0 0
 set -A CN 0 0 0 0 0 0 0 0 0
 
 function add { # category id label status sev observed meaning fix [controls]
-  typeset ci
+  typeset ci ADD_STATUS
   case "$1" in
     lifecycle) ci=0;; patch) ci=1;; storage) ci=2;; performance) ci=3;; errors) ci=4;;
     resilience) ci=5;; security) ci=6;; config) ci=7;; monitoring) ci=8;;
     *) echo "aixray: internal error: unknown category '$1'" >&2; exit 3;;
   esac
-  F_CAT[$NFIND]=$1; F_ID[$NFIND]=$2; F_LBL[$NFIND]=$3; F_ST[$NFIND]=$4
+  ADD_STATUS=$4
+  # The legacy FLRTVC path historically encoded incomplete runs as WARN with
+  # "not assessed" prose. Normalize that state at the model boundary so an
+  # uncompleted scan is machine-readable NOT_ASSESSED everywhere. A completed
+  # clean scan over stale apar.csv remains WARN: it was evaluated, but its
+  # currency is degraded rather than its completion being unknown.
+  if [ "$2" = "apar_scan" ] && [ "$ADD_STATUS" = "WARN" ]; then
+    case "$6" in
+      "not assessed — underlying apar.csv was"*) ;;
+      "not assessed —"*) ADD_STATUS=NOT_ASSESSED;;
+    esac
+  fi
+  F_CAT[$NFIND]=$1; F_ID[$NFIND]=$2; F_LBL[$NFIND]=$3; F_ST[$NFIND]=$ADD_STATUS
   F_SEV[$NFIND]=$5; F_OBS[$NFIND]=$6; F_MEAN[$NFIND]=$7; F_FIX[$NFIND]=$8; F_CTL[$NFIND]=${9:-}
   F_RULES[$NFIND]=""
   F_EXPOSURES[$NFIND]=""
   F_EVIDENCE_COMMANDS[$NFIND]=""
-  case "$4" in
+  case "$ADD_STATUS" in
     PASS) PASS=$((PASS+1)); CP[$ci]=$(( ${CP[$ci]} + 1 ));;
     WARN) WARN=$((WARN+1)); CW[$ci]=$(( ${CW[$ci]} + 1 ));;
     FAIL) FAIL=$((FAIL+1)); CF[$ci]=$(( ${CF[$ci]} + 1 ));;
@@ -2561,6 +2590,10 @@ SEC_APARS_EOF
           return 0
         }
         function clean(s){ gsub(/[\t\r\n]/," ",s); return s }
+        function trim(s){ sub(/^[ \t]+/,"",s); sub(/[ \t]+$/,"",s); return s }
+        function valid_cvss(s){
+          return s ~ /^[0-9]+([.][0-9]+)?$/ && (s+0)>=0 && (s+0)<=10
+        }
         BEGIN{ nexp=0; nhiper=0; nrow=0; nmalformed=0; header_seen=0; clean_seen=0; gncve=0; gnapar=0 }
         NR<=3{next}
         $0 ~ /^# FLRTVC_EXIT=/{next}
@@ -2596,6 +2629,28 @@ SEC_APARS_EOF
             }
           }
           apars=""; for(j=1;j<=napar;j++) apars=apars (j>1?";":"") aparlist[j]
+          original_ncve=ncve
+          cvssfield=trim(cvssfield)
+          bare_cvss=(original_ncve==1 && valid_cvss(cvssfield))
+          map_complete=0
+          if(original_ncve==0){
+            map_complete=(cvssfield=="")
+          } else if(bare_cvss){
+            map_complete=1
+          } else {
+            map_complete=1
+            ncv=split(cvssfield,cvarr,/[[:space:]]+/)
+            if(cvssfield=="" || ncv!=original_ncve)map_complete=0
+            for(m=1;m<=ncv;m++){
+              p2=index(cvarr[m],":")
+              key=(p2>0?substr(cvarr[m],1,p2-1):"")
+              value=(p2>0?substr(cvarr[m],p2+1):"")
+              inrow=0
+              for(q=1;q<=original_ncve;q++)if(cvelist[q]==key)inrow=1
+              mapkey=nrow SUBSEP key
+              if(p2==0 || !inrow || !valid_cvss(value) || mapseen[mapkey]++)map_complete=0
+            }
+          }
           if(ncve==0){ ncve=1; cvelist[1]="" }
           fx=""; if(!is_fixedin_placeholder(fixedin)) fx=fixedin
           rb=tolower(reboot)
@@ -2605,12 +2660,23 @@ SEC_APARS_EOF
             if(type=="hiper")nhiper++
             if(cve!="")name=cve; else if(napar>0)name=aparlist[1]; else name=fileset
             if(nexp<=5)ex[nexp]=name
-            cvss=""
-            if(cve!=""){
-              ncv=split(cvssfield,cvarr,/[ ]+/)
-              for(m=1;m<=ncv;m++){ p2=index(cvarr[m],":"); if(p2>0 && substr(cvarr[m],1,p2-1)==cve){ cvss=substr(cvarr[m],p2+1); break } }
+            cvss=""; cvss_known=(cve=="" && cvssfield=="" ? 1 : 0)
+            if(cve!="" && bare_cvss){
+              cvss=cvssfield; cvss_known=1
+            } else if(cve!=""){
+              matches=0
+              ncv=split(cvssfield,cvarr,/[[:space:]]+/)
+              for(m=1;m<=ncv;m++){
+                p2=index(cvarr[m],":")
+                if(p2>0 && substr(cvarr[m],1,p2-1)==cve){
+                  matches++
+                  candidate=substr(cvarr[m],p2+1)
+                  if(valid_cvss(candidate))cvss=candidate
+                }
+              }
+              if(matches==1 && cvss!="")cvss_known=1
             }
-            printf "%s\t%d\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n", clean(cve), (type=="hiper"?1:0), clean(fileset), clean(installed), clean(unsafever), clean(fx), clean(apars), clean(efixinst), clean(bulletin), cvss, rb
+            printf "%s\t%d\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%d\t%d\n", clean(cve), (type=="hiper"?1:0), clean(fileset), clean(installed), clean(unsafever), clean(fx), clean(apars), clean(efixinst), clean(bulletin), cvss, rb, cvss_known, map_complete
           }
         }
         END{
@@ -2684,7 +2750,18 @@ SEC_APARS_EOF
         if [ "${FVNCVE:-0}" -gt 0 ] || [ "${FVNAPAR:-0}" -gt 0 ]; then
           IDBREAKDOWN=" — $FVNCVE distinct CVE(s), $FVNAPAR distinct APAR/ifix identifier(s) (an identifier can appear on more than one row, so these do not sum to the exposure-record count)"
         fi
-        add patch apar_scan "FLRT APAR exposure scan" FAIL high "$FVNEXP exposure record(s)$HIPERNOTE$IDBREAKDOWN: $FVNAMES" \
+        FV_LADDER_COUNTS=$(printf '%s\n' "$DETAILLINES" | awk -F'\t' '
+          NF>=13 {
+            if($12!="1") unscored++
+            else if($10=="" || $10+0==0) none++
+            else if($10+0>=9) critical++
+            else if($10+0>=7) high++
+            else if($10+0>=4) medium++
+            else low++
+          }
+          END{printf "Critical %d; High %d; Medium %d; Low %d; None %d; Unscored %d",critical+0,high+0,medium+0,low+0,none+0,unscored+0}
+        ')
+        add patch apar_scan "FLRT APAR exposure scan" FAIL high "CVSS ladder: Known-Exploited NOT_ASSESSED; $FV_LADDER_COUNTS — $FVNEXP exposure record(s)$HIPERNOTE$IDBREAKDOWN: $FVNAMES" \
             "Published fixes you don't have, per IBM's own FLRTVC engine ($ATTRIB) — this box matches $FVNEXP exposure record(s) ($FVNCVE distinct CVE(s), $FVNAPAR distinct APAR/ifix identifier(s)) whose fix exists and is not installed here.$MALNOTE$STALENOTE" \
             "apply the listed APAR/ifix from IBM Fix Central (the bulletin/download URLs are in the JSON exposures[]); re-scan after patching." "ffiec:II.C.10"
         FV_PROVENANCE_REAL=1
@@ -7560,7 +7637,7 @@ function eval_svcoff {
   typeset NFS_CONFIG_LINES NFS_LIVE_LINES NFS_CONFIG_COUNT NFS_LIVE_COUNT
   typeset NFS_LINES NFS_ASSESS NFS_HIGH_COUNT NFS_MED_COUNT NFS_RO_COUNT
   typeset NFS_TOTAL_COUNT NFS_EVIDENCE
-  typeset NFS_CONFIGURED_ONLY NFS_OBS
+  typeset NFS_CONFIGURED_ONLY NFS_OBS NFS_PARTIAL_NOTE
 
   NFS_CONFIG=$(aix etc_exports cat /etc/exports); NFS_CONFIG_RC=$?
   NFS_LIVE=$(aix exportfs exportfs); NFS_LIVE_RC=$?
@@ -7678,12 +7755,24 @@ function eval_svcoff {
   ')
 
   NFS_CONFIGURED_ONLY=0
-  if [ "$NFS_CONFIG_COUNT" -gt 0 ] && [ "$NFS_LIVE_COUNT" -eq 0 ]; then
+  if [ "$NFS_CONFIG_RC" -eq 0 ] && [ "$NFS_LIVE_RC" -eq 0 ] \
+      && [ "$NFS_CONFIG_COUNT" -gt 0 ] && [ "$NFS_LIVE_COUNT" -eq 0 ]; then
     NFS_CONFIGURED_ONLY=1
+  fi
+
+  NFS_PARTIAL_NOTE=""
+  if [ "$NFS_CONFIG_RC" -ne 0 ] && [ "$NFS_LIVE_RC" -eq 0 ]; then
+    NFS_PARTIAL_NOTE="partially assessed — /etc/exports read failed; live exportfs evidence follows"
+  elif [ "$NFS_CONFIG_RC" -eq 0 ] && [ "$NFS_LIVE_RC" -ne 0 ]; then
+    NFS_PARTIAL_NOTE="partially assessed — current exportfs listing failed; configured /etc/exports evidence follows"
   fi
 
   if [ "$NFS_HIGH_COUNT" -gt 0 ]; then
     NFS_OBS=$NFS_EVIDENCE
+    if [ -n "$NFS_PARTIAL_NOTE" ]; then
+      NFS_OBS="${NFS_PARTIAL_NOTE}
+${NFS_OBS}"
+    fi
     if [ "$NFS_CONFIGURED_ONLY" -eq 1 ]; then
       NFS_OBS="${NFS_OBS}
 configured-but-not-live: $NFS_CONFIG_COUNT uncommented /etc/exports line(s); exportfs listed no current exports"
@@ -7693,6 +7782,10 @@ configured-but-not-live: $NFS_CONFIG_COUNT uncommented /etc/exports line(s); exp
         "remove anon=0 and restrict every root= list to explicit trusted hostnames or IP addresses; then re-export the corrected definitions during an approved change." "cis-l1"
   elif [ "$NFS_MED_COUNT" -gt 0 ]; then
     NFS_OBS=$NFS_EVIDENCE
+    if [ -n "$NFS_PARTIAL_NOTE" ]; then
+      NFS_OBS="${NFS_PARTIAL_NOTE}
+${NFS_OBS}"
+    fi
     if [ "$NFS_CONFIGURED_ONLY" -eq 1 ]; then
       NFS_OBS="${NFS_OBS}
 configured-but-not-live: $NFS_CONFIG_COUNT uncommented /etc/exports line(s); exportfs listed no current exports"
@@ -7700,6 +7793,21 @@ configured-but-not-live: $NFS_CONFIG_COUNT uncommented /etc/exports line(s); exp
     add security nfs_exports "NFS exports" WARN med "$NFS_OBS" \
         "One or more exports are writable by default and have no access= client restriction, so any client that can reach the NFS service can attempt to mount them." \
         "add an explicit access= host list and use ro unless the clients genuinely require writes; re-export only through the normal approved change process." "cis-l1"
+  elif [ "$NFS_CONFIG_RC" -ne 0 ] && [ "$NFS_LIVE_RC" -ne 0 ]; then
+    add security nfs_exports "NFS exports" NOT_ASSESSED high \
+        "not assessed — both NFS evidence reads failed (/etc/exports exit=$NFS_CONFIG_RC; exportfs exit=$NFS_LIVE_RC)" \
+        "Neither configured nor current NFS export evidence was readable, so absence of exports and safe export options cannot be established." \
+        "restore read access to /etc/exports and the no-argument exportfs listing, then re-run AIXray." "cis-l1"
+  elif [ "$NFS_CONFIG_RC" -ne 0 ]; then
+    add security nfs_exports "NFS exports" NOT_ASSESSED high \
+        "not assessed — /etc/exports read failed (exit=$NFS_CONFIG_RC); no unsafe option was established from the current exportfs listing" \
+        "The live listing alone did not establish an unsafe export, but unreadable configuration can contain dormant definitions that later become active." \
+        "restore read access to /etc/exports and re-run AIXray." "cis-l1"
+  elif [ "$NFS_LIVE_RC" -ne 0 ]; then
+    add security nfs_exports "NFS exports" NOT_ASSESSED high \
+        "not assessed — current exportfs listing failed (exit=$NFS_LIVE_RC); no unsafe option was established from /etc/exports" \
+        "The configuration alone did not establish an unsafe export, but the unreadable live listing can contain currently exported state not represented by that file." \
+        "restore access to the no-argument exportfs listing and re-run AIXray." "cis-l1"
   elif [ "$NFS_CONFIGURED_ONLY" -eq 1 ]; then
     add security nfs_exports "NFS exports" WARN low \
         "configured-but-not-live: $NFS_CONFIG_COUNT uncommented /etc/exports line(s); exportfs listed no current exports" \
@@ -8335,7 +8443,10 @@ progress 8 "configuration hygiene"
 checks_config
 progress 9 "monitoring and operations"
 checks_monitoring
-[ "$IS_VIOS" -eq 1 ] && checks_vios   # LAYER-2 VIOS-role depth — no-op on a plain AIX LPAR
+if [ "$IS_VIOS" -eq 1 ]; then
+  printf '[+] VIOS depth checks…\n' >&2
+  checks_vios
+fi
 
 function cat_status { # <index> -> RED/AMBER/INCOMPLETE/GREEN
   # Believability review follow-up (2026-07-14): a category carrying NOT_ASSESSED
@@ -8442,12 +8553,78 @@ REPORT_DATE=$(printf '%s' "$TODAY" | tr -cd '0-9-')
 [ -n "$REPORT_DATE" ] || REPORT_DATE=unknown-date
 
 # ============================ RENDER ====================================================
+# Resolve the curated numeric crosswalk against this run's actual evidence. A
+# grouped STIG finding is evaluated per rule, then folded by control number:
+# any failed source fails the control; otherwise an assessed source passes it.
+# Unassessed/not-applicable sources emit no verdict, so missing evidence can
+# never become an invented PASS. A fully assessed nfs_exports WARN concerns a
+# writable/access restriction outside its mapped root-access check; a partial
+# WARN emits no numeric verdict, and only confirmed unsafe evidence fails it.
+function cis_l1_verdicts { # <finding-index> -> control|PASS-or-FAIL, one per line
+  typeset CIS_INDEX CIS_DIRECT_STATUS
+  CIS_INDEX=$1
+  CIS_DIRECT_STATUS=${F_ST[$CIS_INDEX]}
+  # A partial NFS WARN is actionable evidence, but it cannot prove the whole
+  # mapped control passed while one of the two required evidence sources was
+  # unreadable. Keep the action and omit the numeric verdict.
+  if [ "${F_ID[$CIS_INDEX]}" = "nfs_exports" ] \
+      && [ "$CIS_DIRECT_STATUS" = "WARN" ]; then
+    case "${F_OBS[$CIS_INDEX]}" in
+      "partially assessed —"*) CIS_DIRECT_STATUS=NOT_ASSESSED;;
+    esac
+  fi
+  {
+    printf '%s\n' "$cis_l1_map" | awk 'NF{print "M|" $0}'
+    printf 'R|finding:%s|%s\n' "${F_ID[$CIS_INDEX]}" "$CIS_DIRECT_STATUS"
+    if [ -n "${F_RULES[$CIS_INDEX]}" ]; then
+      printf '%s\n' "${F_RULES[$CIS_INDEX]}" | awk 'NF{print "R|" $0}'
+    fi
+  } | awk -F'|' '
+    $1=="M" {
+      source=$2; control=$3; mapped[source]=control
+      if(!(control in ordered)){ordered[control]=++n; controls[n]=control}
+      next
+    }
+    $1=="R" {
+      source=$2; status=$3
+      if(!(source in mapped)) next
+      control=mapped[source]
+      if(status=="NA" || status=="NOT_ASSESSED" || status=="NOT_APPLICABLE") next
+      if(source=="finding:nfs_exports" && status=="WARN") status="PASS"
+      else if(status=="WARN") status="FAIL"
+      if(status=="FAIL") verdict[control]="FAIL"
+      else if(status=="PASS" && verdict[control]!="FAIL") verdict[control]="PASS"
+    }
+    END {
+      for(i=1;i<=n;i++) if(controls[i] in verdict)
+        print controls[i] "|" verdict[controls[i]]
+    }
+  '
+}
+
+function cis_l1_html { # <finding-index> -> escaped numeric verdicts separated by <br>
+  typeset CIS_ROWS
+  CIS_ROWS=$(cis_l1_verdicts "$1")
+  if [ -z "$CIS_ROWS" ]; then
+    printf '%s' '—'
+  else
+    printf '%s\n' "$CIS_ROWS" | awk -F'|' '
+      NF>=2 {printf "%s%s %s", (n++?"<br>":""), $1, $2}
+    '
+  fi
+}
+
+function attr_hesc { # HTML attribute escaping for authored finding identifiers
+  sed -e 's/&/\&amp;/g' -e 's/</\&lt;/g' -e 's/>/\&gt;/g' \
+      -e 's/"/\&quot;/g' -e "s/'/\&#39;/g"
+}
+
 if [ "$FORMAT" = "compliance" ]; then
   case "$COMPLIANCE" in
     stig)   STDLABEL="DISA STIG (IBM AIX 7.x)"; STDFULL="DISA STIG for IBM AIX 7.x"
             ATTRIB="Control mappings reference the DISA STIG for IBM AIX 7.x (public domain). This report indicates AIXray's read-only observations and is not a certified audit.";;
-    cis-l1) STDLABEL="CIS IBM AIX 7 Level 1"; STDFULL="CIS IBM AIX 7 Benchmark Level 1 alignment"
-            ATTRIB="CIS alignment tags indicate coverage of common Level-1 hardening territory; this is NOT a certified CIS Benchmark assessment and no CIS content is reproduced.";;
+    cis-l1) STDLABEL="PowerTrue CIS L1 cross-check"; STDFULL="PowerTrue-authored CIS L1 numeric cross-check"
+            ATTRIB="PowerTrue's cross-check uses control-number references and PowerTrue verdicts only; it is not a certified assessment.";;
     ffiec)  STDLABEL="FFIEC IT Handbook"; STDFULL="FFIEC IT Handbook alignment"
             ATTRIB="FFIEC alignment tags reference the public FFIEC IT Examination Handbook (public domain); they indicate coverage territory, not a certified examination. This report indicates AIXray's read-only observations and is not a certified audit.";;
   esac
@@ -8457,11 +8634,15 @@ if [ "$FORMAT" = "compliance" ]; then
     for tok in ${F_CTL[$1]}; do
       case "$COMPLIANCE" in
         stig)   case "$tok" in stig:*)  out="$out $tok";; esac;;
-        cis-l1) case "$tok" in cis-l1)  out="$out $tok";; esac;;
+        cis-l1) ;;
         ffiec)  case "$tok" in ffiec:*) out="$out $tok";; esac;;
       esac
     done
-    echo $out
+    if [ "$COMPLIANCE" = "cis-l1" ]; then
+      cis_l1_verdicts "$1" | awk -F'|' 'NF>=2{printf "%s%s",(n++?" ":""),$1}'
+    else
+      echo $out
+    fi
   }
   function chip_of { case "$1" in FAIL) echo RED;; WARN) echo AMBER;; NOT_ASSESSED|NOT_APPLICABLE) echo MUTE;; *) echo GREEN;; esac; }
   # rule-engine detail: concatenate every finding's F_RULES so a control tag that is a
@@ -8506,7 +8687,8 @@ ${F_RULES[$i]}"; fi
   for t in $CTAGS; do
     # rule-engine control tag: render ONE row per rule with its own status + observed,
     # sourced from the finding's per-rule detail rather than the grouped worst status.
-    rl=$(rule_lookup "$t")
+    rl=""
+    [ "$COMPLIANCE" != "cis-l1" ] && rl=$(rule_lookup "$t")
     if [ -n "$rl" ]; then
       rst=${rl%%"|"*}; robs=${rl#*"|"}; rlbl=""
       i=0
@@ -8523,19 +8705,25 @@ ${F_RULES[$i]}"; fi
     while [ "$i" -lt "$NFIND" ]; do
       for tok in $(ctl_match $i); do
         if [ "$tok" = "$t" ]; then
+          if [ "$COMPLIANCE" = "cis-l1" ]; then
+            mapped_status=$(cis_l1_verdicts "$i" | awk -F'|' -v c="$t" '$1==c{print $2; exit}')
+            [ -n "$mapped_status" ] || continue
+          else
+            mapped_status=${F_ST[$i]}
+          fi
           labels="$labels${labels:+<br>}$(printf '%s' "${F_LBL[$i]}"|hesc)"
           obs="$obs${obs:+<br>}$(printf '%s' "${F_OBS[$i]}"|hesc)"
           nmapped=$((nmapped+1))
           # need-root WARN: observed "n/a" and meaning explicitly says it needs root
-          if [ "${F_ST[$i]}" = "WARN" ] && [ "${F_OBS[$i]}" = "n/a" ]; then
+          if [ "$mapped_status" = "WARN" ] && [ "${F_OBS[$i]}" = "n/a" ]; then
             case "${F_MEAN[$i]}" in *"needs root"*) nneedroot=$((nneedroot+1));; esac
           fi
           # a literal NOT_ASSESSED finding must count the same way (§62 finding #9's
           # class): it must never silently leave `worst` at its PASS default just
           # because NOT_ASSESSED matches neither the FAIL nor WARN case below.
-          [ "${F_ST[$i]}" = "NOT_ASSESSED" ] && nnotassessed=$((nnotassessed+1))
-          [ "${F_ST[$i]}" = "NOT_APPLICABLE" ] && nnotapplicable=$((nnotapplicable+1))
-          case "${F_ST[$i]}" in
+          [ "$mapped_status" = "NOT_ASSESSED" ] && nnotassessed=$((nnotassessed+1))
+          [ "$mapped_status" = "NOT_APPLICABLE" ] && nnotapplicable=$((nnotapplicable+1))
+          case "$mapped_status" in
             FAIL) worst=FAIL;;
             WARN) [ "$worst" != "FAIL" ] && worst=WARN;;
             NOT_ASSESSED)
@@ -8608,7 +8796,11 @@ ${F_RULES[$i]}"; fi
          [ "${F_ST[$i]}" != "PASS" ] && [ "${F_ST[$i]}" != "NOT_APPLICABLE" ]; then
         rk=$(risk_of "${F_ST[$i]}" "${F_SEV[$i]}")
         tg=""
-        for tok in ${F_CTL[$i]}; do tg="$tg${tg:+, }$tok"; done
+        if [ "$COMPLIANCE" = "cis-l1" ]; then
+          tg=$(cis_l1_verdicts "$i" | awk -F'|' 'NF>=2{printf "%s%s %s",(n++?", ":""),$1,$2}')
+        else
+          for tok in ${F_CTL[$i]}; do tg="$tg${tg:+, }$tok"; done
+        fi
         [ -z "$tg" ] && tg="—"
         seg="$seg<tr class=\"${F_ST[$i]}\"><td><span class=\"risk $(riskcls "$rk")\">$rk</span></td>"
         seg="$seg<td class=\"ctl\">$(printf '%s' "${F_LBL[$i]}"|hesc)</td><td class=\"obs\">$(printf '%s' "${F_OBS[$i]}"|hesc)</td>"
@@ -11016,9 +11208,19 @@ if [ "$FORMAT" = "json" ]; then
     else
       EVSUF=", \"evidence\": { \"source_commands\": $(jcmds "${F_EVIDENCE_COMMANDS[$i]}") }"
     fi
-    printf '    { "id": "%s", "category": "%s", "label": "%s", "status": "%s", "severity": "%s", "observed": "%s", "meaning": "%s", "fix": "%s", "controls": %s%s%s%s }%s\n' \
+    CIS_ROWS=$(cis_l1_verdicts "$i")
+    if [ -z "$CIS_ROWS" ]; then
+      CISSUF=""
+    else
+      CISJ=$(printf '%s\n' "$CIS_ROWS" | awk -F'|' '
+        BEGIN{printf "["}
+        NF>=2{printf "%s{ \"control\": \"%s\", \"verdict\": \"%s\" }",(n++?", ":""),$1,$2}
+        END{printf "]"}')
+      CISSUF=", \"cis_l1\": $CISJ"
+    fi
+    printf '    { "id": "%s", "category": "%s", "label": "%s", "status": "%s", "severity": "%s", "observed": "%s", "meaning": "%s", "fix": "%s", "controls": %s%s%s%s%s }%s\n' \
       "$(printf '%s' "${F_ID[$i]}"|jesc)" "${F_CAT[$i]}" "$(printf '%s' "${F_LBL[$i]}"|jesc)" "${F_ST[$i]}" "${F_SEV[$i]}" \
-      "$(printf '%s' "${F_OBS[$i]}"|jesc)" "$(printf '%s' "${F_MEAN[$i]}"|jesc)" "$(printf '%s' "${F_FIX[$i]}"|jesc)" "$CJ" "$RSUF" "$EXPSUF" "$EVSUF" "$sep"
+      "$(printf '%s' "${F_OBS[$i]}"|jesc)" "$(printf '%s' "${F_MEAN[$i]}"|jesc)" "$(printf '%s' "${F_FIX[$i]}"|jesc)" "$CJ" "$RSUF" "$EXPSUF" "$EVSUF" "$CISSUF" "$sep"
     i=$((i+1))
   done
   printf '  ],\n'
@@ -11097,6 +11299,140 @@ if [ "$IS_VIOS" -eq 1 ]; then
 else
   SNAP_EY="System Health Check"; SNAP_H1="Posture snapshot — ${HOST_H}"
 fi
+
+# C2: surface the full CVSS ladder ahead of category detail. This native v1
+# path has no KEV-feed input, so Known-Exploited is explicitly NOT ASSESSED;
+# the Contract-v2 report fills that tier when an-flrtvc receives --kev-json.
+CVSS_APAR_INDEX=-1
+i=0
+while [ "$i" -lt "$NFIND" ]; do
+  [ "${F_ID[$i]}" = "apar_scan" ] && { CVSS_APAR_INDEX=$i; break; }
+  i=$((i+1))
+done
+if [ "$CVSS_APAR_INDEX" -lt 0 ] || [ "${F_ST[$CVSS_APAR_INDEX]}" = "NOT_ASSESSED" ]; then
+  if [ "$CVSS_APAR_INDEX" -ge 0 ]; then
+    CVSS_NA_REASON=$(printf '%s' "${F_OBS[$CVSS_APAR_INDEX]}" | hesc)
+  else
+    CVSS_NA_REASON="FLRTVC evidence was not present in this run"
+  fi
+  CVSSBLOCK="<section id=\"cvss-ladder\" class=\"cvss\"><div class=\"cathead\"><span class=\"cl\">CVE exposure ladder</span></div><div class=\"cov\"><b>NOT ASSESSED</b> — $CVSS_NA_REASON. No zero counts are inferred from an uncompleted run.</div></section>"
+else
+  CVSS_DATA=${F_EXPOSURES[$CVSS_APAR_INDEX]}
+  CVSS_NUMERIC_ROWS=$(printf '%s\n' "$CVSS_DATA" | awk -F'\t' '
+    function he(s){gsub(/&/,"\\&amp;",s);gsub(/</,"\\&lt;",s);gsub(/>/,"\\&gt;",s);return s}
+    function add(t,s){items[t]=items[t] (items[t]!=""?"<br>":"") s; count[t]++}
+    NF>=13 {
+      score=$10
+      if($12!="1")t="Unscored"
+      else if(score=="" || score+0==0)t="None"
+      else if(score+0>=9)t="Critical"
+      else if(score+0>=7)t="High"
+      else if(score+0>=4)t="Medium"
+      else t="Low"
+      ident=$1; if(ident=="")ident=$7; if(ident=="")ident=$3
+      detail=he(ident) " — " he($3) " " he($4)
+      if($12!="1")detail=detail " · CVSS NOT ASSESSED"
+      else if(score!="")detail=detail " · CVSS " he(score)
+      else detail=detail " · CVSS none"
+      if($2=="1")detail=detail " · HIPER"
+      if($6!="")detail=detail " · fixed at/above " he($6)
+      if($9!="")detail=detail " · bulletin " he($9)
+      add(t,detail)
+    }
+    END {
+      order[1]="Critical";order[2]="High";order[3]="Medium";order[4]="Low";order[5]="None";order[6]="Unscored"
+      for(i=1;i<=6;i++){
+        t=order[i]; detail=items[t]; if(detail=="")detail="—"
+        printf "<tr data-tier=\"%s\" data-count=\"%d\"><td class=\"ctl\">%s</td><td class=\"obs\">%d</td><td class=\"obs\">%s</td></tr>",t,count[t]+0,t,count[t]+0,detail
+      }
+    }
+  ')
+  CVSS_NOTE=""
+  [ "${F_ST[$CVSS_APAR_INDEX]}" = "WARN" ] && CVSS_NOTE="<div class=\"cov\"><b>Currency warning.</b> $(printf '%s' "${F_OBS[$CVSS_APAR_INDEX]}" | hesc)</div>"
+  CVSS_INCOMPLETE_ROWS=$(printf '%s\n' "$CVSS_DATA" | awk -F'\t' 'NF>=13 && $13!="1"{n++} END{print n+0}')
+  if [ "$CVSS_INCOMPLETE_ROWS" -gt 0 ]; then
+    CVSS_NOTE="$CVSS_NOTE<div class=\"cov\"><b>Incomplete CVSS evidence.</b> $CVSS_INCOMPLETE_ROWS exposure record(s) came from a row whose CVSS field was incomplete or malformed. Recovered scores remain listed; unscored CVEs are NOT ASSESSED and are not guessed into the None tier.</div>"
+  fi
+  CVSSBLOCK="<section id=\"cvss-ladder\" class=\"cvss\"><div class=\"cathead\"><span class=\"cl\">CVE exposure ladder</span><span class=\"cr\"><span class=\"cnt\">worst first · every exposure listed</span></span></div>$CVSS_NOTE<table><thead><tr><th>Tier</th><th>Count</th><th>Actual CVE / exposure list</th></tr></thead><tbody><tr data-tier=\"Known-Exploited\"><td class=\"ctl\">Known-Exploited</td><td class=\"obs\">NOT ASSESSED</td><td class=\"obs\">No dated KEV feed was supplied to this native report path; zero is not assumed.</td></tr>$CVSS_NUMERIC_ROWS</tbody></table></section>"
+fi
+
+# Complete, uncapped action inventory. CVE tier is read only from recovered
+# FLRT exposure rows; an absent score/row stays absent rather than being
+# guessed. The native report has no KEV input, disclosed in the ladder below.
+function action_cve_tier { # <finding-index> -> tier or empty
+  typeset ACTION_INDEX
+  ACTION_INDEX=$1
+  [ -n "${F_EXPOSURES[$ACTION_INDEX]}" ] || return 0
+  printf '%s\n' "${F_EXPOSURES[$ACTION_INDEX]}" | awk -F'\t' '
+    NF>=13 {
+      rows++
+      if($2=="1") hiper=1
+      if($12!="1") unscored++
+      else if($10!="") {
+        score=$10+0
+        if(!have || score>max){max=score;have=1}
+      } else assessed_none=1
+    }
+    END {
+      if(!rows) exit
+      if(hiper){printf "Critical / HIPER";exit}
+      if(max>=9){printf "Critical";exit}
+      if(unscored)exit
+      if(!have || max==0){printf "None";exit}
+      if(max>=7){printf "High";exit}
+      if(max>=4){printf "Medium";exit}
+      printf "Low"
+    }
+  '
+}
+
+function action_priority { # <finding-index> <cve-tier> -> numeric sort bucket
+  typeset ACTION_INDEX ACTION_TIER ACTION_STATUS ACTION_SEVERITY
+  ACTION_INDEX=$1; ACTION_TIER=$2
+  ACTION_STATUS=${F_ST[$ACTION_INDEX]}; ACTION_SEVERITY=${F_SEV[$ACTION_INDEX]}
+  case "$ACTION_TIER" in Critical*) echo 1; return;; esac
+  case "$ACTION_STATUS:$ACTION_SEVERITY" in
+    FAIL:critical|FAIL:high) echo 2;;
+    FAIL:med|FAIL:medium) echo 3;;
+    FAIL:low) echo 4;;
+    WARN:critical|WARN:high) echo 5;;
+    WARN:med|WARN:medium) echo 6;;
+    WARN:low) echo 7;;
+    *) echo 8;;
+  esac
+}
+
+ACTION_ROWS=""
+ACTION_COUNT=0
+ACTION_PRIORITY=1
+while [ "$ACTION_PRIORITY" -le 8 ]; do
+  i=0
+  while [ "$i" -lt "$NFIND" ]; do
+    ACTION_STATUS=${F_ST[$i]}
+    if [ "$ACTION_STATUS" = "FAIL" ] || [ "$ACTION_STATUS" = "WARN" ]; then
+      ACTION_TIER=$(action_cve_tier "$i")
+      ACTION_FINDING_PRIORITY=$(action_priority "$i" "$ACTION_TIER")
+      if [ "$ACTION_FINDING_PRIORITY" -eq "$ACTION_PRIORITY" ]; then
+        ACTION_COUNT=$((ACTION_COUNT+1))
+        ACTION_ID_H=$(printf '%s' "${F_ID[$i]}" | attr_hesc)
+        ACTION_LABEL_H=$(printf '%s' "${F_LBL[$i]}" | hesc)
+        ACTION_OBS_H=$(printf '%s' "${F_OBS[$i]}" | hesc)
+        ACTION_FIX_H=$(printf '%s' "${F_FIX[$i]}" | hesc)
+        ACTION_TIER_H=$(printf '%s' "$ACTION_TIER" | hesc)
+        [ -n "$ACTION_TIER_H" ] || ACTION_TIER_H='—'
+        ACTION_ROWS="$ACTION_ROWS<tr class=\"$ACTION_STATUS\" data-action-index=\"$i\" data-finding-id=\"$ACTION_ID_H\" data-priority=\"$ACTION_PRIORITY\"><td class=\"action-priority\">$ACTION_COUNT</td><td class=\"ctl\">$ACTION_LABEL_H<div class=\"action-id\">$(printf '%s' "${F_ID[$i]}" | hesc) — $ACTION_STATUS</div></td><td class=\"obs\">$ACTION_OBS_H</td><td class=\"action-fix\">$ACTION_FIX_H</td><td class=\"sev\">${F_SEV[$i]}</td><td class=\"cis\">$(cis_l1_html "$i")</td><td class=\"action-tier\">$ACTION_TIER_H</td></tr>"
+      fi
+    fi
+    i=$((i+1))
+  done
+  ACTION_PRIORITY=$((ACTION_PRIORITY+1))
+done
+
+if [ "$ACTION_COUNT" -eq 0 ]; then
+  ACTION_ROWS='<tr class="none"><td colspan="7">No FAIL/WARN findings were emitted in this run.</td></tr>'
+fi
+ACTIONBLOCK="<section id=\"remediation-actions\" class=\"actions\"><div class=\"cathead\"><span class=\"cl\">Remediation Action List</span><span class=\"cr\"><span class=\"cnt\">$ACTION_COUNT action(s) · complete · worst first</span></span></div><div class=\"cov\">Work from top to bottom. Every FAIL and WARN is its own line; PASS and NOT_ASSESSED findings remain summarized in the detail below.</div><table><thead><tr><th>Priority</th><th>Finding</th><th>Observed evidence</th><th>Fix</th><th>Severity</th><th>CIS L1 check</th><th>CVE tier</th></tr></thead><tbody>$ACTION_ROWS</tbody></table></section>"
+
 CATBLOCKS=""
 ci=0
 while [ "$ci" -lt 9 ]; do
@@ -11105,13 +11441,13 @@ while [ "$ci" -lt 9 ]; do
     CST=$(cat_status $ci)
     NACNT=""; [ "${CN[$ci]}" -gt 0 ] && NACNT=" · ${CN[$ci]} not assessed"
     CATBLOCKS="$CATBLOCKS<div class=\"cathead\"><span class=\"cl\">$(printf '%s' "${CAT_LBL[$ci]}"|hesc)</span><span class=\"cr\"><span class=\"chip $CST\">$CST</span> <span class=\"cnt\">${CP[$ci]} pass · ${CW[$ci]} warn · ${CF[$ci]} fail${NACNT}</span></span></div>"
-    CATBLOCKS="$CATBLOCKS<table><thead><tr><th>Check</th><th>Status</th><th>Sev</th><th>Observed</th><th>What it means &amp; how to fix</th></tr></thead><tbody>"
+    CATBLOCKS="$CATBLOCKS<table><thead><tr><th>Check</th><th>Status</th><th>Sev</th><th>CIS L1 check</th><th>Observed</th><th>What it means &amp; how to fix</th></tr></thead><tbody>"
     i=0
     while [ "$i" -lt "$NFIND" ]; do
       if [ "${F_CAT[$i]}" = "${CAT_ID[$ci]}" ]; then
         st="${F_ST[$i]}"
         CATBLOCKS="$CATBLOCKS<tr class=\"$st\"><td class=\"ctl\">$(printf '%s' "${F_LBL[$i]}"|hesc)</td><td class=\"st $st\">$st</td>"
-        CATBLOCKS="$CATBLOCKS<td class=\"sev\">${F_SEV[$i]}</td><td class=\"obs\">$(printf '%s' "${F_OBS[$i]}"|hesc)</td>"
+        CATBLOCKS="$CATBLOCKS<td class=\"sev\">${F_SEV[$i]}</td><td class=\"cis\">$(cis_l1_html "$i")</td><td class=\"obs\">$(printf '%s' "${F_OBS[$i]}"|hesc)</td>"
         CATBLOCKS="$CATBLOCKS<td>$(printf '%s' "${F_MEAN[$i]}"|hesc)<div class=\"fix\">Fix: $(printf '%s' "${F_FIX[$i]}"|hesc)</div></td></tr>"
       fi
       i=$((i+1))
@@ -11224,6 +11560,11 @@ h1{font-family:var(--serif);color:#fff;font-size:23px;font-weight:600;margin:7px
 .cathead .cl{font-family:var(--serif);font-size:15.5px;color:var(--ink);font-weight:600}
 .cathead .cr{display:flex;align-items:center;gap:10px}
 .cathead .cnt{font-family:var(--mono);font-size:10.5px;color:var(--mute);font-variant-numeric:tabular-nums}
+.cvss .cov{margin-top:10px}.cvss table{margin-bottom:14px}
+.actions .cov{margin-top:10px}.actions table{margin-bottom:14px}
+.action-priority{font-family:var(--serif);font-size:16px;font-weight:600;color:var(--ink);width:5%}
+.action-id{font-family:var(--mono);font-size:9px;color:var(--mute);margin-top:4px}
+.action-fix{color:var(--ink);width:23%}.action-tier{font-family:var(--mono);font-size:9.5px;white-space:nowrap}
 .chip{font-family:var(--mono);font-size:9.5px;font-weight:600;letter-spacing:.8px;padding:3px 9px;color:#fff;text-transform:uppercase}
 .chip.RED{background:var(--red)}.chip.AMBER{background:var(--amber)}.chip.GREEN{background:var(--green)}.chip.INCOMPLETE,.chip.MUTE{background:var(--na)}
 
@@ -11234,6 +11575,7 @@ td.ctl{font-weight:600;color:var(--ink);width:19%}
 td.st{font-family:var(--mono);font-weight:600;width:7%;font-size:10px}
 td.st.PASS{color:var(--green)}td.st.WARN{color:var(--amber)}td.st.FAIL{color:var(--red)}td.st.NOT_ASSESSED,td.st.NOT_APPLICABLE{color:var(--na)}
 td.sev{font-family:var(--mono);color:var(--mute);text-transform:uppercase;font-size:9.5px;width:6%;letter-spacing:.4px}
+td.cis{font-family:var(--mono);color:var(--ink);font-size:9.5px;white-space:nowrap;width:9%}
 td.obs{font-family:var(--mono);font-size:11px;color:var(--ink);width:20%;word-break:break-word}
 tr.FAIL td:first-child{box-shadow:inset 4px 0 var(--red)}
 tr.WARN td:first-child{box-shadow:inset 4px 0 var(--amber)}
@@ -11292,6 +11634,8 @@ footer b,footer a{color:var(--copper-d)}
   <ol class="top-risks">${START_HERE_ITEMS}</ol>
   ${START_HERE_NOTE}
 </section>
+${ACTIONBLOCK}
+${CVSSBLOCK}
 ${CATBLOCKS}
 <footer><span>AIXray · by PowerTrue Systems · read-only · this snapshot is yours to keep</span><a href="mailto:review@powertruesystems.com">${REVIEW_CTA}</a></footer>
 <div class="cta" style="padding:14px 32px;background:var(--cream);font-family:var(--sans);font-size:12px;color:var(--ink)">
@@ -11303,20 +11647,30 @@ HTML
 
 if [ -n "$OUT_DIR" ]; then
   if ! mkdir -p "$OUT_DIR" 2>/dev/null; then
-    echo "aixray: --out: cannot create directory '$OUT_DIR'" >&2
+    if [ "$OUT_EXPLICIT" -eq 1 ]; then
+      echo "aixray: --out: cannot create directory '$OUT_DIR'" >&2
+    else
+      echo "aixray: cannot write the report in the current directory — cd to a writable directory, or use --out DIR" >&2
+    fi
     exit 2
   fi
   REPORT_FILE="$OUT_DIR/aixray-$REPORT_HOST-$REPORT_DATE.html"
   REPORT_TMP="$OUT_DIR/.aixray-$REPORT_HOST-$REPORT_DATE.html.tmp.$$"
   if (umask 077; set -C; emit_html_report > "$REPORT_TMP") &&
      [ ! -d "$REPORT_FILE" ] &&
-     mv -f "$REPORT_TMP" "$REPORT_FILE"; then
+     mv -f "$REPORT_TMP" "$REPORT_FILE" &&
+     [ -f "$REPORT_FILE" ] &&
+     [ ! -L "$REPORT_FILE" ]; then
     printf 'Report ready: %s — open it in your browser. To save a PDF: Print -> Save as PDF.\n' "$REPORT_FILE" >&2
     finish_report
     exit 0
   else
     rm -f "$REPORT_TMP"
-    echo "aixray: --out: cannot write report '$REPORT_FILE'" >&2
+    if [ "$OUT_EXPLICIT" -eq 1 ]; then
+      echo "aixray: --out: cannot write report '$REPORT_FILE'" >&2
+    else
+      echo "aixray: cannot write the report in the current directory — cd to a writable directory, or use --out DIR" >&2
+    fi
     exit 2
   fi
 else
