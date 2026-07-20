@@ -25,7 +25,7 @@
   "description": "A source-available, read-only IBM AIX and VIOS posture assessment delivered as a single ksh88-compatible shell file with zero egress during assessment execution and explicit NOT_ASSESSED results when evidence is unavailable.",
   "url": "https://powertruesystems.com/aixray",
   "codeRepository": "https://github.com/PowerTrueSYS/aixray-public",
-  "downloadUrl": "https://github.com/PowerTrueSYS/aixray-public/releases/latest/download/aixray-aix.sh",
+  "downloadUrl": "https://powertruesystems.com/aixray/aixray-aix.sh",
   "softwareVersion": "0.1.0",
   "applicationCategory": "System administration and security assessment",
   "applicationSubCategory": "IBM AIX health check and VIOS posture assessment",
@@ -49,7 +49,7 @@
     "HTML and JSON reports",
     "Supported compliance-oriented views",
     "Explicit NOT_ASSESSED status for unavailable evidence",
-    "31 standalone check tools with machine-readable manifests"
+    "35 standalone check tools with machine-readable manifests"
   ],
   "keywords": "IBM AIX health check, VIOS assessment, IBM Power security audit, AIX posture assessment, AIX risk scanner, ksh88, read-only, zero egress",
   "additionalProperty": [
@@ -61,7 +61,7 @@
     {
       "@type": "PropertyValue",
       "name": "standaloneCheckCount",
-      "value": 31
+      "value": 35
     },
     {
       "@type": "PropertyValue",
@@ -359,12 +359,12 @@
         <div class="section-head">
           <p class="eyebrow">Choose your next step</p>
           <h2 id="download-title">Run the tool, or have a senior engineer read the risk with you.</h2>
-          <p>The convenient release download asks for a work email. Scheduling a free one-system Blueprint is a separate choice.</p>
+          <p>The convenient static-site download asks for a work email. Scheduling a free one-system Blueprint is a separate choice.</p>
         </div>
         <div class="gate-grid">
           <section class="panel" aria-labelledby="get-title">
             <h3 id="get-title">Get AIXray v1</h3>
-            <p>Enter your work email. After FormSubmit confirms the request, this page reveals the GitHub release asset.</p>
+            <p>Enter your work email. After FormSubmit confirms the request, this page reveals the scanner file served directly by this static site.</p>
             <form id="download-form" action="https://formsubmit.co/hello@powertruesystems.com" method="POST">
               <input type="hidden" name="_subject" value="AIXray public v1 download request">
               <input type="hidden" name="_template" value="table">
@@ -379,8 +379,8 @@
               <p id="download-status" class="status" role="status" aria-live="polite"></p>
             </form>
             <div id="download-ready" hidden class="ready">
-              <p><strong>Request confirmed.</strong> Review the script before moving it to an AIX or VIOS host.</p>
-              <a class="button" href="https://github.com/PowerTrueSYS/aixray-public/releases/latest/download/aixray-aix.sh" download>Download aixray-aix.sh</a>
+              <p><strong>Request confirmed.</strong> The scanner is served directly from this page; review it before moving it to an AIX or VIOS host.</p>
+              <a class="button" href="aixray-aix.sh" download>Download aixray-aix.sh</a>
             </div>
           </section>
 
@@ -408,14 +408,20 @@
         <div class="inspect-copy">
           <p class="eyebrow">Trust through inspection</p>
           <h2 id="inspect-title">The claims are in the files.</h2>
-          <p>The repository includes the assembled v1 script, 31 standalone checks with adjacent command manifests, and a catalog with SHA-256 hashes. Read the exact command surface before anything runs.</p>
+          <p>The repository includes the assembled v1 script, 35 standalone checks with adjacent command manifests, and a catalog with SHA-256 hashes. Read the exact command surface before anything runs.</p>
           <a class="text-link" href="https://github.com/PowerTrueSYS/aixray-public">Inspect AIXray on GitHub →</a>
         </div>
-        <pre aria-label="AIXray example commands"><code># full HTML assessment
+        <pre aria-label="AIXray example commands"><code># easiest run — writes a named HTML report
 chmod 700 aixray-aix.sh
+./aixray-aix.sh
+
+# expect:
+# Report ready: ./aixray-&lt;hostname&gt;-&lt;date&gt;.html — open it in your browser. To save a PDF: Print -&gt; Save as PDF.
+
+# advanced: explicit HTML on stdout
 ./aixray-aix.sh --html &gt; aixray-report.html
 
-# structured assessment
+# advanced: explicit JSON on stdout
 ./aixray-aix.sh --json &gt; aixray-report.json
 
 # verify the public catalog
