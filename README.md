@@ -4,7 +4,7 @@ AIXray is a source-available IBM AIX health check and VIOS posture assessment fo
 
 **Official page:** [powertruesystems.com/aixray](https://powertruesystems.com/aixray)
 
-**Direct download:** [aixray-aix.sh](https://powertruesystems.com/aixray/aixray-aix.sh)
+**Gated download:** [powertruesystems.com/aixray/](https://powertruesystems.com/aixray/)
 
 ## What is AIXray?
 
@@ -55,7 +55,7 @@ The 35 standalone tools are independently callable check modules. They are not a
 
 ## How do I run AIXray?
 
-Download the [directly served scanner](https://powertruesystems.com/aixray/aixray-aix.sh), review it, copy it to the AIX or VIOS host, then start with the easy HTML run:
+Download the scanner from the [gated download page](https://powertruesystems.com/aixray/), review it, copy it to the AIX or VIOS host, then start with the easy HTML run:
 
 ```sh
 chmod 700 aixray-aix.sh

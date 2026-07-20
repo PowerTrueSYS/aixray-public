@@ -4,7 +4,7 @@
 
 Canonical page: https://powertruesystems.com/aixray
 Source repository: https://github.com/PowerTrueSYS/aixray-public
-Direct download: https://powertruesystems.com/aixray/aixray-aix.sh
+Gated download: https://powertruesystems.com/aixray/
 Catalog: https://github.com/PowerTrueSYS/aixray-public/blob/master/catalog.json
 Version: 0.1.0
 License: LicenseRef-PolyForm-Internal-Use-1.0.0

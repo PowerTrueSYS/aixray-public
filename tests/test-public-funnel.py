@@ -30,7 +30,8 @@ FIXTURE = Path(
 )
 DEV_ROOT = Path(os.environ.get("AIXRAY_DEV_ROOT", "/private/tmp/aixray-d81-dev"))
 EGRESS_LINTER = DEV_ROOT / "tools" / "ci" / "egress-lint.sh"
-DIRECT_URL = "https://powertruesystems.com/aixray/aixray-aix.sh"
+DOWNLOAD_PAGE_URL = "https://powertruesystems.com/aixray/"
+DIRECT_ASSET_URL = "https://powertruesystems.com/aixray/aixray-aix.sh"
 REVIEW_CTA = (
     "Free engineer review: email your report to "
     "review@powertruesystems.com — a principal engineer replies within "
@@ -196,11 +197,13 @@ class ReportParser(HTMLParser):
 
 
 class PublicFunnelTests(unittest.TestCase):
-    def test_download_references_use_the_direct_static_artifact(self) -> None:
+    def test_advertised_download_references_use_the_gated_page(self) -> None:
         for path in CUSTOMER_FILES:
             text = path.read_text(encoding="utf-8")
             with self.subTest(path=path.name, contract="no dead release URL"):
                 self.assertNotIn("releases/latest/download", text)
+            with self.subTest(path=path.name, contract="no undeployed direct asset URL"):
+                self.assertNotIn(DIRECT_ASSET_URL, text)
 
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
         llms = (ROOT / "llms.txt").read_text(encoding="utf-8")
@@ -208,10 +211,10 @@ class PublicFunnelTests(unittest.TestCase):
         root_jsonld = json.loads((ROOT / "aixray.jsonld").read_text())
         site_jsonld = inline_jsonld(site_html)
 
-        self.assertIn(DIRECT_URL, readme)
-        self.assertIn(DIRECT_URL, llms)
-        self.assertEqual(DIRECT_URL, root_jsonld.get("downloadUrl"))
-        self.assertEqual(DIRECT_URL, site_jsonld.get("downloadUrl"))
+        self.assertIn(DOWNLOAD_PAGE_URL, readme)
+        self.assertIn(DOWNLOAD_PAGE_URL, llms)
+        self.assertEqual(DOWNLOAD_PAGE_URL, root_jsonld.get("downloadUrl"))
+        self.assertEqual(DOWNLOAD_PAGE_URL, site_jsonld.get("downloadUrl"))
         parser = ReportParser()
         parser.feed(site_html)
         download_actions = [link for link in parser.download_links if link["download"]]
