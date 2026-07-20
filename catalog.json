@@ -3,7 +3,7 @@
   "tool_version": "0.1.0",
   "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
   "generated_from": "checks/*/manifest.json",
-  "check_count": 31,
+  "check_count": 35,
   "checks": [
     {
       "id": "ck-adapter-microcode",
@@ -21,7 +21,7 @@
       "tags": [],
       "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
       "artifact": "checks/ck-adapter-microcode/ck-adapter-microcode.ksh",
-      "sha256": "da677a8a5c3850cac2f90845552c4d91e91f45300647fccbd3346fe41ab9b1ee"
+      "sha256": "f4670bc2e718fde8fd9ab9f895c2aebb3a51ff4a9443df39e26a08c9bb2ecc14"
     },
     {
       "id": "ck-alt-disk-recoverability",
@@ -48,7 +48,7 @@
       "tags": [],
       "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
       "artifact": "checks/ck-alt-disk-recoverability/ck-alt-disk-recoverability.ksh",
-      "sha256": "d5ec4116d278847ff62926e1816beacb5d1f74a2089d672bab9e74233929592c"
+      "sha256": "97926beaa39daad77be3d13ceea81a045d7a1d161a487b914f6fe65aae5b893c"
     },
     {
       "id": "ck-backup-job",
@@ -66,7 +66,7 @@
       "tags": [],
       "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
       "artifact": "checks/ck-backup-job/ck-backup-job.ksh",
-      "sha256": "96ec0de3209924cf36ea61bb791b6cc1933a8a885d919a99d49c847df8bbe85f"
+      "sha256": "b1152e7cd50505abcb13f221f86cf37e20acc9c2e8dfe52a0ce17d4936bf4650"
     },
     {
       "id": "ck-crash-evidence",
@@ -84,7 +84,7 @@
       "tags": [],
       "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
       "artifact": "checks/ck-crash-evidence/ck-crash-evidence.ksh",
-      "sha256": "bfbfcfc197a925ced47dab77ee5524f3156b4aad507a9bb300122cbb21315589"
+      "sha256": "a7e2096b9aa168431eb93b05d6494207690f2e87c23b4159ad194d4e5aa2c35b"
     },
     {
       "id": "ck-dump-history",
@@ -102,7 +102,7 @@
       "tags": [],
       "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
       "artifact": "checks/ck-dump-history/ck-dump-history.ksh",
-      "sha256": "cfd917a321ac6f9912f963441e18a8ee3968ea6bb501b9d6ae752a28fa801e43"
+      "sha256": "f71f8e0886c034539043fa268aa27cafd906611d959d806708f38b11ab6b344e"
     },
     {
       "id": "ck-errdemon-health",
@@ -121,7 +121,7 @@
       "tags": [],
       "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
       "artifact": "checks/ck-errdemon-health/ck-errdemon-health.ksh",
-      "sha256": "96425d9853dbcf3ae8c493cfe088012af71ed03edd00e8c4a43e973627817cd4"
+      "sha256": "4a6a867a7479af8ff5a1f8b90f2568308b45e1583bd05a64829ade8d8023b9d8"
     },
     {
       "id": "ck-errnotify-methods",
@@ -141,7 +141,7 @@
       "tags": [],
       "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
       "artifact": "checks/ck-errnotify-methods/ck-errnotify-methods.ksh",
-      "sha256": "e730af45fa8d07c3f21c3aab86e4da6c7931b20bbd733f91b34884f1be444122"
+      "sha256": "cb7a1a4e4524676a66aed5954c0f15e28fe0de0bf53b2512f173dcc188e94964"
     },
     {
       "id": "ck-errpt-decode",
@@ -159,7 +159,7 @@
       "tags": [],
       "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
       "artifact": "checks/ck-errpt-decode/ck-errpt-decode.ksh",
-      "sha256": "18dc757e61f5b1873f436124bf520ee6103339fb057d663f3c321416d1878199"
+      "sha256": "9966f896de277af37d034424673b52a97e706eae06d187e73048d0b59a06d228"
     },
     {
       "id": "ck-errpt-hw",
@@ -177,7 +177,7 @@
       "tags": [],
       "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
       "artifact": "checks/ck-errpt-hw/ck-errpt-hw.ksh",
-      "sha256": "a73e7414f876d2fe5153b509a0180a1711054a3e35212d71b0797160842cc904"
+      "sha256": "4a69c7eeeb50ba0c2efaedbcb58116363af8bbd06399ef424606e9e8df34ae07"
     },
     {
       "id": "ck-errpt-notify",
@@ -197,7 +197,7 @@
       "tags": [],
       "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
       "artifact": "checks/ck-errpt-notify/ck-errpt-notify.ksh",
-      "sha256": "de99e4c78191d004e0ed4e192c0870b086dd2a680a4d4145a07711956948995c"
+      "sha256": "7951136ee69a005417ef04fd40e7b9b3d664a2328ed6c30aa4c0eb07e9e346a8"
     },
     {
       "id": "ck-errpt-recent",
@@ -216,7 +216,7 @@
       "tags": [],
       "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
       "artifact": "checks/ck-errpt-recent/ck-errpt-recent.ksh",
-      "sha256": "0f6de3b5cf8cc80266405156c940374238bdf612a3efce207995ba4e0caed360"
+      "sha256": "5aa8caadcfda953f43de025c406080605eb04673d5704dfa8951048934d7645c"
     },
     {
       "id": "ck-errpt-signatures",
@@ -236,7 +236,7 @@
       "tags": [],
       "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
       "artifact": "checks/ck-errpt-signatures/ck-errpt-signatures.ksh",
-      "sha256": "186ba799af6ece05bd0b146ed97942d7a6c0e8dd6a6bcb160889b2fbd38db1f8"
+      "sha256": "b360656d5b41f624446c461407c9816f349a370aa760a34f1d3022ba143c0a1c"
     },
     {
       "id": "ck-fc-errors",
@@ -255,7 +255,7 @@
       "tags": [],
       "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
       "artifact": "checks/ck-fc-errors/ck-fc-errors.ksh",
-      "sha256": "4976a6cc3dd31097fd21281db05e4c64f4abecdce9fa37385a9a634e08f0c695"
+      "sha256": "35e234410156e32202aa1c408448298fb1eca6023096198b9ab51b21fdae091f"
     },
     {
       "id": "ck-fs-full",
@@ -277,7 +277,7 @@
       "tags": [],
       "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
       "artifact": "checks/ck-fs-full/ck-fs-full.ksh",
-      "sha256": "7e15070b530ed71fe14de97f74ec6422a70bb364c9d8abe4cdf920b122972aa9"
+      "sha256": "31eb934f1dbda2da5d3d8663654f4161aa8843978cc75f85b6d985a7d8805aa1"
     },
     {
       "id": "ck-fs-lv-slack",
@@ -297,7 +297,7 @@
       ],
       "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
       "artifact": "checks/ck-fs-lv-slack/ck-fs-lv-slack.ksh",
-      "sha256": "77fd1e65dddd185adf3e178f080052d8a7fa1ae0803c9e107c3395d1ac84b6c4"
+      "sha256": "ef98eb7863d1bbea429a93cd41ee027605c258e3829eef677d82f920ba752a7a"
     },
     {
       "id": "ck-hd5-sizing",
@@ -325,7 +325,7 @@
       "tags": [],
       "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
       "artifact": "checks/ck-hd5-sizing/ck-hd5-sizing.ksh",
-      "sha256": "5ac238acf7501b7abc84a51c74779b0e28bfbbd3b6ae82830558615dd30bf209"
+      "sha256": "730cf725add98aea71260d65d46e8572f4f7e23edb89914a1234d6dd21c3c5ed"
     },
     {
       "id": "ck-jfs-legacy",
@@ -347,7 +347,7 @@
       ],
       "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
       "artifact": "checks/ck-jfs-legacy/ck-jfs-legacy.ksh",
-      "sha256": "7e928924718f3baf0721108a8073a105cf980da8b194e4da262ded22bfe78df5"
+      "sha256": "37be016dc43c1cde17bb63c7ee1a5e19529a7c6dca28147fe45d29e5ee2058db"
     },
     {
       "id": "ck-lv-mirror-placement",
@@ -375,7 +375,7 @@
       ],
       "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
       "artifact": "checks/ck-lv-mirror-placement/ck-lv-mirror-placement.ksh",
-      "sha256": "ea5798f10c68d015c32ef5d8360f6319a1adc680f3e56c63318605c2139ec0c1"
+      "sha256": "29b2e10e0b73e8491ba4276d87e3ced60f6011c8969fe33d19970a37e5e40018"
     },
     {
       "id": "ck-monitoring-agent",
@@ -395,7 +395,7 @@
       ],
       "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
       "artifact": "checks/ck-monitoring-agent/ck-monitoring-agent.ksh",
-      "sha256": "c26f3cacabac353d21f146eaf01705cc09fe70a70fca741cefd1decdc05d1dc3"
+      "sha256": "d886bdc47a6cb1646c3e9f0bcca733a4a1a5308d772099ce7b23e13afcfa27e3"
     },
     {
       "id": "ck-mount-options",
@@ -415,7 +415,26 @@
       ],
       "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
       "artifact": "checks/ck-mount-options/ck-mount-options.ksh",
-      "sha256": "9a6d4c0e97970b50c43dbd5c63dcb38447df8566ed66d3c486ac8ebb2dde959b"
+      "sha256": "9e4e113a58040b3fa304c715e2da629116e2e3934362a20ea42705d3f93401d4"
+    },
+    {
+      "id": "ck-mpio-hcheck",
+      "pillar": "resiliency",
+      "category": "storage",
+      "finding_ids": [
+        "mpio_hcheck"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "lspath",
+        "lsattr -El hdiskN -a hcheck_interval -a hcheck_mode 2>/dev/null"
+      ],
+      "tags": [],
+      "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+      "artifact": "checks/ck-mpio-hcheck/ck-mpio-hcheck.ksh",
+      "sha256": "72da9fb198ea198bb52a32e5a5694a76b9dac06de45eab9b391666916ccada5d"
     },
     {
       "id": "ck-mpio-paths",
@@ -433,7 +452,7 @@
       "tags": [],
       "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
       "artifact": "checks/ck-mpio-paths/ck-mpio-paths.ksh",
-      "sha256": "66fe6915553b1fe267d0e5c865e670c415327a1b2756800c04ad666f3ebaa70f"
+      "sha256": "88691f3ef0b2223717e016746568fc932e06a73b8c0a39f706fe02396e4d3009"
     },
     {
       "id": "ck-multibos-residue",
@@ -454,7 +473,7 @@
       "tags": [],
       "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
       "artifact": "checks/ck-multibos-residue/ck-multibos-residue.ksh",
-      "sha256": "30f12ac690f83d1b3a37724c2f171e48ee91c2ded85c248e44621b5a56ecdd54"
+      "sha256": "0ec4777bfd7d66daca98fd3280dc487edc219c0cdfe8695704513e077bd8267b"
     },
     {
       "id": "ck-network-inventory",
@@ -474,7 +493,28 @@
       "tags": [],
       "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
       "artifact": "checks/ck-network-inventory/ck-network-inventory.ksh",
-      "sha256": "ade38aaddb4959aeb84ed17d8f003c6ede96e092b1dc5997c7c8eead126de6c4"
+      "sha256": "1d190b1156f58afcfa153c4d6115cb340d70ca413b8c70eeb841570360938fe5"
+    },
+    {
+      "id": "ck-nfs-exports",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "nfs_exports"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "cat /etc/exports",
+        "exportfs"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+      "artifact": "checks/ck-nfs-exports/ck-nfs-exports.ksh",
+      "sha256": "d0ea1910ae1e4a1704a627e5ea595411a6e82671ab30e54f72ada0f8e7f9f76e"
     },
     {
       "id": "ck-paging",
@@ -493,7 +533,7 @@
       "tags": [],
       "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
       "artifact": "checks/ck-paging/ck-paging.ksh",
-      "sha256": "3e3d9e24345839df63d8f0b14d5b70a2fb7846fa44795c653bfa5fdea4f4b815"
+      "sha256": "3d1d8ec452973ec3b514743d3c3dfea41ecff6ebc92de11558def7d9903f8262"
     },
     {
       "id": "ck-paging-layout",
@@ -519,7 +559,27 @@
       ],
       "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
       "artifact": "checks/ck-paging-layout/ck-paging-layout.ksh",
-      "sha256": "7f39bbf6a38b298ada1b4e84b212d92a350ccda71af19449cc4e87fa67602f14"
+      "sha256": "45ecf52f93958a383d9d406b0eb20ac17d8cba7ce82240a9b9e7b8b735b47256"
+    },
+    {
+      "id": "ck-paging-parity",
+      "pillar": "operational-readiness",
+      "category": "storage",
+      "finding_ids": [
+        "paging_parity"
+      ],
+      "captures": [
+        "cap-lsps-a"
+      ],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "lsps -a"
+      ],
+      "tags": [],
+      "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+      "artifact": "checks/ck-paging-parity/ck-paging-parity.ksh",
+      "sha256": "6a6fb6a056ad5196c339a8b5e128acd751b2b63dda195bdbc68bbce2fd2388c2"
     },
     {
       "id": "ck-perf-history",
@@ -539,7 +599,27 @@
       "tags": [],
       "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
       "artifact": "checks/ck-perf-history/ck-perf-history.ksh",
-      "sha256": "4317dcecd53aafb553fb597fa1ce74d14eb4b258f39098c224ccc750cdeffe62"
+      "sha256": "a03a247f9ef9b702193004cbdcead21b5c87681956f2f913515304269a504c46"
+    },
+    {
+      "id": "ck-pw-hashing",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "pw_hashing"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "lssec -f /etc/security/login.cfg -s usw -a pwd_algorithm"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+      "artifact": "checks/ck-pw-hashing/ck-pw-hashing.ksh",
+      "sha256": "c664fba328ecb9e656f8aad69c45d3a74727684922c05b4b7284c12e163512af"
     },
     {
       "id": "ck-remote-syslog",
@@ -559,7 +639,7 @@
       ],
       "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
       "artifact": "checks/ck-remote-syslog/ck-remote-syslog.ksh",
-      "sha256": "cef651bc6c2423ee71a91317f6808c6c4978f6d2cefcd87690761856a3daf99d"
+      "sha256": "9f3cc9e1c91db3b82a2e8170e3a7a279b5588c1345bbdf7382036ed120382c6b"
     },
     {
       "id": "ck-software-inventory",
@@ -577,7 +657,7 @@
       "tags": [],
       "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
       "artifact": "checks/ck-software-inventory/ck-software-inventory.ksh",
-      "sha256": "9e0e001a51618c06a65f42b237225e3a64aad066b0a5b40946c7cba80ad2a731"
+      "sha256": "cd3be62f254cba6b8c1ff4bf48bcc1cab0103768b30135d017881efcb6728f66"
     },
     {
       "id": "ck-storage-layout",
@@ -596,7 +676,7 @@
       "tags": [],
       "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
       "artifact": "checks/ck-storage-layout/ck-storage-layout.ksh",
-      "sha256": "1c0c62b10765edf471f4bc14f2cb7c78ab0b941dccb0a5b40c88ea4beb7ef865"
+      "sha256": "7ee256965ea56d8539855190d2c3bcb92f120f002cc898032d3040a2a49133b7"
     },
     {
       "id": "ck-sysdump",
@@ -614,7 +694,7 @@
       "tags": [],
       "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
       "artifact": "checks/ck-sysdump/ck-sysdump.ksh",
-      "sha256": "a118e8d8c5b7880d65d5d4b93394120cc2772065dff9d823ac09e4f956b10b22"
+      "sha256": "586ca95f5b1832b01e09096215c1dc4c238d3948a4ebfb3be22d90f0cea56600"
     },
     {
       "id": "ck-vg-capacity",
@@ -635,7 +715,12 @@
       "tags": [],
       "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
       "artifact": "checks/ck-vg-capacity/ck-vg-capacity.ksh",
-      "sha256": "50ddfe8190c19ca69f021ebe404823fc9406abfe01fc3f8bcabbcb1bbd954a22"
+      "sha256": "f73932f2b16ed7c15f2019eb7e9bcb596d85416db93da3e50d934ef6ba7d09d4"
     }
-  ]
+  ],
+  "assembled_scanner": {
+    "artifact": "aixray-aix.sh",
+    "site_artifact": "site/aixray-aix.sh",
+    "sha256": "c4d5835f8554177097d54e45a69f351d6989a35380b6b0d158ef2ee41779a392"
+  }
 }

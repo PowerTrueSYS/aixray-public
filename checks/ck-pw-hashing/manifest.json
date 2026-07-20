@@ -1,0 +1,19 @@
+{
+  "id": "ck-pw-hashing",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "pw_hashing"
+  ],
+  "captures": [],
+  "requires_root": true,
+  "read_only": true,
+  "commands": [
+    "lssec -f /etc/security/login.cfg -s usw -a pwd_algorithm"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+  "artifact": "checks/ck-pw-hashing/ck-pw-hashing.ksh"
+}

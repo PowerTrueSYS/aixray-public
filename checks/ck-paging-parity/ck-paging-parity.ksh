@@ -295,38 +295,10 @@ function standalone_main {
   return 3
 }
 
-AIXRAY_TOOL=ck-paging
+AIXRAY_TOOL=ck-paging-parity
 
-
-function standalone_check {
-
-  # online volume groups (used by paging layout, vg_capacity, and the VG loop below)
-  VGL=$(aix lsvg_o lsvg -o); VGLRC=$?
-  VGL_OK=0; VGLWHY=""
-  if [ "$VGLRC" -ne 0 ]; then
-    VGLWHY="not assessed — lsvg -o capture failed (rc=$VGLRC)"
-  elif [ -z "$VGL" ]; then
-    VGLWHY="not assessed — lsvg -o capture empty (rc=0)"
-  elif printf '%s\n' "$VGL" | awk '
-      NF {
-        n++
-        if (NF != 1 || $1 !~ /^[A-Za-z0-9_.-][A-Za-z0-9_.-]*$/) bad=1
-      }
-      END { if (n == 0 || bad) exit 1 }
-    '
-  then
-    VGL_OK=1
-    FACT_STORAGE_VG_READ=1
-  else
-    VGLWHY="not assessed — lsvg -o capture unparseable (rc=0)"
-  fi
-  if [ "$VGL_OK" -eq 1 ]; then
-    NVG=$(printf '%s\n' "$VGL" | awk 'NF{n++} END{print n+0}')
-  else
-    VGL=""; NVG=0
-  fi
-
-  # paging space
+# Shared paging-space evidence used by the standalone paging-layout check.
+function capture_cap_lsps_a {
   LSPS=$(aix lsps_a lsps -a); LSPSRC=$?
   LSPS_OK=0; LSPSWHY=""
   if [ "$LSPSRC" -ne 0 ]; then
@@ -361,45 +333,107 @@ function standalone_check {
   else
     LSPSWHY="not assessed — lsps -a capture unparseable (rc=0)"
   fi
-  if [ "$LSPS_OK" -eq 1 ]; then
-    NPS=$(printf '%s\n' "$LSPS" | awk 'NR>1 && NF>1 {n++} END{print n+0}')
-    MAXU=$(printf '%s\n' "$LSPS" | awk 'NR>1 && NF>1 {u=$5+0; if (u>mx) mx=u} END{print mx+0}')
-    ALLROOT=$(printf '%s\n' "$LSPS" | awk 'NR>1 && NF>1 {t++; if ($3=="rootvg") r++} END{print (t>0 && r==t)?1:0}')
-    DUPPV=$(printf '%s\n' "$LSPS" | awk 'NR>1 && NF>1 {c[$2]++} END{d=0; for (k in c) if (c[k]>1) d=1; print d}')
-    NPS=$(printf '%s\n' "$LSPS" | awk 'NR>1 && NF>1{n++} END{if(n>0)print n}')
-    if valid_json_number "$NPS"; then FACT_PAGING_SPACES="$NPS"; fi
-    if [ -n "$FACT_PAGING_SPACES" ]; then
-      MAXU_FACT=$(printf '%s\n' "$LSPS" | awk '
-        NR>1 && NF>1 {n++; if($5 !~ /^[0-9][0-9]*$/) bad=1; else if(!seen || $5+0>mx){mx=$5+0; out=$5; seen=1}}
-        END{if(n>0 && !bad && seen)print out}')
-      if valid_json_number "$MAXU_FACT"; then FACT_PAGING_MAX="$MAXU_FACT"; fi
-      [ "$ALLROOT" -eq 1 ] && FACT_PAGING_ROOT=true || FACT_PAGING_ROOT=false
-      [ "$DUPPV" -eq 1 ] && FACT_PAGING_DUP=true || FACT_PAGING_DUP=false
-    fi
-    PGNOTE=""
-    if [ "${NVG:-0}" -gt 1 ] && [ "$ALLROOT" -eq 1 ]; then
-      PGNOTE=" Every paging space sits in rootvg while another VG is online — spreading paging onto another VG's disks avoids a rootvg I/O bottleneck."
-    elif [ "$DUPPV" -eq 1 ]; then
-      PGNOTE=" Multiple paging spaces share one physical volume — they contend for the same disk, so the extra space buys little."
-    fi
-    if [ "$MAXU" -ge 70 ]; then
-      add storage paging "Paging space" FAIL high "$NPS space(s), ${MAXU}% used" \
-          "The box is paging heavily — performance is suffering now, and paging-space-full kills processes.$PGNOTE" \
-          "find the memory consumer (svmon -P | head); add RAM or paging space as a stopgap."
-    elif [ "$MAXU" -ge 40 ]; then
-      add storage paging "Paging space" WARN med "$NPS space(s), ${MAXU}% used" \
-          "Sustained paging use signals memory pressure.$PGNOTE" "investigate memory consumers; review sizing."
-    else
-      add storage paging "Paging space" PASS low "$NPS space(s), ${MAXU}% used" "Memory pressure is low.$PGNOTE" "n/a"
-    fi
+}
+
+
+function standalone_check {
+
+  # paging_parity — multi-space size and active-state correctness. AIX VMM
+  # round-robins across active paging spaces, so unequal sizes stop balanced
+  # interleaving when the smallest space fills.
+  if [ "${LSPS_OK:-0}" -ne 1 ]; then
+    add storage paging_parity "Paging space parity" NOT_ASSESSED med \
+        "${LSPSWHY:-not assessed — lsps -a capture unavailable}" \
+        "Paging-space parity could not be assessed because lsps -a failed, returned no evidence, or did not match the expected AIX output shape." \
+        "run 'lsps -a' manually, then rerun AIXray before treating multi-space paging as balanced."
   else
-    add storage paging "Paging space" NOT_ASSESSED med "$LSPSWHY" \
-        "Paging-space use could not be assessed because lsps -a failed, returned no evidence, or did not match the expected AIX output shape." \
-        "run 'lsps -a' manually, then rerun AIXray before treating paging-space use as healthy."
+    PPAR_COUNT=$(printf '%s\n' "$LSPS" | awk 'NR>1 && NF>1 {n++} END {print n+0}')
+    if [ "$PPAR_COUNT" -gt 1 ]; then
+      PPAR_TABLE=$(printf '%s\n' "$LSPS" | awk '
+        BEGIN { print "NAME | PV | SIZE | ACTIVE" }
+        NR>1 && NF>1 { print $1 " | " $2 " | " $4 " | " $6 }
+      ')
+      PPAR_META=$(printf '%s\n' "$LSPS" | awk '
+        NR>1 && NF>1 {
+          n++
+          name[n]=$1
+          raw_size[n]=$4
+          active[n]=$6
+          size=$4
+          if (size ~ /MB$/) {
+            sub(/MB$/, "", size)
+          } else if (size ~ /GB$/) {
+            sub(/GB$/, "", size)
+            size=size*1024
+          }
+          size_mb[n]=size+0
+          size_count[size_mb[n]]++
+          if (n == 1 || size_mb[n] < smallest) smallest=size_mb[n]
+        }
+        END {
+          baseline=smallest
+          baseline_count=size_count[smallest]
+          for (size in size_count) {
+            numeric_size=size+0
+            if (size_count[size] > baseline_count ||
+                (size_count[size] == baseline_count && numeric_size < baseline)) {
+              baseline=numeric_size
+              baseline_count=size_count[size]
+            }
+          }
+          odd=""
+          inactive=""
+          wasted=0
+          for (i=1; i<=n; i++) {
+            wasted+=size_mb[i]-smallest
+            if (size_mb[i] != baseline) {
+              if (odd != "") odd=odd ", "
+              odd=odd name[i] " (" raw_size[i] ")"
+            }
+            if (active[i] != "yes") {
+              if (inactive != "") inactive=inactive ", "
+              inactive=inactive name[i]
+            }
+          }
+          printf "%d\t%d\t%s\t%s\n", smallest+0, wasted+0, odd, inactive
+        }
+      ')
+      PPAR_MIN_MB=$(printf '%s\n' "$PPAR_META" | awk -F '\t' '{print $1}')
+      PPAR_WASTE_MB=$(printf '%s\n' "$PPAR_META" | awk -F '\t' '{print $2}')
+      PPAR_ODD=$(printf '%s\n' "$PPAR_META" | awk -F '\t' '{print $3}')
+      PPAR_INACTIVE=$(printf '%s\n' "$PPAR_META" | awk -F '\t' '{print $4}')
+
+      if [ "$PPAR_WASTE_MB" -eq 0 ] && [ -z "$PPAR_INACTIVE" ]; then
+        add storage paging_parity "Paging space parity" PASS med "$PPAR_TABLE" \
+            "All $PPAR_COUNT paging spaces are active and exactly ${PPAR_MIN_MB}MB, so VMM can round-robin them without an early size cap." \
+            "n/a"
+      else
+        PPAR_ISSUES=""
+        if [ "$PPAR_WASTE_MB" -gt 0 ]; then
+          PPAR_ISSUES="odd size: $PPAR_ODD; wasted delta: ${PPAR_WASTE_MB}MB above the smallest defined paging-space size (${PPAR_MIN_MB}MB)"
+        fi
+        if [ -n "$PPAR_INACTIVE" ]; then
+          [ -z "$PPAR_ISSUES" ] \
+            || PPAR_ISSUES="$PPAR_ISSUES; "
+          PPAR_ISSUES="${PPAR_ISSUES}inactive: $PPAR_INACTIVE"
+        fi
+        PPAR_OBSERVED="$PPAR_TABLE
+Issues: $PPAR_ISSUES"
+        add storage paging_parity "Paging space parity" WARN med "$PPAR_OBSERVED" \
+            "Multiple defined paging spaces are not balanced: inactive spaces do not participate in VMM round-robin, and unequal sizes leave capacity outside the smallest-space parity baseline." \
+            "make every defined paging space exactly the same size and active during an approved change window."
+      fi
+    else
+      add storage paging_parity "Paging space parity" PASS med \
+          "single paging space defined; multi-space parity not applicable" \
+          "Only one paging space is defined, so there is no second space whose size or active state could be out of parity." \
+          "n/a"
+    fi
   fi
 }
 
 function standalone_run {
+  capture_cap_lsps_a || return 1
   standalone_check
 }
 

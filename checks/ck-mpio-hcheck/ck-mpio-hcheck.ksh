@@ -295,107 +295,142 @@ function standalone_main {
   return 3
 }
 
-AIXRAY_TOOL=ck-paging
+AIXRAY_TOOL=ck-mpio-hcheck
 
 
 function standalone_check {
 
-  # online volume groups (used by paging layout, vg_capacity, and the VG loop below)
-  VGL=$(aix lsvg_o lsvg -o); VGLRC=$?
-  VGL_OK=0; VGLWHY=""
-  if [ "$VGLRC" -ne 0 ]; then
-    VGLWHY="not assessed — lsvg -o capture failed (rc=$VGLRC)"
-  elif [ -z "$VGL" ]; then
-    VGLWHY="not assessed — lsvg -o capture empty (rc=0)"
-  elif printf '%s\n' "$VGL" | awk '
-      NF {
-        n++
-        if (NF != 1 || $1 !~ /^[A-Za-z0-9_.-][A-Za-z0-9_.-]*$/) bad=1
-      }
-      END { if (n == 0 || bad) exit 1 }
-    '
-  then
-    VGL_OK=1
-    FACT_STORAGE_VG_READ=1
+  # MPIO path health-check policy. Reuse ck-mpio-paths' lspath capture in the
+  # monolith; a standalone S1 artifact takes the same read when no shared
+  # capture has been populated.
+  if [ "${LSP+set}" = set ]; then
+    HCK_LSP=$LSP
+    HCK_LSP_RC=${RC:-0}
   else
-    VGLWHY="not assessed — lsvg -o capture unparseable (rc=0)"
-  fi
-  if [ "$VGL_OK" -eq 1 ]; then
-    NVG=$(printf '%s\n' "$VGL" | awk 'NF{n++} END{print n+0}')
-  else
-    VGL=""; NVG=0
+    HCK_LSP=$(aix lspath lspath)
+    HCK_LSP_RC=$?
   fi
 
-  # paging space
-  LSPS=$(aix lsps_a lsps -a); LSPSRC=$?
-  LSPS_OK=0; LSPSWHY=""
-  if [ "$LSPSRC" -ne 0 ]; then
-    LSPSWHY="not assessed — lsps -a capture failed (rc=$LSPSRC)"
-  elif [ -z "$LSPS" ]; then
-    LSPSWHY="not assessed — lsps -a capture empty (rc=0)"
-  elif printf '%s\n' "$LSPS" | awk -v max_pct="$STOR_FACT_MAX_USED_PCT" '
-      NR == 1 {
-        if ($1 != "Page" || $2 != "Space" || $3 != "Physical" ||
-            $4 != "Volume" || $5 != "Volume" || $6 != "Group" ||
-            $7 != "Size" || $8 != "%Used" || $9 != "Active" ||
-            $10 != "Auto" || $11 != "Type" || $12 != "Chksum") bad=1
-        next
-      }
-      NF {
-        n++
-        if (NF < 9 ||
-            $1 !~ /^[A-Za-z0-9_.-][A-Za-z0-9_.-]*$/ ||
-            $2 !~ /^[A-Za-z0-9_.-][A-Za-z0-9_.-]*$/ ||
-            $3 !~ /^[A-Za-z0-9_.-][A-Za-z0-9_.-]*$/ ||
-            $4 !~ /^[0-9][0-9]*(MB|GB)$/ ||
-            $5 !~ /^[0-9][0-9]*$/ || $5 + 0 > max_pct ||
-            $6 !~ /^(yes|no)$/ || $7 !~ /^(yes|no)$/ ||
-            $8 !~ /^[A-Za-z0-9_.-][A-Za-z0-9_.-]*$/ ||
-            $9 !~ /^[0-9][0-9]*$/) bad=1
-      }
-      END { if (n == 0 || bad) exit 1 }
-    '
-  then
-    LSPS_OK=1
-    FACT_PAGING_READ=1
+  if [ "$HCK_LSP_RC" -ne 0 ]; then
+    add storage mpio_hcheck "MPIO health-check probing" NOT_ASSESSED high \
+        "not assessed — lspath capture failed (rc=$HCK_LSP_RC)" \
+        "MPIO disks could not be identified from a successful lspath read, so no health-check policy claim is made." \
+        "resolve the lspath read failure and rerun the diagnostic."
   else
-    LSPSWHY="not assessed — lsps -a capture unparseable (rc=0)"
-  fi
-  if [ "$LSPS_OK" -eq 1 ]; then
-    NPS=$(printf '%s\n' "$LSPS" | awk 'NR>1 && NF>1 {n++} END{print n+0}')
-    MAXU=$(printf '%s\n' "$LSPS" | awk 'NR>1 && NF>1 {u=$5+0; if (u>mx) mx=u} END{print mx+0}')
-    ALLROOT=$(printf '%s\n' "$LSPS" | awk 'NR>1 && NF>1 {t++; if ($3=="rootvg") r++} END{print (t>0 && r==t)?1:0}')
-    DUPPV=$(printf '%s\n' "$LSPS" | awk 'NR>1 && NF>1 {c[$2]++} END{d=0; for (k in c) if (c[k]>1) d=1; print d}')
-    NPS=$(printf '%s\n' "$LSPS" | awk 'NR>1 && NF>1{n++} END{if(n>0)print n}')
-    if valid_json_number "$NPS"; then FACT_PAGING_SPACES="$NPS"; fi
-    if [ -n "$FACT_PAGING_SPACES" ]; then
-      MAXU_FACT=$(printf '%s\n' "$LSPS" | awk '
-        NR>1 && NF>1 {n++; if($5 !~ /^[0-9][0-9]*$/) bad=1; else if(!seen || $5+0>mx){mx=$5+0; out=$5; seen=1}}
-        END{if(n>0 && !bad && seen)print out}')
-      if valid_json_number "$MAXU_FACT"; then FACT_PAGING_MAX="$MAXU_FACT"; fi
-      [ "$ALLROOT" -eq 1 ] && FACT_PAGING_ROOT=true || FACT_PAGING_ROOT=false
-      [ "$DUPPV" -eq 1 ] && FACT_PAGING_DUP=true || FACT_PAGING_DUP=false
+    # Preserve capture order for deterministic output. Only hdisk names with
+    # multiple lspath rows are eligible; single-path and non-hdisk rows never
+    # become lsattr arguments.
+    HCK_DISKS=$(printf '%s\n' "$HCK_LSP" | awk '
+      $2 ~ /^hdisk[0-9]+$/ {
+        if (!($2 in count)) order[++disks]=$2
+        count[$2]++
+      }
+      END {
+        for (i=1; i<=disks; i++)
+          if (count[order[i]] > 1) print order[i]
+      }
+    ')
+    HCK_TOTAL=$(printf '%s\n' "$HCK_DISKS" | awk 'NF {n++} END {print n+0}')
+    HCK_SHOWN=0
+    HCK_APPLICABLE=0
+    HCK_NOT_APPLICABLE=0
+    HCK_UNREADABLE=0
+    HCK_STATUS=PASS
+    HCK_SEVERITY=low
+    HCK_TABLE="disk interval mode"
+
+    for HCK_DISK in $HCK_DISKS; do
+      HCK_ATTR=$(aix "lsattr_hcheck_$HCK_DISK" lsattr -El "$HCK_DISK" \
+        -a hcheck_interval -a hcheck_mode)
+      HCK_ATTR_RC=$?
+      HCK_INTERVAL=$(printf '%s\n' "$HCK_ATTR" | \
+        awk '$1 == "hcheck_interval" {print $2; exit}')
+      HCK_MODE_VALUE=$(printf '%s\n' "$HCK_ATTR" | \
+        awk '$1 == "hcheck_mode" {print $2; exit}')
+      HCK_MODE=$HCK_MODE_VALUE
+      [ -n "$HCK_MODE" ] || HCK_MODE=not-reported
+
+      if [ -z "$HCK_INTERVAL" ] && [ "$HCK_ATTR_RC" -ne 0 ] && \
+          [ -z "$HCK_MODE_VALUE" ]; then
+        HCK_UNREADABLE=$((HCK_UNREADABLE + 1))
+        HCK_ROW="$HCK_DISK unreadable (lsattr rc=$HCK_ATTR_RC) $HCK_MODE"
+        if [ "$HCK_STATUS" = PASS ]; then
+          HCK_STATUS=NOT_ASSESSED
+          HCK_SEVERITY=high
+        fi
+      elif [ -z "$HCK_INTERVAL" ]; then
+        HCK_NOT_APPLICABLE=$((HCK_NOT_APPLICABLE + 1))
+        HCK_ROW="$HCK_DISK n/a $HCK_MODE (attribute not applicable)"
+      else
+        HCK_APPLICABLE=$((HCK_APPLICABLE + 1))
+        case "$HCK_INTERVAL" in
+          *[!0-9]*)
+            HCK_UNREADABLE=$((HCK_UNREADABLE + 1))
+            HCK_ROW="$HCK_DISK unreadable $HCK_MODE"
+            if [ "$HCK_STATUS" = PASS ]; then
+              HCK_STATUS=NOT_ASSESSED
+              HCK_SEVERITY=high
+            fi
+            ;;
+          *)
+            HCK_ROW="$HCK_DISK $HCK_INTERVAL $HCK_MODE"
+            HCK_INTERVAL_CLASS=$(awk -v interval="$HCK_INTERVAL" 'BEGIN {
+              if (interval + 0 == 0) print "disabled"
+              else if (interval + 0 > 300) print "slow"
+              else print "sane"
+            }')
+            case "$HCK_INTERVAL_CLASS" in
+              disabled)
+                HCK_STATUS=FAIL
+                HCK_SEVERITY=high
+                ;;
+              slow)
+                if [ "$HCK_STATUS" != FAIL ]; then
+                  HCK_STATUS=WARN
+                  HCK_SEVERITY=low
+                fi
+                ;;
+            esac
+            ;;
+        esac
+      fi
+
+      if [ "$HCK_SHOWN" -lt 50 ]; then
+        HCK_TABLE="$HCK_TABLE | $HCK_ROW"
+        HCK_SHOWN=$((HCK_SHOWN + 1))
+      fi
+    done
+
+    HCK_OBSERVED="MPIO disks=$HCK_TOTAL; showing $HCK_SHOWN of $HCK_TOTAL; applicable=$HCK_APPLICABLE; attribute not applicable=$HCK_NOT_APPLICABLE; unreadable=$HCK_UNREADABLE; table: $HCK_TABLE"
+    HCK_OMITTED=$((HCK_TOTAL - HCK_SHOWN))
+    if [ "$HCK_OMITTED" -eq 1 ]; then
+      HCK_OBSERVED="$HCK_OBSERVED; 1 row omitted by 50-disk cap"
+    elif [ "$HCK_OMITTED" -gt 1 ]; then
+      HCK_OBSERVED="$HCK_OBSERVED; $HCK_OMITTED rows omitted by 50-disk cap"
     fi
-    PGNOTE=""
-    if [ "${NVG:-0}" -gt 1 ] && [ "$ALLROOT" -eq 1 ]; then
-      PGNOTE=" Every paging space sits in rootvg while another VG is online — spreading paging onto another VG's disks avoids a rootvg I/O bottleneck."
-    elif [ "$DUPPV" -eq 1 ]; then
-      PGNOTE=" Multiple paging spaces share one physical volume — they contend for the same disk, so the extra space buys little."
-    fi
-    if [ "$MAXU" -ge 70 ]; then
-      add storage paging "Paging space" FAIL high "$NPS space(s), ${MAXU}% used" \
-          "The box is paging heavily — performance is suffering now, and paging-space-full kills processes.$PGNOTE" \
-          "find the memory consumer (svmon -P | head); add RAM or paging space as a stopgap."
-    elif [ "$MAXU" -ge 40 ]; then
-      add storage paging "Paging space" WARN med "$NPS space(s), ${MAXU}% used" \
-          "Sustained paging use signals memory pressure.$PGNOTE" "investigate memory consumers; review sizing."
-    else
-      add storage paging "Paging space" PASS low "$NPS space(s), ${MAXU}% used" "Memory pressure is low.$PGNOTE" "n/a"
-    fi
-  else
-    add storage paging "Paging space" NOT_ASSESSED med "$LSPSWHY" \
-        "Paging-space use could not be assessed because lsps -a failed, returned no evidence, or did not match the expected AIX output shape." \
-        "run 'lsps -a' manually, then rerun AIXray before treating paging-space use as healthy."
+
+    case "$HCK_STATUS" in
+      FAIL)
+        HCK_MEANING="At least one multipath disk has health-check probing disabled; configured path redundancy is not being actively verified before failover is needed."
+        HCK_FIX="set a nonzero hcheck_interval through the approved storage change process (typically 60 seconds), then verify the policy with the read-only lsattr command."
+        ;;
+      WARN)
+        HCK_MEANING="At least one multipath disk waits more than 300 seconds between path health probes, delaying detection of a dead path."
+        HCK_FIX="review the storage driver's supported policy and reduce hcheck_interval through the approved change process; 60 seconds is typical."
+        ;;
+      NOT_ASSESSED)
+        HCK_MEANING="At least one multipath disk's hcheck_interval could not be read or parsed, so no complete health-check policy verdict is claimed."
+        HCK_FIX="resolve the lsattr read failure or malformed value and rerun the read-only diagnostic."
+        ;;
+      *)
+        HCK_MEANING="Every applicable multipath disk reports a nonzero health-check interval no greater than 300 seconds."
+        HCK_FIX="n/a"
+        ;;
+    esac
+
+    add storage mpio_hcheck "MPIO health-check probing" \
+        "$HCK_STATUS" "$HCK_SEVERITY" "$HCK_OBSERVED" \
+        "$HCK_MEANING" "$HCK_FIX"
   fi
 }
 

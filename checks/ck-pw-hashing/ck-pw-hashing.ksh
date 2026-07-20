@@ -295,107 +295,90 @@ function standalone_main {
   return 3
 }
 
-AIXRAY_TOOL=ck-paging
+AIXRAY_TOOL=ck-pw-hashing
 
 
 function standalone_check {
 
-  # online volume groups (used by paging layout, vg_capacity, and the VG loop below)
-  VGL=$(aix lsvg_o lsvg -o); VGLRC=$?
-  VGL_OK=0; VGLWHY=""
-  if [ "$VGLRC" -ne 0 ]; then
-    VGLWHY="not assessed — lsvg -o capture failed (rc=$VGLRC)"
-  elif [ -z "$VGL" ]; then
-    VGLWHY="not assessed — lsvg -o capture empty (rc=0)"
-  elif printf '%s\n' "$VGL" | awk '
+  # pw_hashing — the usw password-hash algorithm. An unset pwd_algorithm
+  # falls back to legacy DES crypt, which considers only the first 8 password
+  # characters. This check is diagnostic only: chsec appears in fix prose but
+  # is never invoked.
+  typeset PWH_RAW PWH_RC PWH_PARSED PWH_STATE PWH_VALUE
+  if [ "${MYUID:-0}" != "0" ]; then
+    PWH_RAW=""
+    PWH_RC=126
+  else
+    PWH_RAW=$(aix pwd_algorithm lssec -f /etc/security/login.cfg -s usw -a pwd_algorithm); PWH_RC=$?
+  fi
+  if [ "$PWH_RC" -ne 0 ]; then
+    nr_warn security pw_hashing "Password hashing algorithm" \
+        "the password hashing policy" \
+        "lssec -f /etc/security/login.cfg -s usw -a pwd_algorithm" \
+        "cis-l1" NOT_ASSESSED high
+  else
+    PWH_PARSED=$(printf '%s\n' "$PWH_RAW" | awk '
       NF {
-        n++
-        if (NF != 1 || $1 !~ /^[A-Za-z0-9_.-][A-Za-z0-9_.-]*$/) bad=1
+        rows++
+        if ($1 != "usw") bad=1
+        for (i=2; i<=NF; i++) {
+          if (index($i,"pwd_algorithm=")==1) {
+            attrs++
+            value=substr($i,length("pwd_algorithm=")+1)
+          } else {
+            bad=1
+          }
+        }
       }
-      END { if (n == 0 || bad) exit 1 }
-    '
-  then
-    VGL_OK=1
-    FACT_STORAGE_VG_READ=1
-  else
-    VGLWHY="not assessed — lsvg -o capture unparseable (rc=0)"
-  fi
-  if [ "$VGL_OK" -eq 1 ]; then
-    NVG=$(printf '%s\n' "$VGL" | awk 'NF{n++} END{print n+0}')
-  else
-    VGL=""; NVG=0
-  fi
+      END {
+        if (rows==0) print "unset"
+        else if (bad || rows!=1 || attrs>1) print "bad"
+        else if (attrs==0 || value=="") print "unset"
+        else if (value ~ /^[A-Za-z0-9_.-]+$/) print "value " value
+        else print "bad"
+      }')
+    PWH_STATE=${PWH_PARSED%% *}
+    case "$PWH_PARSED" in
+      value\ *) PWH_VALUE=${PWH_PARSED#value } ;;
+      *) PWH_VALUE="" ;;
+    esac
 
-  # paging space
-  LSPS=$(aix lsps_a lsps -a); LSPSRC=$?
-  LSPS_OK=0; LSPSWHY=""
-  if [ "$LSPSRC" -ne 0 ]; then
-    LSPSWHY="not assessed — lsps -a capture failed (rc=$LSPSRC)"
-  elif [ -z "$LSPS" ]; then
-    LSPSWHY="not assessed — lsps -a capture empty (rc=0)"
-  elif printf '%s\n' "$LSPS" | awk -v max_pct="$STOR_FACT_MAX_USED_PCT" '
-      NR == 1 {
-        if ($1 != "Page" || $2 != "Space" || $3 != "Physical" ||
-            $4 != "Volume" || $5 != "Volume" || $6 != "Group" ||
-            $7 != "Size" || $8 != "%Used" || $9 != "Active" ||
-            $10 != "Auto" || $11 != "Type" || $12 != "Chksum") bad=1
-        next
-      }
-      NF {
-        n++
-        if (NF < 9 ||
-            $1 !~ /^[A-Za-z0-9_.-][A-Za-z0-9_.-]*$/ ||
-            $2 !~ /^[A-Za-z0-9_.-][A-Za-z0-9_.-]*$/ ||
-            $3 !~ /^[A-Za-z0-9_.-][A-Za-z0-9_.-]*$/ ||
-            $4 !~ /^[0-9][0-9]*(MB|GB)$/ ||
-            $5 !~ /^[0-9][0-9]*$/ || $5 + 0 > max_pct ||
-            $6 !~ /^(yes|no)$/ || $7 !~ /^(yes|no)$/ ||
-            $8 !~ /^[A-Za-z0-9_.-][A-Za-z0-9_.-]*$/ ||
-            $9 !~ /^[0-9][0-9]*$/) bad=1
-      }
-      END { if (n == 0 || bad) exit 1 }
-    '
-  then
-    LSPS_OK=1
-    FACT_PAGING_READ=1
-  else
-    LSPSWHY="not assessed — lsps -a capture unparseable (rc=0)"
-  fi
-  if [ "$LSPS_OK" -eq 1 ]; then
-    NPS=$(printf '%s\n' "$LSPS" | awk 'NR>1 && NF>1 {n++} END{print n+0}')
-    MAXU=$(printf '%s\n' "$LSPS" | awk 'NR>1 && NF>1 {u=$5+0; if (u>mx) mx=u} END{print mx+0}')
-    ALLROOT=$(printf '%s\n' "$LSPS" | awk 'NR>1 && NF>1 {t++; if ($3=="rootvg") r++} END{print (t>0 && r==t)?1:0}')
-    DUPPV=$(printf '%s\n' "$LSPS" | awk 'NR>1 && NF>1 {c[$2]++} END{d=0; for (k in c) if (c[k]>1) d=1; print d}')
-    NPS=$(printf '%s\n' "$LSPS" | awk 'NR>1 && NF>1{n++} END{if(n>0)print n}')
-    if valid_json_number "$NPS"; then FACT_PAGING_SPACES="$NPS"; fi
-    if [ -n "$FACT_PAGING_SPACES" ]; then
-      MAXU_FACT=$(printf '%s\n' "$LSPS" | awk '
-        NR>1 && NF>1 {n++; if($5 !~ /^[0-9][0-9]*$/) bad=1; else if(!seen || $5+0>mx){mx=$5+0; out=$5; seen=1}}
-        END{if(n>0 && !bad && seen)print out}')
-      if valid_json_number "$MAXU_FACT"; then FACT_PAGING_MAX="$MAXU_FACT"; fi
-      [ "$ALLROOT" -eq 1 ] && FACT_PAGING_ROOT=true || FACT_PAGING_ROOT=false
-      [ "$DUPPV" -eq 1 ] && FACT_PAGING_DUP=true || FACT_PAGING_DUP=false
-    fi
-    PGNOTE=""
-    if [ "${NVG:-0}" -gt 1 ] && [ "$ALLROOT" -eq 1 ]; then
-      PGNOTE=" Every paging space sits in rootvg while another VG is online — spreading paging onto another VG's disks avoids a rootvg I/O bottleneck."
-    elif [ "$DUPPV" -eq 1 ]; then
-      PGNOTE=" Multiple paging spaces share one physical volume — they contend for the same disk, so the extra space buys little."
-    fi
-    if [ "$MAXU" -ge 70 ]; then
-      add storage paging "Paging space" FAIL high "$NPS space(s), ${MAXU}% used" \
-          "The box is paging heavily — performance is suffering now, and paging-space-full kills processes.$PGNOTE" \
-          "find the memory consumer (svmon -P | head); add RAM or paging space as a stopgap."
-    elif [ "$MAXU" -ge 40 ]; then
-      add storage paging "Paging space" WARN med "$NPS space(s), ${MAXU}% used" \
-          "Sustained paging use signals memory pressure.$PGNOTE" "investigate memory consumers; review sizing."
-    else
-      add storage paging "Paging space" PASS low "$NPS space(s), ${MAXU}% used" "Memory pressure is low.$PGNOTE" "n/a"
-    fi
-  else
-    add storage paging "Paging space" NOT_ASSESSED med "$LSPSWHY" \
-        "Paging-space use could not be assessed because lsps -a failed, returned no evidence, or did not match the expected AIX output shape." \
-        "run 'lsps -a' manually, then rerun AIXray before treating paging-space use as healthy."
+    case "$PWH_STATE" in
+      bad)
+        add security pw_hashing "Password hashing algorithm" NOT_ASSESSED high \
+            "not assessed — lssec pwd_algorithm output was unparseable" \
+            "The password hashing policy could not be parsed, so AIXray cannot claim that password hashes use an approved algorithm." \
+            "run 'lssec -f /etc/security/login.cfg -s usw -a pwd_algorithm' manually, then rerun AIXray." "cis-l1"
+        ;;
+      unset)
+        add security pw_hashing "Password hashing algorithm" FAIL high \
+            "(unset — defaults to legacy crypt)" \
+            "An unset pwd_algorithm defaults to legacy DES crypt, which truncates passwords to 8 characters; characters after the eighth do not strengthen the stored hash." \
+            "set pwd_algorithm to ssha256 at minimum (for example, 'chsec -f /etc/security/login.cfg -s usw -a pwd_algorithm=ssha256'); AIXray only recommends this command and never executes it." "cis-l1"
+        ;;
+      value)
+        case "$PWH_VALUE" in
+          ssha256|ssha512|bcrypt)
+            add security pw_hashing "Password hashing algorithm" PASS high \
+                "$PWH_VALUE" \
+                "The configured password hashing algorithm avoids the legacy DES crypt default and its 8-character password limit." \
+                "n/a" "cis-l1"
+            ;;
+          crypt)
+            add security pw_hashing "Password hashing algorithm" FAIL high \
+                "$PWH_VALUE" \
+                "pwd_algorithm=crypt selects legacy DES crypt, which truncates passwords to 8 characters; characters after the eighth do not strengthen the stored hash." \
+                "set pwd_algorithm to ssha256 at minimum (for example, 'chsec -f /etc/security/login.cfg -s usw -a pwd_algorithm=ssha256'); AIXray only recommends this command and never executes it." "cis-l1"
+            ;;
+          *)
+            add security pw_hashing "Password hashing algorithm" FAIL high \
+                "$PWH_VALUE" \
+                "The configured password hashing algorithm is not one of the accepted choices (ssha256, ssha512, or bcrypt); ssha256 is the minimum recommendation." \
+                "set pwd_algorithm to ssha256 at minimum (for example, 'chsec -f /etc/security/login.cfg -s usw -a pwd_algorithm=ssha256'); AIXray only recommends this command and never executes it." "cis-l1"
+            ;;
+        esac
+        ;;
+    esac
   fi
 }
 

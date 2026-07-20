@@ -81,11 +81,48 @@ C7=""
 C30=""
 NOW=""
 
+# Date math is pure integer arithmetic because AIX does not provide GNU date.
+# Validate the full calendar date before any of its fields can reach an
+# arithmetic context: ksh recursively evaluates arithmetic expressions stored
+# in variables, and the Julian formula also normalizes impossible dates.
+function is_leap_year {
+  typeset y=$1
+  y=${y#0}; y=${y#0}; y=${y#0}
+  if [ $((y % 400)) -eq 0 ]; then echo 1
+  elif [ $((y % 100)) -eq 0 ]; then echo 0
+  elif [ $((y % 4)) -eq 0 ]; then echo 1
+  else echo 0; fi
+}
+
+function valid_ymd {
+  typeset ymd=$1 y m d rest dim
+  case "$ymd" in
+    [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]) ;;
+    *) echo 0; return;;
+  esac
+  y=${ymd%%-*}; rest=${ymd#*-}; m=${rest%%-*}; d=${rest#*-}
+  m=${m#0}; d=${d#0}
+  [ -z "$m" ] && m=0; [ -z "$d" ] && d=0
+  if [ "$m" -lt 1 ] || [ "$m" -gt 12 ]; then echo 0; return; fi
+  case "$m" in
+    1|3|5|7|8|10|12) dim=31;;
+    4|6|9|11) dim=30;;
+    2) if [ "$(is_leap_year "$y")" -eq 1 ]; then dim=29; else dim=28; fi;;
+    *) echo 0; return;;
+  esac
+  if [ "$d" -lt 1 ] || [ "$d" -gt "$dim" ]; then echo 0; else echo 1; fi
+}
+
 function d2j {
-  typeset y m d a
-  y=${1%%-*}
-  m=${1#*-}; m=${m%%-*}
-  d=${1##*-}
+  typeset ymd y m d a
+  ymd=$1
+  if [ "$(valid_ymd "$ymd")" != 1 ]; then
+    echo "${AIXRAY_TOOL:-standalone}: internal error: d2j requires a real calendar date in YYYY-MM-DD format" >&2
+    return 1
+  fi
+  y=${ymd%%-*}
+  m=${ymd#*-}; m=${m%%-*}
+  d=${ymd##*-}
   m=${m#0}; d=${d#0}
   a=$(( (14 - m) / 12 ))
   y=$(( y + 4800 - a ))
@@ -175,13 +212,28 @@ FACT_STORAGE_DF_READ=0
 FACT_STORAGE_VG_READ=0
 
 function standalone_initialize {
-  TODAY=${AIXRAY_TODAY:-$(date +%Y-%m-%d)}
-  TODAY_J=$(d2j "$TODAY")
-  C7=$(errpt_cutoff 7)
-  C30=$(errpt_cutoff 30)
+  typeset today_overridden
+  today_overridden=0
+  if [ "${AIXRAY_TODAY+x}" = x ]; then
+    TODAY=$AIXRAY_TODAY
+    today_overridden=1
+  else
+    TODAY=$(date +%Y-%m-%d)
+  fi
+  if [ "$(valid_ymd "$TODAY")" != 1 ]; then
+    if [ "$today_overridden" -eq 1 ]; then
+      echo "$AIXRAY_TOOL: AIXRAY_TODAY must be a real calendar date in YYYY-MM-DD format" >&2
+    else
+      echo "$AIXRAY_TOOL: system date must be a real calendar date in YYYY-MM-DD format" >&2
+    fi
+    return 2
+  fi
+  TODAY_J=$(d2j "$TODAY") || return 1
+  C7=$(errpt_cutoff 7) || return 1
+  C30=$(errpt_cutoff 30) || return 1
   MYUID=$(aix id_u id -u)
   [ -n "$MYUID" ] || MYUID=1
-  if [ -n "${AIXRAY_TODAY:-}" ]; then
+  if [ "$today_overridden" -eq 1 ]; then
     NOW=$TODAY
   else
     NOW=$(date '+%Y-%m-%d %H:%M %Z')
@@ -217,7 +269,7 @@ function standalone_emit {
 }
 
 function standalone_main {
-  typeset i assessed run_rc
+  typeset i assessed initialize_rc run_rc
   if [ "$#" -ne 1 ] || [ "$1" != "--json" ]; then
     echo "usage: $0 --json" >&2
     return 2
@@ -226,7 +278,9 @@ function standalone_main {
     echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
     return 2
   fi
-  standalone_initialize || return 1
+  standalone_initialize
+  initialize_rc=$?
+  [ "$initialize_rc" -eq 0 ] || return "$initialize_rc"
   standalone_run
   run_rc=$?
   [ "$run_rc" -eq 0 ] || return 1

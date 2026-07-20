@@ -1,0 +1,19 @@
+{
+  "id": "ck-paging-parity",
+  "pillar": "operational-readiness",
+  "category": "storage",
+  "finding_ids": [
+    "paging_parity"
+  ],
+  "captures": [
+    "cap-lsps-a"
+  ],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "lsps -a"
+  ],
+  "tags": [],
+  "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+  "artifact": "checks/ck-paging-parity/ck-paging-parity.ksh"
+}
