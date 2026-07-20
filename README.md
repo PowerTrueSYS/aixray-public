@@ -4,7 +4,7 @@ AIXray is a source-available IBM AIX health check and VIOS posture assessment fo
 
 **Official page:** [powertruesystems.com/aixray](https://powertruesystems.com/aixray)
 
-**Release asset:** [aixray-aix.sh](https://github.com/PowerTrueSYS/aixray-public/releases/latest/download/aixray-aix.sh)
+**Gated download:** [powertruesystems.com/aixray/](https://powertruesystems.com/aixray/)
 
 ## What is AIXray?
 
@@ -24,12 +24,12 @@ AIXray is useful for:
 ## What is included?
 
 - [`aixray-aix.sh`](aixray-aix.sh) — the complete AIX/VIOS v1 assessment, version 0.1.0
-- [`checks/`](checks/) — 31 standalone ksh check tools, each paired with its `manifest.json`
-- [`catalog.json`](catalog.json) — a generated, sorted catalog of all 31 manifests with SHA-256 hashes
+- [`checks/`](checks/) — 35 standalone ksh check tools, each paired with its `manifest.json`
+- [`catalog.json`](catalog.json) — a generated, sorted catalog of all 35 manifests with SHA-256 hashes
 - [`site/index.html`](site/index.html) — the gated public download page for `powertruesystems.com/aixray`
 - [`aixray.jsonld`](aixray.jsonld), [`llms.txt`](llms.txt), and [`robots.txt`](robots.txt) — machine and crawler discovery metadata
 
-The 31 standalone tools are independently callable check modules. They are not a numerical claim about every finding produced by the larger assembled assessment.
+The 35 standalone tools are independently callable check modules. They are not a numerical claim about every finding produced by the larger assembled assessment.
 
 ## Why can a cautious AIX administrator inspect it first?
 
@@ -39,36 +39,59 @@ The 31 standalone tools are independently callable check modules. They are not a
 | zero egress during the assessment | The shell artifacts contain the assessment logic and reference data locally. They do not fetch reference data or transmit results. Review the command surface in [`catalog.json`](catalog.json) and the executable source before running it. |
 | single ksh88 file | The full scan is one inspectable [`aixray-aix.sh`](aixray-aix.sh) file. On AIX, `/bin/sh` provides the ksh88-compatible runtime used by the script; bash, Python, package installation, and GNU userland are not runtime requirements. |
 | No fabricated assessment result | `NOT_ASSESSED` is a first-class output state. Missing, unreadable, malformed, ambiguous, or unsupported evidence is reported as unavailable rather than silently converted to `PASS`. Search the assembled source for `NOT_ASSESSED` to inspect each branch. |
-| 31 standalone tools | [`catalog.json`](catalog.json) has `"check_count": 31`; each entry resolves to one paired script and manifest under [`checks/`](checks/). |
+| 35 standalone tools | [`catalog.json`](catalog.json) has `"check_count": 35`; each entry resolves to one paired script and manifest under [`checks/`](checks/). |
 | Exact artifact identity | Each catalog entry carries the SHA-256 digest of its referenced standalone shell artifact. The catalog is sorted by check ID for deterministic review. |
 | v1 only | The assembled script and all standalone scripts declare version `0.1.0`. This repository does not contain a v2 implementation. |
 
 “Read-only” describes the tool’s effect on target system configuration. If you redirect output or request an export, AIXray writes the output path you selected. The optional offline FLRTVC mode also uses a private temporary directory and removes it on exit. “zero egress” describes assessment execution; obtaining the script is, of course, a separate download.
 
+## Prerequisites
+
+- IBM AIX 7.2 or 7.3, or VIOS
+- AIX `/bin/sh` and standard AIX userland; bash, Python, GNU userland, and package installation are not required
+- Root is recommended for the broadest read access; an unprivileged or non-root run continues, unavailable evidence is explicitly identified, and depending on the check may be reported as `WARN` or `NOT_ASSESSED`
+- Plan for several minutes; runtime varies by system size and optional locally supplied FLRTVC data
+- Nothing is installed, and the assessment makes no network calls
+
 ## How do I run AIXray?
 
-Download the release asset from the [AIXray page](https://powertruesystems.com/aixray), review it, copy it to the AIX or VIOS host, then run:
+Download the scanner from the [gated download page](https://powertruesystems.com/aixray/), review it, copy it to the AIX or VIOS host, then start with the easy HTML run:
 
 ```sh
 chmod 700 aixray-aix.sh
-./aixray-aix.sh --html > aixray-report.html
+./aixray-aix.sh
 ```
 
-For structured output:
+The bare run writes `aixray-<hostname>-<date>.html` in the current directory and prints this completion message:
+
+```text
+Report ready: ./aixray-<hostname>-<date>.html — open it in your browser. To save a PDF: Print -> Save as PDF.
+```
+
+Open the named report in a browser. Use **Print → Save as PDF** when you need a PDF copy. To write the named HTML report somewhere else, use `./aixray-aix.sh --out DIR`.
+
+For advanced, explicit stdout output, redirect HTML or JSON yourself:
 
 ```sh
+./aixray-aix.sh --html > aixray-report.html
 ./aixray-aix.sh --json > aixray-report.json
 ```
 
-For a supported compliance view:
+For a supported compliance view on stdout:
 
 ```sh
 ./aixray-aix.sh --compliance stig > aixray-stig.html
 ```
 
-Run as root for the broadest read access. An unprivileged run continues where possible and marks evidence it cannot read; it does not pretend those checks passed.
+## Verify what you run
 
-## How do I verify the distribution?
+Published SHA-256 for the assembled `aixray-aix.sh` scanner:
+
+```text
+b29039b427057be30d10e06e79854d6c23e9011bc1413be1273d2dc82858c639
+```
+
+The `assembled_scanner.sha256` value in [`catalog.json`](catalog.json) records the same hash. Each standalone check entry in the catalog also records the SHA-256 of its own shell artifact.
 
 On a review workstation with `jq`, `rg`, and SHA-256 tooling:
 
