@@ -239,6 +239,10 @@ class PublicFunnelTests(unittest.TestCase):
         enhancement = (SITE / "download-form.js").read_text(encoding="utf-8")
         self.assertIn("fetch(ajaxAction", enhancement)
         self.assertIn("form.submit();", enhancement)
+        self.assertIn("AbortController", enhancement)
+        self.assertIn("Promise.race", enhancement)
+        self.assertIn("window.setTimeout", enhancement)
+        self.assertIn("window.clearTimeout", enhancement)
         external_urls = re.findall(r'https://[^"\']+', enhancement)
         self.assertEqual(
             ["https://formsubmit.co/", "https://formsubmit.co/ajax/"],
