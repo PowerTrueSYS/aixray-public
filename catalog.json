@@ -514,7 +514,7 @@
       ],
       "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
       "artifact": "checks/ck-nfs-exports/ck-nfs-exports.ksh",
-      "sha256": "d0ea1910ae1e4a1704a627e5ea595411a6e82671ab30e54f72ada0f8e7f9f76e"
+      "sha256": "c25c0c42b16d7d987c64f738b6562016987cf889d69b34bd58517068327b9239"
     },
     {
       "id": "ck-paging",
@@ -721,6 +721,10 @@
   "assembled_scanner": {
     "artifact": "aixray-aix.sh",
     "site_artifact": "site/aixray-aix.sh",
-    "sha256": "b29039b427057be30d10e06e79854d6c23e9011bc1413be1273d2dc82858c639"
+    "sha256": "060c32c3b6f2c6c81e4f14d2b3106ccf0ff987d7f3189f5eef61c458644e3eb0"
+  },
+  "review_pack": {
+    "artifact": "aixray-review-pack.sh",
+    "sha256": "f5d1241ca95a50286a14cd96b86cd6696dab0cb8d298b4cdf27bfaf574446d47"
   }
 }

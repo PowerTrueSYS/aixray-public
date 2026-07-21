@@ -24,8 +24,10 @@ AIXray is useful for:
 ## What is included?
 
 - [`aixray-aix.sh`](aixray-aix.sh) — the complete AIX/VIOS v1 assessment, version 0.1.0
+- [`aixray-review-pack.sh`](aixray-review-pack.sh) — the offline helper that creates a pseudonymized review copy and a separate local decoding key
 - [`checks/`](checks/) — 35 standalone ksh check tools, each paired with its `manifest.json`
 - [`catalog.json`](catalog.json) — a generated, sorted catalog of all 35 manifests with SHA-256 hashes
+- [`SECURITY.md`](SECURITY.md) and [`docs/VERIFY.md`](docs/VERIFY.md) — the trust boundary, caveats, and repeatable public-repository verification commands
 - [`site/index.html`](site/index.html) — the gated public download page for `powertruesystems.com/aixray`
 - [`aixray.jsonld`](aixray.jsonld), [`llms.txt`](llms.txt), and [`robots.txt`](robots.txt) — machine and crawler discovery metadata
 
@@ -83,27 +85,57 @@ For a supported compliance view on stdout:
 ./aixray-aix.sh --compliance stig > aixray-stig.html
 ```
 
-## Verify what you run
+## Send a report safely for review
 
-Published SHA-256 for the assembled `aixray-aix.sh` scanner:
-
-```text
-b29039b427057be30d10e06e79854d6c23e9011bc1413be1273d2dc82858c639
-```
-
-The `assembled_scanner.sha256` value in [`catalog.json`](catalog.json) records the same hash. Each standalone check entry in the catalog also records the SHA-256 of its own shell artifact.
-
-On a review workstation with `jq`, `rg`, and SHA-256 tooling:
+Before sending a generated HTML report, run the offline review helper beside
+the report:
 
 ```sh
-jq '.tool_version, .check_count, .license' catalog.json
-find checks -name manifest.json | wc -l
-jq -e 'all(.checks[]; .read_only == true and .license == "LicenseRef-PolyForm-Internal-Use-1.0.0")' catalog.json
-rg -n 'VERSION="0\.1\.0"|AIXRAY_STANDALONE_VERSION="0\.1\.0"' aixray-aix.sh checks --glob '*.ksh'
-rg -n 'NOT_ASSESSED' aixray-aix.sh
+./aixray-review-pack.sh aixray-<hostname>-<date>.html
 ```
 
-To verify a standalone artifact, compare its digest with the `sha256` value in its catalog entry. To audit behavior, inspect its manifest’s declared commands and then read the paired ksh file; both are adjacent by design.
+Open the new `aixray-review-*.html` in a browser and inspect it before
+sending it. Send only that `aixray-review-*.html` file. Keep the separate
+mode-`0600` `aixray-local-key-*.map` on your system: it is the decoding
+key for the pseudonyms and must never be sent. The helper pseudonymizes
+identifiers and removes secret-shaped or unresolved evidence; it does not claim
+to make the report anonymous. See the exact boundary in
+[`SECURITY.md`](SECURITY.md#outbound-review-pack) and the review steps in
+[`docs/VERIFY.md`](docs/VERIFY.md).
+
+## Verify what you run
+
+Published SHA-256 values for the launch artifacts:
+
+```text
+aixray-aix.sh
+060c32c3b6f2c6c81e4f14d2b3106ccf0ff987d7f3189f5eef61c458644e3eb0
+
+aixray-review-pack.sh
+f5d1241ca95a50286a14cd96b86cd6696dab0cb8d298b4cdf27bfaf574446d47
+```
+
+The top-level `assembled_scanner` entry in
+[`catalog.json`](catalog.json) binds the root and site scanner copies to the
+first hash. The top-level `review_pack` entry binds the review helper to the
+second. Each sorted `checks[]` entry records its standalone artifact and
+SHA-256; `check_count` remains 35.
+
+On a review workstation, run the public verification gates:
+
+```sh
+cmp aixray-aix.sh site/aixray-aix.sh
+sh tools/ci/egress-lint.sh aixray-aix.sh
+sh tools/ci/egress-lint.sh aixray-review-pack.sh
+python3 tools/check-no-ibm-redistribution.py
+PYTHONDONTWRITEBYTECODE=1 sh tests/run-tests.sh
+```
+
+The complete [`verification checklist`](docs/VERIFY.md) checks the catalog
+and README hashes, reviews likely network and mutating command sites, and
+explains what each gate does and does not prove. A digest identifies exact
+bytes; it is an authenticity check only when compared with a value obtained
+through an independently trusted channel.
 
 ## Output honesty and limitations
 

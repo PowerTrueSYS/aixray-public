@@ -15,6 +15,11 @@
 # Stdout:   ./aixray-aix.sh [--html|--json] > report.html
 #   Best run as root — a few reads (emgr -l, sysdumpdev -l, bootlist) need it.
 #   Unprivileged runs degrade those checks to WARN or NOT_ASSESSED and say so.
+# network-lint: allow-next=4 -- customer transfer documentation; never executed
+# Transfer in (workstation to AIX/VIOS):
+#   scp aixray-aix.sh root@<aix-host>:/tmp/aixray-aix.sh
+# Transfer out (AIX/VIOS to workstation):
+#   scp root@<aix-host>:/tmp/aixray-<hostname>-<YYYY-MM-DD>.html .
 #
 # Test hooks (used by tests/ on a dev box; harmless in production):
 #   AIXRAY_FIXTURES=<dir>   read command output from <dir>/<key>.out instead of executing
@@ -981,6 +986,9 @@ function add { # category id label status sev observed meaning fix [controls]
 }
 
 MYUID=$(aix id_u id -u)
+if [ "${MYUID:-0}" != "0" ]; then
+  echo "running without root: root-only checks may report WARN or NOT_ASSESSED" >&2
+fi
 function nr_warn { # category id label <what> <command> [controls] [status] [severity]
   typeset NR_STATUS NR_SEVERITY
   NR_STATUS=${7:-WARN}
@@ -8545,6 +8553,7 @@ if [ "${FV_PROVENANCE_REAL:-0}" = 1 ]; then
 fi
 
 HOST_H=$(printf '%s' "$HOST" | hesc)
+HOST_ATTR=$(printf '%s' "$HOST_H" | sed -e 's/"/\&quot;/g' -e "s/'/\&#39;/g")
 PRINT_HOST=$(printf '%s\n' "$HOST" | awk 'NR==1{gsub(/[^A-Za-z0-9_.-]/,"_"); print; exit}')
 [ -n "$PRINT_HOST" ] || PRINT_HOST=unknown
 REPORT_HOST=$(printf '%s\n' "${HOST%%.*}" | awk 'NR==1{gsub(/[^A-Za-z0-9_.-]/,"_"); print; exit}')
@@ -8819,6 +8828,9 @@ ${F_RULES[$i]}"; fi
 
   cat <<HTML
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="aixray-report-version" content="1">
+<meta name="aixray-report-date" content="${REPORT_DATE}">
+<meta name="aixray-report-host" content="${HOST_ATTR}">
 <title>AIXray compliance — ${STDLABEL} — ${HOST_H}</title>
 <style>
 @font-face{font-family:'Plex Sans';src:url(data:font/woff2;base64,${report_font_plex_sans_variable_b64}) format('woff2');font-weight:300 700;font-display:swap}
@@ -8947,7 +8959,12 @@ ${WL}
 <li><b>Physical &amp; organizational controls</b> — data-center access, change control, separation of duties and staff training are program-level controls no host scan can measure.</li>
 </ul>
 <div class="attrib">${ATTRIB}</div>
-<footer><span>AIXray · by PowerTrue Systems · read-only · this report is yours to keep</span><a href="mailto:review@powertruesystems.com">${REVIEW_CTA}</a></footer>
+<footer><span>AIXray · by PowerTrue Systems · read-only · this report is yours to keep</span></footer>
+<div class="cta" style="padding:14px 32px;background:var(--cream);font-family:var(--sans);font-size:12px;color:var(--ink)">
+  <p>${REVIEW_CTA}</p>
+  <p>Your report contains your hostname, addresses, and configuration. To send a redacted copy instead, run: <code>./aixray-review-pack.sh &lt;this-report&gt;</code> — it writes a review- file and changes nothing else.</p>
+  <p><a href="mailto:review@powertruesystems.com">review@powertruesystems.com</a></p>
+</div>
 </body></html>
 HTML
   REPORT_RC=$?
@@ -11482,6 +11499,9 @@ done
 function emit_html_report {
 cat <<HTML
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="aixray-report-version" content="1">
+<meta name="aixray-report-date" content="${REPORT_DATE}">
+<meta name="aixray-report-host" content="${HOST_ATTR}">
 <title>AIXray — ${HOST_H}</title>
 <style>
 @font-face{font-family:'Plex Sans';src:url(data:font/woff2;base64,${report_font_plex_sans_variable_b64}) format('woff2');font-weight:300 700;font-display:swap}
@@ -11637,9 +11657,11 @@ footer b,footer a{color:var(--copper-d)}
 ${ACTIONBLOCK}
 ${CVSSBLOCK}
 ${CATBLOCKS}
-<footer><span>AIXray · by PowerTrue Systems · read-only · this snapshot is yours to keep</span><a href="mailto:review@powertruesystems.com">${REVIEW_CTA}</a></footer>
+<footer><span>AIXray · by PowerTrue Systems · read-only · this snapshot is yours to keep</span></footer>
 <div class="cta" style="padding:14px 32px;background:var(--cream);font-family:var(--sans);font-size:12px;color:var(--ink)">
-  <a href="mailto:review@powertruesystems.com">${REVIEW_CTA}</a>
+  <p>${REVIEW_CTA}</p>
+  <p>Your report contains your hostname, addresses, and configuration. To send a redacted copy instead, run: <code>./aixray-review-pack.sh &lt;this-report&gt;</code> — it writes a review- file and changes nothing else.</p>
+  <p><a href="mailto:review@powertruesystems.com">review@powertruesystems.com</a></p>
 </div>
 </body></html>
 HTML

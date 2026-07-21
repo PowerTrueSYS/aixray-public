@@ -16,15 +16,20 @@ import subprocess
 import tempfile
 import threading
 import unittest
+import urllib.parse
 import urllib.request
 
 
 ROOT = Path(__file__).resolve().parents[1]
 SITE = ROOT / "site"
 SCANNER = ROOT / "aixray-aix.sh"
+REVIEW_HELPER = ROOT / "aixray-review-pack.sh"
 FIXTURE_ROOT = os.environ.get("AIXRAY_FIXTURE_ROOT")
 FIXTURE = Path(FIXTURE_ROOT) if FIXTURE_ROOT else None
 EGRESS_LINTER = ROOT / "tools" / "ci" / "egress-lint.sh"
+IBM_DATA_GUARD = ROOT / "tools" / "check-no-ibm-redistribution.py"
+SECURITY_DOC = ROOT / "SECURITY.md"
+VERIFY_DOC = ROOT / "docs" / "VERIFY.md"
 DOWNLOAD_PAGE_URL = "https://powertruesystems.com/aixray/"
 DIRECT_ASSET_URL = "https://powertruesystems.com/aixray/aixray-aix.sh"
 READY_PAGE_URL = "https://powertruesystems.com/aixray/ready/"
@@ -83,6 +88,24 @@ def inline_jsonld(site_html: str) -> dict[str, object]:
     if match is None:
         raise AssertionError("site has no inline JSON-LD block")
     return json.loads(match.group(1))
+
+
+def relative_markdown_links(document: Path) -> list[tuple[str, Path]]:
+    """Return local relative inline-Markdown links and their resolved paths."""
+    links: list[tuple[str, Path]] = []
+    text = document.read_text(encoding="utf-8")
+    for match in re.finditer(r"(?<!!)\[[^]]+\]\(([^)]+)\)", text):
+        target = match.group(1).strip()
+        if target.startswith("<") and target.endswith(">"):
+            target = target[1:-1]
+        target = target.split(maxsplit=1)[0]
+        parsed = urllib.parse.urlsplit(target)
+        if parsed.scheme or parsed.netloc or parsed.path.startswith("/"):
+            continue
+        relative_path = urllib.parse.unquote(parsed.path)
+        resolved = document if not relative_path else document.parent / relative_path
+        links.append((target, resolved.resolve()))
+    return links
 
 
 class QuietHandler(http.server.SimpleHTTPRequestHandler):
@@ -361,6 +384,20 @@ class PublicFunnelTests(unittest.TestCase):
         self.assertEqual(expected, assembled.get("sha256"))
         self.assertEqual(expected, sha256(SITE / "aixray-aix.sh"))
 
+        review_pack = catalog.get("review_pack")
+        self.assertIsInstance(
+            review_pack,
+            dict,
+            "catalog review_pack metadata is missing",
+        )
+        if not isinstance(review_pack, dict):
+            return
+        self.assertEqual("aixray-review-pack.sh", review_pack.get("artifact"))
+        if REVIEW_HELPER.is_file():
+            self.assertEqual(sha256(REVIEW_HELPER), review_pack.get("sha256"))
+        else:
+            self.fail(f"missing review helper: {REVIEW_HELPER}")
+
     def test_customer_copy_describes_the_current_35_checks(self) -> None:
         for path in (ROOT / "README.md", SITE / "index.html", ROOT / "llms.txt"):
             text = path.read_text(encoding="utf-8")
@@ -409,6 +446,16 @@ class PublicFunnelTests(unittest.TestCase):
         scanner_hash = sha256(SCANNER)
         self.assertIn(scanner_hash, readme)
 
+    def test_readme_publishes_launch_hashes_and_verification_links(self) -> None:
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        for artifact in (SCANNER, REVIEW_HELPER):
+            with self.subTest(artifact=artifact.name):
+                self.assertTrue(artifact.is_file(), f"missing artifact: {artifact}")
+                if artifact.is_file():
+                    self.assertIn(sha256(artifact), readme)
+        self.assertRegex(readme, r"\[[^]]+\]\(SECURITY\.md(?:#[^)]+)?\)")
+        self.assertRegex(readme, r"\[[^]]+\]\(docs/VERIFY\.md(?:#[^)]+)?\)")
+
     def test_scanner_audit_map_names_only_public_paths(self) -> None:
         header = "\n".join(SCANNER.read_text(encoding="utf-8").splitlines()[:30])
         audit = re.search(
@@ -436,6 +483,47 @@ class PublicFunnelTests(unittest.TestCase):
             "tools.d/checks",
         ):
             self.assertNotIn(dev_only, header)
+
+    def test_launch_security_docs_exist_and_local_links_resolve(self) -> None:
+        repository_root = ROOT.resolve()
+        for document in (SECURITY_DOC, VERIFY_DOC):
+            with self.subTest(document=document.relative_to(ROOT), contract="exists"):
+                self.assertTrue(document.is_file(), f"missing public doc: {document}")
+            if not document.is_file():
+                continue
+            for target, resolved in relative_markdown_links(document):
+                with self.subTest(
+                    document=document.relative_to(ROOT),
+                    target=target,
+                ):
+                    try:
+                        resolved.relative_to(repository_root)
+                    except ValueError:
+                        self.fail(f"relative link escapes the public repo: {target}")
+                    self.assertTrue(
+                        resolved.exists(),
+                        f"unresolved relative link {target!r} in {document}",
+                    )
+
+    def test_every_scanner_report_footer_has_safe_send_instructions(self) -> None:
+        source = SCANNER.read_text(encoding="utf-8")
+        footer_tails = re.findall(
+            r"<footer>.*?</footer>(.*?)</body></html>",
+            source,
+            flags=re.DOTALL,
+        )
+        self.assertEqual(2, len(footer_tails), "expected both HTML report footers")
+        for index, tail in enumerate(footer_tails, start=1):
+            with self.subTest(renderer=index):
+                self.assertIn(
+                    "<code>./aixray-review-pack.sh &lt;this-report&gt;</code>",
+                    tail,
+                )
+                self.assertIn("${REVIEW_CTA}", tail)
+                self.assertIn(
+                    'href="mailto:review@powertruesystems.com"',
+                    tail,
+                )
 
     @unittest.skipUnless(
         os.environ.get("AIXRAY_FIXTURE_ROOT"),
@@ -603,7 +691,31 @@ START_HERE_ITEMS=""
         json.loads((ROOT / "aixray.jsonld").read_text())
         inline_jsonld((SITE / "index.html").read_text(encoding="utf-8"))
 
-    def test_scanner_has_no_egress_command_primitive(self) -> None:
+    def test_review_helper_is_shipped_executable_and_shell_valid(self) -> None:
+        self.assertTrue(
+            REVIEW_HELPER.is_file(),
+            f"missing shipped review helper: {REVIEW_HELPER}",
+        )
+        if not REVIEW_HELPER.is_file():
+            return
+        mode = stat.S_IMODE(REVIEW_HELPER.stat().st_mode)
+        self.assertNotEqual(
+            0,
+            mode & 0o111,
+            f"review helper is not executable: {mode:o}",
+        )
+        for shell in ("sh", "ksh"):
+            result = subprocess.run(
+                [shell, "-n", str(REVIEW_HELPER)],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                check=False,
+            )
+            with self.subTest(shell=shell):
+                self.assertEqual(0, result.returncode, result.stderr)
+
+    def test_public_shell_artifacts_have_no_egress_command_primitive(self) -> None:
         self.assertTrue(EGRESS_LINTER.is_file(), f"missing linter: {EGRESS_LINTER}")
 
         def lint(path: Path) -> subprocess.CompletedProcess[str]:
@@ -615,8 +727,10 @@ START_HERE_ITEMS=""
                 check=False,
             )
 
-        clean = lint(SCANNER)
-        self.assertEqual(0, clean.returncode, clean.stdout + clean.stderr)
+        for artifact in (SCANNER, REVIEW_HELPER):
+            clean = lint(artifact)
+            with self.subTest(artifact=artifact.name):
+                self.assertEqual(0, clean.returncode, clean.stdout + clean.stderr)
         probes = (
             'x="$(curl https://example.invalid)"',
             "command curl https://example.invalid",
@@ -645,6 +759,49 @@ START_HERE_ITEMS=""
                 result = lint(candidate)
                 with self.subTest(probe=probe):
                     self.assertEqual(1, result.returncode, result.stdout + result.stderr)
+
+    def test_ibm_delivery_data_guard_is_shipped_and_public_tree_is_clean(
+        self,
+    ) -> None:
+        with self.subTest(contract="guard exists"):
+            self.assertTrue(
+                IBM_DATA_GUARD.is_file(),
+                f"missing IBM redistribution guard: {IBM_DATA_GUARD}",
+            )
+        if IBM_DATA_GUARD.is_file():
+            guarded = subprocess.run(
+                ["python3", str(IBM_DATA_GUARD)],
+                cwd=ROOT,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                check=False,
+            )
+            with self.subTest(contract="guard passes"):
+                self.assertEqual(
+                    0,
+                    guarded.returncode,
+                    guarded.stdout + guarded.stderr,
+                )
+
+        tracked = subprocess.run(
+            ["git", "ls-files", "-z"],
+            cwd=ROOT,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=False,
+        )
+        self.assertEqual(0, tracked.returncode, tracked.stderr)
+        tracked_basenames = {
+            Path(path).name for path in tracked.stdout.split("\0") if path
+        }
+        banned_basenames = {
+            "apar.csv",
+            "flrtvc.ksh",
+            "aixray-aix.bundled.sh",
+        }
+        self.assertEqual(set(), tracked_basenames & banned_basenames)
 
 
 if __name__ == "__main__":
