@@ -1,0 +1,12 @@
+{
+  "name": "aixray-public-tests",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "tests/run-tests.sh",
+    "test:browser": "node --test tests/test-gate-browser.mjs"
+  },
+  "devDependencies": {
+    "playwright-core": "1.61.1"
+  }
+}

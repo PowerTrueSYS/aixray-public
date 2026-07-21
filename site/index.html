@@ -102,7 +102,7 @@
       line-height: 1.6;
     }
     a { color: inherit; }
-    button, input { font: inherit; }
+    button, input, select { font: inherit; }
     .wrap { width: min(1120px, calc(100% - 40px)); margin: 0 auto; }
 
     .hero {
@@ -216,17 +216,22 @@
     .panel.secondary { display: flex; flex-direction: column; justify-content: space-between; background: #dce9e6; }
     .panel h3 { margin-bottom: 10px; font-family: Georgia, serif; font-size: 1.75rem; font-weight: 500; }
     .panel p { color: var(--muted); }
-    .form-row { display: flex; gap: 11px; margin-top: 25px; }
-    input[type="email"] {
-      flex: 1;
+    .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 11px; margin-top: 25px; }
+    .field { display: grid; gap: 6px; }
+    .field span { font-size: .78rem; font-weight: 760; }
+    .field small { color: var(--muted); font-size: inherit; font-weight: 500; }
+    .field input, .field select {
+      width: 100%;
       min-width: 0;
+      min-height: 52px;
       padding: 15px 16px;
       color: var(--ink);
       background: var(--white);
       border: 1px solid #aebfbd;
       border-radius: 0;
     }
-    input[type="email"]:focus { outline: 3px solid rgba(183,103,60,.25); border-color: var(--copper); }
+    .field input:focus, .field select:focus { outline: 3px solid rgba(183,103,60,.25); border-color: var(--copper); }
+    .form-grid > .button { align-self: end; }
     .button {
       display: inline-flex;
       align-items: center;
@@ -285,7 +290,7 @@
       .hero-grid { padding: 50px 0 68px; }
       main section { padding: 68px 0; }
       .proof-grid { grid-template-columns: 1fr; }
-      .form-row { flex-direction: column; }
+      .form-grid { grid-template-columns: 1fr; }
       footer .wrap { flex-direction: column; }
     }
     @media (prefers-reduced-motion: reduce) {
@@ -359,20 +364,38 @@
         <div class="section-head">
           <p class="eyebrow">Choose your next step</p>
           <h2 id="download-title">Run the tool, or have a senior engineer read the risk with you.</h2>
-          <p>The convenient static-site download asks for a work email. Scheduling a free one-system Blueprint is a separate choice.</p>
+          <p>The convenient static-site download asks for your name and work email; role is optional. Scheduling a free one-system Blueprint is a separate choice.</p>
         </div>
         <div class="gate-grid">
           <section class="panel" aria-labelledby="get-title">
             <h3 id="get-title">Get AIXray v1</h3>
-            <p>Enter your work email. After FormSubmit confirms the request, this page reveals the scanner file served directly by this static site.</p>
+            <p>Enter your name and work email; role is optional. After FormSubmit confirms the request, the scanner file is revealed from this static site.</p>
             <form id="download-form" action="https://formsubmit.co/hello@powertruesystems.com" method="POST">
               <input type="hidden" name="_subject" value="AIXray public v1 download request">
               <input type="hidden" name="_template" value="table">
               <input type="hidden" name="_captcha" value="false">
+              <input type="hidden" name="_next" value="https://powertruesystems.com/aixray/ready/">
               <input type="hidden" name="product" value="AIXray v1">
               <input type="text" name="_honey" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-10000px">
-              <div class="form-row">
-                <input type="email" name="email" autocomplete="email" placeholder="you@company.com" aria-label="Work email" required>
+              <div class="form-grid">
+                <label class="field" for="download-name">
+                  <span>Name</span>
+                  <input id="download-name" type="text" name="name" autocomplete="name" required>
+                </label>
+                <label class="field" for="download-email">
+                  <span>Work email</span>
+                  <input id="download-email" type="email" name="email" autocomplete="email" placeholder="you@company.com" required>
+                </label>
+                <label class="field" for="download-role">
+                  <span>Role <small>(optional)</small></span>
+                  <select id="download-role" name="role" autocomplete="organization-title">
+                    <option value="">Select one</option>
+                    <option value="sysadmin">Sysadmin</option>
+                    <option value="it_manager">IT manager</option>
+                    <option value="director_plus">Director+</option>
+                    <option value="other">Other</option>
+                  </select>
+                </label>
                 <button class="button" type="submit">Reveal download</button>
               </div>
               <p class="fine">Used to record who is evaluating AIXray. This form does not subscribe you to a newsletter.</p>
@@ -437,50 +460,6 @@ jq '.tool_version, .check_count, .license' catalog.json</code></pre>
     </div>
   </footer>
 
-  <script>
-  (function () {
-    "use strict";
-
-    var form = document.getElementById("download-form");
-    var ready = document.getElementById("download-ready");
-    var status = document.getElementById("download-status");
-    var submit = form.querySelector('button[type="submit"]');
-
-    ready.hidden = true;
-
-    form.addEventListener("submit", async function (event) {
-      event.preventDefault();
-      ready.hidden = true;
-      status.textContent = "Confirming your request…";
-      submit.disabled = true;
-
-      try {
-        var ajaxAction = form.action.replace(
-          "https://formsubmit.co/",
-          "https://formsubmit.co/ajax/"
-        );
-        var response = await fetch(ajaxAction, {
-          method: "POST",
-          headers: { "Accept": "application/json" },
-          body: new FormData(form)
-        });
-        var payload = await response.json();
-
-        if (!response.ok || (payload.success !== true && payload.success !== "true")) {
-          throw new Error("FormSubmit did not confirm capture");
-        }
-
-        ready.hidden = false;
-        status.textContent = "Request confirmed. Your download is ready.";
-        form.reset();
-      } catch (error) {
-        ready.hidden = true;
-        status.textContent = "We could not confirm your request. Please try again.";
-      } finally {
-        submit.disabled = false;
-      }
-    });
-  }());
-  </script>
+  <script src="download-form.js" defer></script>
 </body>
 </html>
