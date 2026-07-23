@@ -13,6 +13,6 @@
     "/usr/lib/errdemon -l"
   ],
   "tags": [],
-  "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+  "license": "Apache-2.0",
   "artifact": "checks/ck-errdemon-health/ck-errdemon-health.ksh"
 }

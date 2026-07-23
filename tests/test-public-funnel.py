@@ -26,9 +26,9 @@ FIXTURE_ROOT = os.environ.get("AIXRAY_FIXTURE_ROOT")
 FIXTURE = Path(FIXTURE_ROOT) if FIXTURE_ROOT else None
 EGRESS_LINTER = ROOT / "tools" / "ci" / "egress-lint.sh"
 DOWNLOAD_PAGE_URL = "https://powertruesystems.com/aixray/"
-DIRECT_ASSET_URL = "https://powertruesystems.com/aixray/aixray-aix.sh"
-READY_PAGE_URL = "https://powertruesystems.com/aixray/ready/"
-ROLE_VALUES = ("sysadmin", "it_manager", "director_plus", "other")
+RELEASE_ASSET_URL = (
+    "https://github.com/PowerTrueSYS/aixray-public/releases/latest/download/aixray-aix.sh"
+)
 REVIEW_CTA = (
     "Free engineer review: email your report to "
     "review@powertruesystems.com — a principal engineer replies within "
@@ -196,88 +196,79 @@ class ReportParser(HTMLParser):
 
 
 class PublicFunnelTests(unittest.TestCase):
-    def test_download_gate_is_native_first_and_ajax_enhanced(self) -> None:
+    def test_download_is_frictionless_and_ungated(self) -> None:
         site_html = (SITE / "index.html").read_text(encoding="utf-8")
-        form_match = re.search(
-            r'<form\b(?=[^>]*\bid="download-form")([^>]*)>(.*?)</form>',
+
+        # The scanner is a direct, ungated download from the public GitHub release.
+        primary = re.search(
+            rf'<a\b(?=[^>]*\bhref="{re.escape(RELEASE_ASSET_URL)}")[^>]*>',
             site_html,
-            flags=re.DOTALL,
         )
-        self.assertIsNotNone(form_match, "download form is missing")
-        if form_match is None:
-            return
-        form_open, form_body = form_match.groups()
-        self.assertRegex(
-            form_open,
-            r'\baction="https://formsubmit\.co/hello@powertruesystems\.com"',
-        )
-        self.assertRegex(form_open, r'\bmethod="POST"')
-        self.assertRegex(
-            form_body,
-            rf'<input\b(?=[^>]*\bname="_next")(?=[^>]*\bvalue="{re.escape(READY_PAGE_URL)}")[^>]*>',
+        self.assertIsNotNone(primary, "primary release download link is missing")
+
+        # No email/lead gate fronts the download anymore.
+        self.assertNotIn('id="download-form"', site_html)
+        self.assertNotIn('id="download-ready"', site_html)
+        self.assertNotIn("download-form.js", site_html)
+        self.assertFalse(
+            (SITE / "download-form.js").exists(),
+            "the retired download-gate script must not ship",
         )
 
-        def named_tag(tag: str, name: str) -> str:
-            match = re.search(
-                rf'<{tag}\b(?=[^>]*\bname="{re.escape(name)}")[^>]*>',
-                form_body,
-            )
-            self.assertIsNotNone(match, f"missing {name} field")
-            return match.group(0) if match else ""
+        # A soft, non-blocking call to action points at the repo and its issues.
+        self.assertIn("https://github.com/PowerTrueSYS/aixray-public/issues", site_html)
 
-        self.assertRegex(named_tag("input", "name"), r"\brequired\b")
-        self.assertRegex(named_tag("input", "email"), r"\brequired\b")
-        self.assertNotRegex(named_tag("select", "role"), r"\brequired\b")
-        for value in ROLE_VALUES:
-            self.assertRegex(form_body, rf'<option\s+value="{value}"')
-        self.assertNotIn("this page reveals", site_html)
-
-        self.assertRegex(
+        # The optional notify field exists and is never required to download.
+        notify = re.search(
+            r'<input\b(?=[^>]*\bid="notify-email")[^>]*>',
             site_html,
-            r'<script\s+src="download-form\.js"\s+defer></script>',
         )
-        enhancement = (SITE / "download-form.js").read_text(encoding="utf-8")
-        self.assertIn("fetch(ajaxAction", enhancement)
-        self.assertIn("form.submit();", enhancement)
-        self.assertIn("AbortController", enhancement)
-        self.assertIn("Promise.race", enhancement)
-        self.assertIn("window.setTimeout", enhancement)
-        self.assertIn("window.clearTimeout", enhancement)
-        external_urls = re.findall(r'https://[^"\']+', enhancement)
-        self.assertEqual(
-            ["https://formsubmit.co/", "https://formsubmit.co/ajax/"],
-            external_urls,
-        )
+        self.assertIsNotNone(notify, "optional notify field is missing")
+        if notify is not None:
+            self.assertNotRegex(notify.group(0), r"\brequired\b")
 
-        ready_html = (SITE / "ready" / "index.html").read_text(encoding="utf-8")
-        self.assertIn('href="../aixray-aix.sh"', ready_html)
-        self.assertRegex(ready_html, r'<a\b[^>]*\bdownload(?:\s|>|=)')
-
-    def test_advertised_download_references_use_the_gated_page(self) -> None:
-        for path in CUSTOMER_FILES:
-            text = path.read_text(encoding="utf-8")
-            with self.subTest(path=path.name, contract="no dead release URL"):
-                self.assertNotIn("releases/latest/download", text)
-            with self.subTest(path=path.name, contract="no undeployed direct asset URL"):
-                self.assertNotIn(DIRECT_ASSET_URL, text)
-
+    def test_download_references_are_ungated(self) -> None:
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
         llms = (ROOT / "llms.txt").read_text(encoding="utf-8")
         site_html = (SITE / "index.html").read_text(encoding="utf-8")
         root_jsonld = json.loads((ROOT / "aixray.jsonld").read_text())
         site_jsonld = inline_jsonld(site_html)
 
+        # The public download page is still the advertised entry point.
         self.assertIn(DOWNLOAD_PAGE_URL, readme)
         self.assertIn(DOWNLOAD_PAGE_URL, llms)
         self.assertEqual(DOWNLOAD_PAGE_URL, root_jsonld.get("downloadUrl"))
         self.assertEqual(DOWNLOAD_PAGE_URL, site_jsonld.get("downloadUrl"))
-        parser = ReportParser()
-        parser.feed(site_html)
-        download_actions = [link for link in parser.download_links if link["download"]]
-        self.assertEqual(
-            [{"href": "aixray-aix.sh", "download": True}],
-            download_actions,
-        )
+
+        # It links straight to the public release asset — no lead gate.
+        self.assertIn(RELEASE_ASSET_URL, site_html)
+
+        # The customer copy no longer advertises a gated download.
+        self.assertNotIn("Gated download", readme)
+        self.assertNotIn("Gated download", llms)
+
+    def test_license_is_apache_2_0(self) -> None:
+        catalog = json.loads((ROOT / "catalog.json").read_text())
+        self.assertEqual("Apache-2.0", catalog.get("license"))
+        for entry in catalog.get("checks", []):
+            with self.subTest(check=entry.get("id")):
+                self.assertEqual("Apache-2.0", entry.get("license"))
+
+        license_text = (ROOT / "LICENSE").read_text(encoding="utf-8")
+        self.assertIn("Apache License", license_text)
+        self.assertIn("Version 2.0, January 2004", license_text)
+        self.assertIn("END OF TERMS AND CONDITIONS", license_text)
+        self.assertTrue((ROOT / "NOTICE").is_file(), "Apache NOTICE file is missing")
+
+        for path in (
+            ROOT / "README.md",
+            ROOT / "llms.txt",
+            ROOT / "aixray.jsonld",
+            ROOT / "catalog.json",
+            SITE / "index.html",
+        ):
+            with self.subTest(path=path.name, contract="no PolyForm reference"):
+                self.assertNotIn("PolyForm", path.read_text(encoding="utf-8"))
 
     def test_site_serves_the_scanner_directly_over_local_http(self) -> None:
         site_scanner = SITE / "aixray-aix.sh"

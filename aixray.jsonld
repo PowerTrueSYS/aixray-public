@@ -4,7 +4,7 @@
   "@id": "https://powertruesystems.com/aixray#software",
   "name": "AIXray",
   "alternateName": "AIXray AIX and VIOS posture assessment",
-  "description": "A source-available, read-only IBM AIX and VIOS posture assessment delivered as a single ksh88-compatible shell file with zero egress during assessment execution and explicit NOT_ASSESSED results when evidence is unavailable.",
+  "description": "An open-source, read-only IBM AIX and VIOS posture assessment delivered as a single ksh88-compatible shell file with zero egress during assessment execution and explicit NOT_ASSESSED results when evidence is unavailable.",
   "url": "https://powertruesystems.com/aixray",
   "codeRepository": "https://github.com/PowerTrueSYS/aixray-public",
   "downloadUrl": "https://powertruesystems.com/aixray/",
@@ -18,7 +18,7 @@
   ],
   "programmingLanguage": "KornShell (ksh88-compatible AIX /bin/sh)",
   "softwareRequirements": "AIX /bin/sh and standard AIX userland; no bash, Python, GNU userland, package installation, or assessment-time network access required.",
-  "license": "https://polyformproject.org/licenses/internal-use/1.0.0",
+  "license": "https://www.apache.org/licenses/LICENSE-2.0",
   "provider": {
     "@type": "Organization",
     "@id": "https://powertruesystems.com/#org",
@@ -38,7 +38,7 @@
     {
       "@type": "PropertyValue",
       "name": "licenseExpression",
-      "value": "LicenseRef-PolyForm-Internal-Use-1.0.0"
+      "value": "Apache-2.0"
     },
     {
       "@type": "PropertyValue",

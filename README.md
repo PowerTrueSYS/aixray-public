@@ -1,10 +1,10 @@
 # AIXray: read-only IBM AIX and VIOS health, risk, and security assessment
 
-AIXray is a source-available IBM AIX health check and VIOS posture assessment for administrators who need evidence before they change a system. Version 0.1.0 runs as a single ksh88 file under AIX `/bin/sh`, reads system state, makes zero network calls during assessment execution, and reports findings without remediating the host.
+AIXray is an open-source IBM AIX health check and VIOS posture assessment for administrators who need evidence before they change a system. Version 0.1.0 runs as a single ksh88 file under AIX `/bin/sh`, reads system state, makes zero network calls during assessment execution, and reports findings without remediating the host.
 
 **Official page:** [powertruesystems.com/aixray](https://powertruesystems.com/aixray)
 
-**Gated download:** [powertruesystems.com/aixray/](https://powertruesystems.com/aixray/)
+**Download:** [powertruesystems.com/aixray/](https://powertruesystems.com/aixray/)
 
 ## What is AIXray?
 
@@ -26,7 +26,7 @@ AIXray is useful for:
 - [`aixray-aix.sh`](aixray-aix.sh) — the complete AIX/VIOS v1 assessment, version 0.1.0
 - [`checks/`](checks/) — 35 standalone ksh check tools, each paired with its `manifest.json`
 - [`catalog.json`](catalog.json) — a generated, sorted catalog of all 35 manifests with SHA-256 hashes
-- [`site/index.html`](site/index.html) — the gated public download page for `powertruesystems.com/aixray`
+- [`site/index.html`](site/index.html) — the public download page for `powertruesystems.com/aixray`
 - [`aixray.jsonld`](aixray.jsonld), [`llms.txt`](llms.txt), and [`robots.txt`](robots.txt) — machine and crawler discovery metadata
 
 The 35 standalone tools are independently callable check modules. They are not a numerical claim about every finding produced by the larger assembled assessment.
@@ -55,7 +55,7 @@ The 35 standalone tools are independently callable check modules. They are not a
 
 ## How do I run AIXray?
 
-Download the scanner from the [gated download page](https://powertruesystems.com/aixray/), review it, copy it to the AIX or VIOS host, then start with the easy HTML run:
+Download the scanner from the [download page](https://powertruesystems.com/aixray/), review it, copy it to the AIX or VIOS host, then start with the easy HTML run:
 
 ```sh
 chmod 700 aixray-aix.sh
@@ -88,7 +88,7 @@ For a supported compliance view on stdout:
 Published SHA-256 for the assembled `aixray-aix.sh` scanner:
 
 ```text
-b29039b427057be30d10e06e79854d6c23e9011bc1413be1273d2dc82858c639
+e098e0b0f617649ba29fbf1626fefb55bcd2b467c09060bdcb4458b1340e5b16
 ```
 
 The `assembled_scanner.sha256` value in [`catalog.json`](catalog.json) records the same hash. Each standalone check entry in the catalog also records the SHA-256 of its own shell artifact.
@@ -98,7 +98,7 @@ On a review workstation with `jq`, `rg`, and SHA-256 tooling:
 ```sh
 jq '.tool_version, .check_count, .license' catalog.json
 find checks -name manifest.json | wc -l
-jq -e 'all(.checks[]; .read_only == true and .license == "LicenseRef-PolyForm-Internal-Use-1.0.0")' catalog.json
+jq -e 'all(.checks[]; .read_only == true and .license == "Apache-2.0")' catalog.json
 rg -n 'VERSION="0\.1\.0"|AIXRAY_STANDALONE_VERSION="0\.1\.0"' aixray-aix.sh checks --glob '*.ksh'
 rg -n 'NOT_ASSESSED' aixray-aix.sh
 ```
@@ -113,9 +113,9 @@ Reference data has a declared vintage in the assembled script. Review that value
 
 ## License
 
-AIXray is source-available under the [PolyForm Internal Use License 1.0.0](LICENSE). It is not offered under an OSI-approved license. Internal business use and permitted changes are covered by the license; redistribution is not granted. See [LICENSE-FAQ.md](LICENSE-FAQ.md) for the GitHub display note and machine-readable identifier.
+AIXray is open source under the [Apache License 2.0](LICENSE). Use, modification, and redistribution are permitted under the license's terms, including the patent grant. See the [NOTICE](NOTICE) file for attribution.
 
-Machine-readable license expression: `LicenseRef-PolyForm-Internal-Use-1.0.0`.
+Machine-readable license expression: `Apache-2.0`.
 
 The assembled report includes IBM Plex font data under the SIL Open Font License 1.1. See [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
 

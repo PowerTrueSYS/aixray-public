@@ -21,6 +21,6 @@
     "cat /var/adm/ras/alt_disk_inst.log"
   ],
   "tags": [],
-  "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+  "license": "Apache-2.0",
   "artifact": "checks/ck-alt-disk-recoverability/ck-alt-disk-recoverability.ksh"
 }

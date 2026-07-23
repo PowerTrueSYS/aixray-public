@@ -12,6 +12,6 @@
     "find /var/adm/ras -name vmcore* -mtime -30 -print"
   ],
   "tags": [],
-  "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+  "license": "Apache-2.0",
   "artifact": "checks/ck-crash-evidence/ck-crash-evidence.ksh"
 }

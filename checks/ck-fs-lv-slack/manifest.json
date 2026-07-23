@@ -14,6 +14,6 @@
   "tags": [
     "ffiec:II.C.11"
   ],
-  "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+  "license": "Apache-2.0",
   "artifact": "checks/ck-fs-lv-slack/ck-fs-lv-slack.ksh"
 }

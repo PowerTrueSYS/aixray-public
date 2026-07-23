@@ -15,6 +15,6 @@
     "lsvg <vg>"
   ],
   "tags": [],
-  "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+  "license": "Apache-2.0",
   "artifact": "checks/ck-vg-capacity/ck-vg-capacity.ksh"
 }
