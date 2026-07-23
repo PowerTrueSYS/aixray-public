@@ -536,6 +536,9 @@ V-215363|rctcp|timed
 # ======================= infrastructure ===============================================
 
 REVIEW_CTA='Free engineer review: email your report to review@powertruesystems.com — a principal engineer replies within 2 business days.'
+# Restrained, value-first report hooks (screen-only; hidden in print/PDF). Static, safe HTML — no $ or backticks.
+MITIGATE_CTA='<p class="mitigate">Mitigation available — <a href="https://powertruesystems.com">PowerTrue can fix + monitor this →</a></p>'
+BOOK_CTA='Want these fixed and watched 24/7? <a href="https://powertruesystems.com/assessment">Book a 20-minute call →</a>'
 function progress { printf '[%s/9] %s…\n' "$1" "$2" >&2; }
 function finish_report { printf '%s\n' "$REVIEW_CTA" >&2; }
 
@@ -8812,6 +8815,7 @@ ${F_RULES[$i]}"; fi
     if [ -n "$seg" ]; then
       WL="$WL<div class=\"cathead\"><span class=\"cl\">$(catlbl_of "${CAT_ID[$ci]}"|hesc)</span></div>"
       WL="$WL<table><thead><tr><th>Risk</th><th>Finding</th><th>Observed</th><th>What it means &amp; how to fix</th><th>Control tags</th></tr></thead><tbody>$seg</tbody></table>"
+      WL="$WL$MITIGATE_CTA"
     fi
     ci=$((ci+1))
   done
@@ -8893,6 +8897,9 @@ tr.NOT_APPLICABLE td:first-child{box-shadow:inset 4px 0 var(--na)}
 tr.FAIL{background:var(--red-t)}tr.WARN{background:var(--amber-t)}tr.NOT_ASSESSED,tr.NOT_APPLICABLE{background:var(--na-t)}
 .fix{margin-top:5px;color:var(--body);font-size:11px;line-height:1.5;padding-left:11px;border-left:2px solid var(--copper)}
 .fix::before{content:"→ ";color:var(--copper-d);font-weight:700}
+.mitigate{margin:2px 40px 16px;font-family:var(--mono);font-size:10px;letter-spacing:.3px;color:var(--mute)}
+.mitigate a{color:var(--copper-d);font-weight:600;text-decoration:none}
+.cta a{color:var(--copper-d);font-weight:600;text-decoration:none}
 
 .manual{margin:6px 40px 10px;font-size:12px;color:var(--body)}.manual li{margin:6px 0}.manual b{color:var(--ink)}
 .none{margin:10px 40px;color:var(--green);font-size:12px}
@@ -8925,7 +8932,7 @@ footer b,footer a{color:var(--copper-d)}
   tr,td,.fix{break-inside:avoid;page-break-inside:avoid}
   h2,.cathead,.cov,.manual,.none,.attrib,footer{margin-left:0;margin-right:0}
   table{width:100%;margin-left:0;margin-right:0;font-size:9pt}
-  .cta{display:none}
+  .cta,.mitigate{display:none}
 }
 @media (max-width:620px){.band,.meta,.score,.cathead,footer{padding-inline:22px;margin-inline:0}h2,.cov,.manual,.none,.attrib{margin-inline:22px}table{width:calc(100% - 44px);margin-inline:22px}.scorebox{min-width:calc(50% - 1px)}}
 </style></head><body>
@@ -8948,6 +8955,10 @@ ${WL}
 </ul>
 <div class="attrib">${ATTRIB}</div>
 <footer><span>AIXray · by PowerTrue Systems · read-only · this report is yours to keep</span><a href="mailto:review@powertruesystems.com">${REVIEW_CTA}</a></footer>
+<div class="cta" style="padding:14px 32px;background:var(--cream);font-family:var(--sans);font-size:12px;color:var(--ink)">
+  <p style="margin:0 0 6px">${BOOK_CTA}</p>
+  <a href="mailto:review@powertruesystems.com">${REVIEW_CTA}</a>
+</div>
 </body></html>
 HTML
   REPORT_RC=$?
@@ -11453,6 +11464,9 @@ while [ "$ci" -lt 9 ]; do
       i=$((i+1))
     done
     CATBLOCKS="$CATBLOCKS</tbody></table>"
+    if [ "${CF[$ci]}" -gt 0 ] || [ "${CW[$ci]}" -gt 0 ]; then
+      CATBLOCKS="$CATBLOCKS$MITIGATE_CTA"
+    fi
   fi
   ci=$((ci+1))
 done
@@ -11585,9 +11599,12 @@ tr.NOT_APPLICABLE td:first-child{box-shadow:inset 4px 0 var(--na)}
 tr.FAIL{background:var(--red-t)}tr.WARN{background:var(--amber-t)}tr.NOT_ASSESSED,tr.NOT_APPLICABLE{background:var(--na-t)}
 .fix{margin-top:5px;color:var(--body);font-size:11px;line-height:1.5;padding-left:11px;border-left:2px solid var(--copper)}
 .fix::before{content:"→ ";color:var(--copper-d);font-weight:700}
+.mitigate{margin:2px 40px 16px;font-family:var(--mono);font-size:10px;letter-spacing:.3px;color:var(--mute)}
+.mitigate a{color:var(--copper-d);font-weight:600;text-decoration:none}
 
 footer{margin:26px 40px 34px;padding:15px 0 0;border-top:2px solid var(--copper);font-family:var(--mono);font-size:10px;letter-spacing:.4px;color:var(--mute);display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
 footer b,footer a{color:var(--copper-d)}
+.cta a{color:var(--copper-d);font-weight:600;text-decoration:none}
 
 @media print{
   @page{
@@ -11615,7 +11632,7 @@ footer b,footer a{color:var(--copper-d)}
   tr,td,.fix{break-inside:avoid;page-break-inside:avoid}
   h2,.start-here,.cathead,.cov,.manual,.none,.attrib,footer{margin-left:0;margin-right:0}
   table{width:100%;margin-left:0;margin-right:0;font-size:9pt}
-  .cta{display:none}
+  .cta,.mitigate{display:none}
 }
 @media (max-width:620px){.band,.meta,.score,.cathead,footer{padding-inline:22px;margin-inline:0}.start-here{margin-inline:22px;padding:16px}.top-risk-head{align-items:flex-start;flex-direction:column;gap:3px}table{width:calc(100% - 44px);margin-inline:22px}.scorebox{min-width:calc(50% - 1px)}}
 </style></head><body>
@@ -11639,6 +11656,7 @@ ${CVSSBLOCK}
 ${CATBLOCKS}
 <footer><span>AIXray · by PowerTrue Systems · read-only · this snapshot is yours to keep</span><a href="mailto:review@powertruesystems.com">${REVIEW_CTA}</a></footer>
 <div class="cta" style="padding:14px 32px;background:var(--cream);font-family:var(--sans);font-size:12px;color:var(--ink)">
+  <p style="margin:0 0 6px">${BOOK_CTA}</p>
   <a href="mailto:review@powertruesystems.com">${REVIEW_CTA}</a>
 </div>
 </body></html>

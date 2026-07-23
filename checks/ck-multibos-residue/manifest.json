@@ -15,6 +15,6 @@
     "mount"
   ],
   "tags": [],
-  "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+  "license": "Apache-2.0",
   "artifact": "checks/ck-multibos-residue/ck-multibos-residue.ksh"
 }

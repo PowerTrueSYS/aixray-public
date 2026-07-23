@@ -22,6 +22,6 @@
     "lspv -M <pv>"
   ],
   "tags": [],
-  "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+  "license": "Apache-2.0",
   "artifact": "checks/ck-hd5-sizing/ck-hd5-sizing.ksh"
 }

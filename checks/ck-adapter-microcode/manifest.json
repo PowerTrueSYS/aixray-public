@@ -12,6 +12,6 @@
     "lscfg -vpl <device>"
   ],
   "tags": [],
-  "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+  "license": "Apache-2.0",
   "artifact": "checks/ck-adapter-microcode/ck-adapter-microcode.ksh"
 }
