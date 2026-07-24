@@ -300,7 +300,7 @@ AIXRAY_TOOL=ck-backup-job
 
 function standalone_check {
 
-  # backup_job (root-gated; silent skip unprivileged — F already covers backup evidence)
+  # backup_job (root-required; silent skip unprivileged — F already covers backup evidence)
   CR=$(aix crontab_root crontab -l); RC=$?
   if [ "$RC" -ne 0 ]; then
     if [ "${MYUID:-0}" != "0" ]; then

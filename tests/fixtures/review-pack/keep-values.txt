@@ -1,0 +1,21 @@
+7300-04-00-2549
+VL950_179
+CVE-2026-98765
+NOT_ASSESSED
+ssha256
+9009-22A
+1.1.1 PASS
+bos.mp64
+bos.64bit
+devices.pciex.1410c183.rte
+bos.adt.base
+Java8_64.jre
+openssh.base.client
+printers.rte
+perl.rte
+sysmgt.cimserver.rte
+xlC.rte
+bos.rte.install
+flrtvc.ksh
+apar.csv
+the hostname A is a local label; A remains prose

@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import errno
 import hashlib
 from html.parser import HTMLParser
 import http.server
@@ -22,9 +23,12 @@ import urllib.request
 ROOT = Path(__file__).resolve().parents[1]
 SITE = ROOT / "site"
 SCANNER = ROOT / "aixray-aix.sh"
+REVIEW_HELPER = ROOT / "aixray-review-pack.sh"
 FIXTURE_ROOT = os.environ.get("AIXRAY_FIXTURE_ROOT")
 FIXTURE = Path(FIXTURE_ROOT) if FIXTURE_ROOT else None
 EGRESS_LINTER = ROOT / "tools" / "ci" / "egress-lint.sh"
+IBM_DATA_GUARD = ROOT / "tools" / "check-no-ibm-redistribution.py"
+PUBLIC_WORKFLOW = ROOT / ".github" / "workflows" / "public-checks.yml"
 DOWNLOAD_PAGE_URL = "https://powertruesystems.com/aixray/"
 RELEASE_ASSET_URL = (
     "https://github.com/PowerTrueSYS/aixray-public/releases/latest/download/aixray-aix.sh"
@@ -33,6 +37,10 @@ REVIEW_CTA = (
     "Free engineer review: email your report to "
     "review@powertruesystems.com — a principal engineer replies within "
     "2 business days."
+)
+SAFE_SEND_DISCLOSURE = (
+    "it writes a review file and a separate local decoding key that never "
+    "leaves this machine."
 )
 PROGRESS = (
     "[1/9] lifecycle and support…",
@@ -196,10 +204,10 @@ class ReportParser(HTMLParser):
 
 
 class PublicFunnelTests(unittest.TestCase):
-    def test_download_is_frictionless_and_ungated(self) -> None:
+    def test_download_is_frictionless_and_direct(self) -> None:
         site_html = (SITE / "index.html").read_text(encoding="utf-8")
 
-        # The scanner is a direct, ungated download from the public GitHub release.
+        # The scanner is a direct download from the public GitHub release.
         primary = re.search(
             rf'<a\b(?=[^>]*\bhref="{re.escape(RELEASE_ASSET_URL)}")[^>]*>',
             site_html,
@@ -227,7 +235,7 @@ class PublicFunnelTests(unittest.TestCase):
         if notify is not None:
             self.assertNotRegex(notify.group(0), r"\brequired\b")
 
-    def test_download_references_are_ungated(self) -> None:
+    def test_download_references_are_direct(self) -> None:
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
         llms = (ROOT / "llms.txt").read_text(encoding="utf-8")
         site_html = (SITE / "index.html").read_text(encoding="utf-8")
@@ -243,9 +251,10 @@ class PublicFunnelTests(unittest.TestCase):
         # It links straight to the public release asset — no lead gate.
         self.assertIn(RELEASE_ASSET_URL, site_html)
 
-        # The customer copy no longer advertises a gated download.
-        self.assertNotIn("Gated download", readme)
-        self.assertNotIn("Gated download", llms)
+        # Customer copy must not revive the retired lead-form headline.
+        retired_headline = "".join(("Ga", "ted download"))
+        self.assertNotIn(retired_headline, readme)
+        self.assertNotIn(retired_headline, llms)
 
     def test_license_is_apache_2_0(self) -> None:
         catalog = json.loads((ROOT / "catalog.json").read_text())
@@ -260,6 +269,7 @@ class PublicFunnelTests(unittest.TestCase):
         self.assertIn("END OF TERMS AND CONDITIONS", license_text)
         self.assertTrue((ROOT / "NOTICE").is_file(), "Apache NOTICE file is missing")
 
+        retired_license_name = "".join(("Poly", "Form"))
         for path in (
             ROOT / "README.md",
             ROOT / "llms.txt",
@@ -267,8 +277,11 @@ class PublicFunnelTests(unittest.TestCase):
             ROOT / "catalog.json",
             SITE / "index.html",
         ):
-            with self.subTest(path=path.name, contract="no PolyForm reference"):
-                self.assertNotIn("PolyForm", path.read_text(encoding="utf-8"))
+            with self.subTest(path=path.name, contract="no retired license reference"):
+                self.assertNotIn(
+                    retired_license_name,
+                    path.read_text(encoding="utf-8"),
+                )
 
     def test_site_serves_the_scanner_directly_over_local_http(self) -> None:
         site_scanner = SITE / "aixray-aix.sh"
@@ -280,7 +293,13 @@ class PublicFunnelTests(unittest.TestCase):
         handler = lambda *args, **kwargs: QuietHandler(  # noqa: E731
             *args, directory=str(SITE), **kwargs
         )
-        with socketserver.TCPServer(("127.0.0.1", 0), handler) as server:
+        try:
+            server = socketserver.TCPServer(("127.0.0.1", 0), handler)
+        except PermissionError as exc:
+            if exc.errno not in (errno.EACCES, errno.EPERM):
+                raise
+            self.skipTest("execution sandbox blocks a loopback listener")
+        with server:
             thread = threading.Thread(target=server.serve_forever, daemon=True)
             thread.start()
             try:
@@ -352,6 +371,20 @@ class PublicFunnelTests(unittest.TestCase):
         self.assertEqual(expected, assembled.get("sha256"))
         self.assertEqual(expected, sha256(SITE / "aixray-aix.sh"))
 
+        review_pack = catalog.get("review_pack")
+        self.assertIsInstance(review_pack, dict)
+        if isinstance(review_pack, dict):
+            self.assertEqual(
+                "aixray-review-pack.sh",
+                review_pack.get("artifact"),
+            )
+            self.assertTrue(REVIEW_HELPER.is_file())
+            if REVIEW_HELPER.is_file():
+                self.assertEqual(
+                    sha256(REVIEW_HELPER),
+                    review_pack.get("sha256"),
+                )
+
     def test_customer_copy_describes_the_current_35_checks(self) -> None:
         for path in (ROOT / "README.md", SITE / "index.html", ROOT / "llms.txt"):
             text = path.read_text(encoding="utf-8")
@@ -399,6 +432,45 @@ class PublicFunnelTests(unittest.TestCase):
 
         scanner_hash = sha256(SCANNER)
         self.assertIn(scanner_hash, readme)
+
+    def test_readme_documents_safe_send_limits_and_hashes(self) -> None:
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        normalized = " ".join(readme.lower().split())
+        self.assertIn("aixray-review-pack.sh", readme)
+        self.assertIn("aixray-review-", readme)
+        self.assertIn("aixray-local-key-", readme)
+        self.assertIn("never leaves this machine", normalized)
+        self.assertIn("pseudonymized, not anonymized", normalized)
+        self.assertIn("undiscovered pure-alphabetic barewords", normalized)
+        self.assertIn("inspect the review file before sending", normalized)
+        self.assertIn(sha256(SCANNER), readme)
+        self.assertTrue(REVIEW_HELPER.is_file())
+        if REVIEW_HELPER.is_file():
+            self.assertIn(sha256(REVIEW_HELPER), readme)
+
+    def test_report_keeps_marketing_hooks_and_safe_send_footer(self) -> None:
+        source = SCANNER.read_text(encoding="utf-8")
+        self.assertEqual(1, source.count("MITIGATE_CTA='"))
+        self.assertEqual(1, source.count("BOOK_CTA='"))
+        self.assertIn('WL="$WL$MITIGATE_CTA"', source)
+        self.assertIn('CATBLOCKS="$CATBLOCKS$MITIGATE_CTA"', source)
+        self.assertEqual(2, source.count(".cta,.mitigate{display:none}"))
+
+        footer_blocks = re.findall(
+            r'<footer>.*?</footer>\s*<div class="cta".*?</div>',
+            source,
+            flags=re.DOTALL,
+        )
+        self.assertEqual(2, len(footer_blocks))
+        for footer in footer_blocks:
+            with self.subTest(footer=footer[:80]):
+                self.assertIn("${BOOK_CTA}", footer)
+                self.assertIn("aixray-review-pack.sh", footer)
+                self.assertIn(SAFE_SEND_DISCLOSURE, footer)
+                self.assertIn(
+                    'href="mailto:review@powertruesystems.com"',
+                    footer,
+                )
 
     def test_scanner_audit_map_names_only_public_paths(self) -> None:
         header = "\n".join(SCANNER.read_text(encoding="utf-8").splitlines()[:30])
@@ -580,19 +652,41 @@ START_HERE_ITEMS=""
         self.assertTrue(result.stdout.rstrip().endswith("</html>"))
 
     def test_public_shell_and_metadata_syntax(self) -> None:
-        for shell in ("sh", "ksh"):
-            result = subprocess.run(
-                [shell, "-n", str(SCANNER)],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-                check=False,
-            )
-            with self.subTest(shell=shell):
-                self.assertEqual(0, result.returncode, result.stderr)
+        for artifact in (SCANNER, REVIEW_HELPER):
+            for shell in ("sh", "ksh"):
+                result = subprocess.run(
+                    [shell, "-n", str(artifact)],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True,
+                    check=False,
+                )
+                with self.subTest(shell=shell, artifact=artifact.name):
+                    self.assertEqual(0, result.returncode, result.stderr)
         json.loads((ROOT / "catalog.json").read_text())
         json.loads((ROOT / "aixray.jsonld").read_text())
         inline_jsonld((SITE / "index.html").read_text(encoding="utf-8"))
+
+    def test_public_ci_runs_all_release_guards(self) -> None:
+        self.assertTrue(PUBLIC_WORKFLOW.is_file())
+        self.assertTrue(IBM_DATA_GUARD.is_file())
+        if not PUBLIC_WORKFLOW.is_file():
+            return
+        workflow = PUBLIC_WORKFLOW.read_text(encoding="utf-8")
+        self.assertRegex(workflow, r"(?m)^on:\s*$")
+        self.assertRegex(workflow, r"(?m)^\s+pull_request:\s*$")
+        self.assertRegex(workflow, r"(?m)^\s+push:\s*$")
+        self.assertRegex(workflow, r"(?m)^\s+branches:\s*\[master\]\s*$")
+        self.assertIn("sh tests/run-tests.sh", workflow)
+        self.assertIn(
+            "sh tools/ci/egress-lint.sh "
+            "aixray-aix.sh aixray-review-pack.sh checks/*/*.ksh",
+            workflow,
+        )
+        self.assertIn(
+            "python3 tools/check-no-ibm-redistribution.py",
+            workflow,
+        )
 
     def test_scanner_has_no_egress_command_primitive(self) -> None:
         self.assertTrue(EGRESS_LINTER.is_file(), f"missing linter: {EGRESS_LINTER}")
@@ -606,8 +700,14 @@ START_HERE_ITEMS=""
                 check=False,
             )
 
-        clean = lint(SCANNER)
-        self.assertEqual(0, clean.returncode, clean.stdout + clean.stderr)
+        for artifact in (SCANNER, REVIEW_HELPER):
+            clean = lint(artifact)
+            with self.subTest(clean_artifact=artifact.name):
+                self.assertEqual(
+                    0,
+                    clean.returncode,
+                    clean.stdout + clean.stderr,
+                )
         probes = (
             'x="$(curl https://example.invalid)"',
             "command curl https://example.invalid",

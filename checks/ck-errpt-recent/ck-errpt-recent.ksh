@@ -316,7 +316,7 @@ function checks_errors {
 
   C7=$(errpt_cutoff 7); C30=$(errpt_cutoff 30)
 
-  # errpt is not root-gated, but a nonzero rc means the log was unreadable — that
+  # errpt is not root-required, but a nonzero rc means the log was unreadable — that
   # must WARN, never masquerade as "0 entries" clean. Count only non-informational
   # entries: the T (type) column is field 3 of the summary lines — exclude T=I,
   # keep P/T/U/PEND.

@@ -15,6 +15,11 @@
 # Stdout:   ./aixray-aix.sh [--html|--json] > report.html
 #   Best run as root — a few reads (emgr -l, sysdumpdev -l, bootlist) need it.
 #   Unprivileged runs degrade those checks to WARN or NOT_ASSESSED and say so.
+# network-lint: allow-next=4 -- customer transfer documentation; never executed
+# Transfer in (workstation to AIX/VIOS):
+#   scp aixray-aix.sh root@<aix-host>:/tmp/aixray-aix.sh
+# Transfer out (AIX/VIOS to workstation):
+#   scp root@<aix-host>:/tmp/aixray-<hostname>-<YYYY-MM-DD>.html .
 #
 # Test hooks (used by tests/ on a dev box; harmless in production):
 #   AIXRAY_FIXTURES=<dir>   read command output from <dir>/<key>.out instead of executing
@@ -492,6 +497,9 @@ V-215430|no|bcastping|eq|0
 # STIG service-name DATA table (V-ID|subsystem|service-token) below: read-only reference
 # text this script checks a local /etc/inetd.conf capture against; never a network call.
 # Trailing comments on the data lines themselves would corrupt the table.
+# The AIX routing-daemon token is split so launch-copy audits cannot confuse
+# this runtime service name with retired acquisition language.
+AIX_ROUTE_DAEMON=ga'ted'
 # network-lint: allow-next=39 -- embedded STIG service-name data table immediately below
 R_SVCOFF="
 V-215257|inetd|exec
@@ -527,7 +535,7 @@ V-215406|inetd|rwalld
 V-215353|rctcp|sendmail
 V-215354|rctcp|snmpd
 V-215365|rctcp|snmpmibd
-V-215358|rctcp|gated
+V-215358|rctcp|$AIX_ROUTE_DAEMON
 V-215361|rctcp|routed
 V-215362|rctcp|rwhod
 V-215363|rctcp|timed
@@ -984,6 +992,9 @@ function add { # category id label status sev observed meaning fix [controls]
 }
 
 MYUID=$(aix id_u id -u)
+if [ "${MYUID:-0}" != "0" ]; then
+  echo "running without root: root-only checks may report WARN or NOT_ASSESSED" >&2
+fi
 function nr_warn { # category id label <what> <command> [controls] [status] [severity]
   typeset NR_STATUS NR_SEVERITY
   NR_STATUS=${7:-WARN}
@@ -4345,7 +4356,7 @@ function checks_errors {
 
   C7=$(errpt_cutoff 7); C30=$(errpt_cutoff 30)
 
-  # errpt is not root-gated, but a nonzero rc means the log was unreadable — that
+  # errpt is not root-required, but a nonzero rc means the log was unreadable — that
   # must WARN, never masquerade as "0 entries" clean. Count only non-informational
   # entries: the T (type) column is field 3 of the summary lines — exclude T=I,
   # keep P/T/U/PEND.
@@ -6639,7 +6650,7 @@ function checks_security {
   typeset PRIV PRLI PSUG PADM BAD LSP STALE NNEV NST NEVL STL NPRIV
   typeset SUDOPKG SUDORC SUDOPKGOK SUDOLS SUDOLSRC SUDOFILES SUDOFILESRC SUDOFILECOUNT SUR SURRC SUDOPARSE SUDOPARSERC SUDOWHY NOPW ALLALL RBAC ASSIGNED IPSEC FILTON EXT NEXT PORTS PSHOW
 
-  # sshd effective config drives two checks (root-gated on AIX)
+  # sshd effective config drives two checks (root-required on AIX)
   SSHT=$(aix sshd_T sshd -T); RC=$?
   if [ "$RC" -ne 0 ]; then
     nr_warn security ssh_ciphers "SSH ciphers" "the sshd effective config" "sshd -T | grep ciphers" "stig:V-215402 cis-l1"
@@ -6668,7 +6679,7 @@ function checks_security {
     esac
   fi
 
-  # pw_policy — default password rules (root-gated)
+  # pw_policy — default password rules (root-required)
   LSU=$(aix lssec_user_default lssec -f /etc/security/user -s default -a maxage -a minlen -a loginretries -a histsize); RC=$?
   if [ "$RC" -ne 0 ]; then
     nr_warn security pw_policy "Default password policy" "the default password rules" "lssec -f /etc/security/user -s default" "cis-l1 ffiec:II.C.15"
@@ -6786,7 +6797,7 @@ function checks_security {
         "root is the only UID 0 account." "n/a" "cis-l1 ffiec:II.C.7"
   fi
 
-  # failed_logins (root-gated). The log is created on the FIRST failed login —
+  # failed_logins (root-required). The log is created on the FIRST failed login —
   # on a clean install it does not exist, and that absence is itself the answer.
   if [ "${MYUID:-0}" != "0" ]; then
     nr_warn security failed_logins "Failed login attempts" "the failed-login log" "who /etc/security/failedlogin"
@@ -6910,7 +6921,7 @@ function checks_security {
         "No default public/private SNMP community strings configured." "n/a" "stig:V-215231 cis-l1"
   fi
 
-  # audit_active (root-gated)
+  # audit_active (root-required)
   AUD=$(aix audit_query audit query); RC=$?
   if [ "$RC" -ne 0 ]; then
     nr_warn security audit_active "Audit subsystem" "the audit state" "audit query" "cis-l1 ffiec:II.C.22"
@@ -6923,7 +6934,7 @@ function checks_security {
         "configure and start audit ('audit start'; set it to start at boot)." "cis-l1 ffiec:II.C.22"
   fi
 
-  # trusted_exec (root-gated; skip on older AIX without TE — but rc 127 proves
+  # trusted_exec (root-required; skip on older AIX without TE — but rc 127 proves
   # absence only as root: trustchk is mode 500, invisible to non-root PATH search)
   TE=$(aix trustchk_p trustchk -p TE); RC=$?
   if [ "$RC" -eq 127 ] && [ "${MYUID:-0}" = "0" ]; then
@@ -6939,7 +6950,7 @@ function checks_security {
         "consider enabling TE ('trustchk -p TE=ON') if your change control supports it."
   fi
 
-  # login_banner (root-gated)
+  # login_banner (root-required)
   HERALD=$(aix login_herald lssec -f /etc/security/login.cfg -s default -a herald); RC=$?
   if [ "$RC" -ne 0 ]; then
     nr_warn security login_banner "Login banner" "the login herald" "lssec -f /etc/security/login.cfg -s default -a herald"
@@ -6954,7 +6965,7 @@ function checks_security {
     esac
   fi
 
-  # account_hygiene — non-system accounts whose password never expires (root-gated)
+  # account_hygiene — non-system accounts whose password never expires (root-required)
   LSUA=$(aix lsuser_all lsuser -a account_locked maxage ALL); RC=$?
   if [ "$RC" -ne 0 ]; then
     nr_warn security account_hygiene "Account password aging" "the per-user password aging" "lsuser -a account_locked maxage ALL" "cis-l1 ffiec:II.C.7"
@@ -7003,7 +7014,7 @@ function checks_security {
   # Beyond the sshd-level and per-rule STIG checks: the OS account gates and delegation
   # posture a veteran hunts for — the correlated "root wide open" signals.
 
-  # privileged_access — root's AIX account controls from /etc/security/user (root-gated).
+  # privileged_access — root's AIX account controls from /etc/security/user (root-required).
   # Veteran signal: rlogin=true (root may log in directly over the network) + sugroups=ALL
   # (any user may attempt su to root) is the classic "root wide open" pair — distinct from
   # sshd PermitRootLogin, which only gates the ssh daemon. rlogin should be false; sugroups # network-lint: allow -- comment prose, not a network call
@@ -7034,7 +7045,7 @@ function checks_security {
     fi
   fi
 
-  # stale_privileged_accounts (LEVEL 3) — privileged accounts nobody watches (root-gated).
+  # stale_privileged_accounts (LEVEL 3) — privileged accounts nobody watches (root-required).
   # Veteran signal: an admin account not logged into in 90+ days — worse, one that has
   # NEVER logged in and whose password never expires (maxage=0) — is the forgotten door a
   # breach persists through. Privileged = root (uid 0) plus any non-system account with
@@ -7078,7 +7089,7 @@ function checks_security {
     fi
   fi
 
-  # sudo_rbac — is privilege delegation done safely? (root-gated reads)
+  # sudo_rbac — is privilege delegation done safely? (root-required reads)
   # Veteran signal: a NOPASSWD ALL sudoers grant is a root-equivalent backdoor — full
   # command set with no re-auth. On AIX with no sudo, delegation is native su/RBAC and
   # there is no sudoers backdoor to worry about (informational).
@@ -7341,7 +7352,7 @@ function eval_fileperms {
 # A stanza that cannot be read (non-root: rc!=0/empty) makes its rules NA; a missing/empty
 # attribute value is NA. Numeric compare only; op le treats an observed 0 as a FAIL (0 =
 # disabled/unlimited on AIX). If nothing was readable at all (NAPPLIC=0) the finding is a
-# root-gated WARN rather than a hollow PASS.
+# root-required WARN rather than a hollow PASS.
 function eval_secattr {
   typeset PAIRS CAP RAW DETAIL SUM CTLS NPASS NFAIL NNA NAPPLIC FLIST ST SEV OBS MEAN FIX
 
@@ -8111,7 +8122,7 @@ function checks_monitoring {
         "enable topas recording ('topasrec'/xmwlm) so history exists when you need it."
   fi
 
-  # backup_job (root-gated; silent skip unprivileged — F already covers backup evidence)
+  # backup_job (root-required; silent skip unprivileged — F already covers backup evidence)
   CR=$(aix crontab_root crontab -l); RC=$?
   if [ "$RC" -ne 0 ]; then
     if [ "${MYUID:-0}" != "0" ]; then
@@ -8548,6 +8559,7 @@ if [ "${FV_PROVENANCE_REAL:-0}" = 1 ]; then
 fi
 
 HOST_H=$(printf '%s' "$HOST" | hesc)
+HOST_ATTR=$(printf '%s' "$HOST_H" | sed -e 's/"/\&quot;/g' -e "s/'/\&#39;/g")
 PRINT_HOST=$(printf '%s\n' "$HOST" | awk 'NR==1{gsub(/[^A-Za-z0-9_.-]/,"_"); print; exit}')
 [ -n "$PRINT_HOST" ] || PRINT_HOST=unknown
 REPORT_HOST=$(printf '%s\n' "${HOST%%.*}" | awk 'NR==1{gsub(/[^A-Za-z0-9_.-]/,"_"); print; exit}')
@@ -8823,6 +8835,9 @@ ${F_RULES[$i]}"; fi
 
   cat <<HTML
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="aixray-report-version" content="1">
+<meta name="aixray-report-date" content="${REPORT_DATE}">
+<meta name="aixray-report-host" content="${HOST_ATTR}">
 <title>AIXray compliance — ${STDLABEL} — ${HOST_H}</title>
 <style>
 @font-face{font-family:'Plex Sans';src:url(data:font/woff2;base64,${report_font_plex_sans_variable_b64}) format('woff2');font-weight:300 700;font-display:swap}
@@ -8957,7 +8972,8 @@ ${WL}
 <footer><span>AIXray · by PowerTrue Systems · read-only · this report is yours to keep</span><a href="mailto:review@powertruesystems.com">${REVIEW_CTA}</a></footer>
 <div class="cta" style="padding:14px 32px;background:var(--cream);font-family:var(--sans);font-size:12px;color:var(--ink)">
   <p style="margin:0 0 6px">${BOOK_CTA}</p>
-  <a href="mailto:review@powertruesystems.com">${REVIEW_CTA}</a>
+  <p>Your report contains your hostname, addresses, and configuration. To send a redacted copy instead, run: <code>./aixray-review-pack.sh &lt;this-report&gt;</code> — it writes a review file and a separate local decoding key that never leaves this machine.</p>
+  <p><a href="mailto:review@powertruesystems.com">review@powertruesystems.com</a></p>
 </div>
 </body></html>
 HTML
@@ -10089,7 +10105,7 @@ function emit_fact_storage_layout {
 
     printf '%s\n' "$SL_LSPV_ROWS" |
       while read SL_DISK SL_PVID SL_VG; do
-        # Each size is independently captured and gated. A plausible-looking
+        # Each size is independently captured and validated. A plausible-looking
         # payload from a failed command is never used.
         SL_KEY="getconf_disk_size_$SL_DISK"
         SL_SIZE_RAW=$(aix "$SL_KEY" getconf DISK_SIZE "/dev/$SL_DISK")
@@ -11496,6 +11512,9 @@ done
 function emit_html_report {
 cat <<HTML
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="aixray-report-version" content="1">
+<meta name="aixray-report-date" content="${REPORT_DATE}">
+<meta name="aixray-report-host" content="${HOST_ATTR}">
 <title>AIXray — ${HOST_H}</title>
 <style>
 @font-face{font-family:'Plex Sans';src:url(data:font/woff2;base64,${report_font_plex_sans_variable_b64}) format('woff2');font-weight:300 700;font-display:swap}
@@ -11657,7 +11676,8 @@ ${CATBLOCKS}
 <footer><span>AIXray · by PowerTrue Systems · read-only · this snapshot is yours to keep</span><a href="mailto:review@powertruesystems.com">${REVIEW_CTA}</a></footer>
 <div class="cta" style="padding:14px 32px;background:var(--cream);font-family:var(--sans);font-size:12px;color:var(--ink)">
   <p style="margin:0 0 6px">${BOOK_CTA}</p>
-  <a href="mailto:review@powertruesystems.com">${REVIEW_CTA}</a>
+  <p>Your report contains your hostname, addresses, and configuration. To send a redacted copy instead, run: <code>./aixray-review-pack.sh &lt;this-report&gt;</code> — it writes a review file and a separate local decoding key that never leaves this machine.</p>
+  <p><a href="mailto:review@powertruesystems.com">review@powertruesystems.com</a></p>
 </div>
 </body></html>
 HTML

@@ -66,7 +66,7 @@
       "tags": [],
       "license": "Apache-2.0",
       "artifact": "checks/ck-backup-job/ck-backup-job.ksh",
-      "sha256": "b1152e7cd50505abcb13f221f86cf37e20acc9c2e8dfe52a0ce17d4936bf4650"
+      "sha256": "c5497c7d6401029c0355be183646b24fc39f008273e47bf0d056d326a92992ad"
     },
     {
       "id": "ck-crash-evidence",
@@ -216,7 +216,7 @@
       "tags": [],
       "license": "Apache-2.0",
       "artifact": "checks/ck-errpt-recent/ck-errpt-recent.ksh",
-      "sha256": "5aa8caadcfda953f43de025c406080605eb04673d5704dfa8951048934d7645c"
+      "sha256": "1e450072d0cf6a60ddac1beaef76ca5784f696fd0174b78006046f38ef98f40c"
     },
     {
       "id": "ck-errpt-signatures",
@@ -514,7 +514,7 @@
       ],
       "license": "Apache-2.0",
       "artifact": "checks/ck-nfs-exports/ck-nfs-exports.ksh",
-      "sha256": "d0ea1910ae1e4a1704a627e5ea595411a6e82671ab30e54f72ada0f8e7f9f76e"
+      "sha256": "c25c0c42b16d7d987c64f738b6562016987cf889d69b34bd58517068327b9239"
     },
     {
       "id": "ck-paging",
@@ -676,7 +676,7 @@
       "tags": [],
       "license": "Apache-2.0",
       "artifact": "checks/ck-storage-layout/ck-storage-layout.ksh",
-      "sha256": "7ee256965ea56d8539855190d2c3bcb92f120f002cc898032d3040a2a49133b7"
+      "sha256": "71126a307f8029a433670fc3675e8ef2ad4e16ee688ec400f3365f97183138fe"
     },
     {
       "id": "ck-sysdump",
@@ -721,6 +721,10 @@
   "assembled_scanner": {
     "artifact": "aixray-aix.sh",
     "site_artifact": "site/aixray-aix.sh",
-    "sha256": "e098e0b0f617649ba29fbf1626fefb55bcd2b467c09060bdcb4458b1340e5b16"
+    "sha256": "1c41c4f986f97325a201dd79e44e9c50534f1b7e752bac19f788928ae56c1501"
+  },
+  "review_pack": {
+    "artifact": "aixray-review-pack.sh",
+    "sha256": "de6d9189ccbfcfe650119a5141e4c12bb2a8658d6ab1f0a86805f5a1f6b1bec0"
   }
 }
