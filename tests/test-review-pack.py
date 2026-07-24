@@ -433,6 +433,27 @@ class ReviewPackTests(unittest.TestCase):
                 self.assertIn("redaction validation failed", result.stderr)
                 self.assertIn("unresolved IPv4 address", result.stderr)
 
+    def test_independent_validation_rejects_fqdn_with_suffix(self) -> None:
+        for fixture in (
+            "unresolved-attribute-fqdn-path.html",
+            "unresolved-visible-fqdn-path.html",
+            "unresolved-visible-fqdn-colon-path.html",
+        ):
+            with self.subTest(fixture=fixture), tempfile.TemporaryDirectory(
+                prefix="aixray-review-fqdn-suffix-",
+            ) as temp:
+                directory = Path(temp)
+                report = self.copy_review_fixture(directory, fixture)
+
+                result, review_path, map_path = self.run_review(report)
+
+                self.assertNotEqual(0, result.returncode)
+                self.assertEqual("", result.stdout)
+                self.assertIsNone(review_path, sorted(directory.iterdir()))
+                self.assertIsNone(map_path, sorted(directory.iterdir()))
+                self.assertIn("redaction validation failed", result.stderr)
+                self.assertIn("unresolved FQDN", result.stderr)
+
     def test_independent_validation_rejects_issued_pseudotoken_collision(
         self,
     ) -> None:

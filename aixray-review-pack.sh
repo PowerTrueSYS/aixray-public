@@ -322,6 +322,20 @@ function is_fqdn(value,    fields, part, count, label, suffix) {
   return 1
 }
 
+function split_fqdn_candidate(value,    slash, colon, boundary) {
+  FQDN_BASE = value
+  FQDN_SUFFIX = ""
+  slash = index(value, "/")
+  colon = index(value, ":")
+  boundary = 0
+  if (slash > 1) boundary = slash
+  if (colon > 1 && (boundary == 0 || colon < boundary)) boundary = colon
+  if (boundary > 1) {
+    FQDN_BASE = substr(value, 1, boundary - 1)
+    FQDN_SUFFIX = substr(value, boundary + 1)
+  }
+}
+
 function is_email(value,    fields, count, mailbox, domain) {
   count = split(value, fields, "@")
   if (count != 2) return 0
@@ -713,12 +727,19 @@ function scan_candidates(text, td_class, context,    fields, count, part, value,
       if (!keep_network_like(base, text, td_class, context)) add_map(base, "ip")
       continue
     }
-    if (is_aix_fileset(value)) continue
-    if (is_fqdn(value)) {
+    split_fqdn_candidate(value)
+    base = FQDN_BASE
+    suffix = FQDN_SUFFIX
+    lower = tolower(base)
+    if (is_aix_fileset(base)) continue
+    if (is_fqdn(base)) {
       if (lower == "powertruesystems.com" || lower == "openssh.com") continue
       if (lower == "flrtvc.ksh" || lower == "apar.csv") continue
       if (lower ~ /\.(rte|install|fileset)$/) continue
-      if (!keep_network_like(value, text, td_class, context)) add_map(value, "fqdn")
+      if (!keep_network_like(base, text, td_class, context)) add_map(base, "fqdn")
+      if (is_fqdn(suffix) \
+          && !keep_network_like(suffix, text, td_class, context)) \
+        add_map(suffix, "fqdn")
     }
   }
 }
@@ -1239,7 +1260,7 @@ function validate_labels(text) {
   validate_labeled_value(text, "location=", "serial")
 }
 
-function independent_identifier_check(text, td_class, context, evidence,    safe, fields, count, part, value, lower, domain, base, slash, suffix, plain) {
+function independent_identifier_check(text, td_class, context, evidence, strong_only,    safe, fields, count, part, value, lower, domain, base, slash, suffix, plain) {
   safe = html_unescape(text)
   plain = trim(safe)
   if (plain == "") return
@@ -1295,15 +1316,22 @@ function independent_identifier_check(text, td_class, context, evidence,    safe
         die("redaction validation failed: an unresolved IPv6 address remains")
       continue
     }
-    if (is_aix_fileset(value) || lower == "flrtvc.ksh" \
+    split_fqdn_candidate(value)
+    base = FQDN_BASE
+    suffix = FQDN_SUFFIX
+    lower = tolower(base)
+    if (is_aix_fileset(base) || lower == "flrtvc.ksh" \
         || lower == "apar.csv" || lower ~ /[.](rte|install|fileset)$/) continue
-    if (is_fqdn(value)) {
+    if (is_fqdn(base)) {
       if (lower == "powertruesystems.com" || lower == "openssh.com") continue
-      if (!keep_network_like(value, safe, td_class, context)) \
+      if (!keep_network_like(base, safe, td_class, context)) \
         die("redaction validation failed: an unresolved FQDN remains")
-      continue
     }
-    if (value ~ /^[A-Za-z][A-Za-z0-9_-]*$/ && value ~ /[0-9]/ \
+    if (suffix != "" && is_pseudotoken(base) \
+        && tolower(base) ~ /^fqdn-/) \
+      die("redaction validation failed: an unresolved FQDN suffix remains")
+    if (!strong_only \
+        && value ~ /^[A-Za-z][A-Za-z0-9_-]*$/ && value ~ /[0-9]/ \
         && !is_known_keep_word(value, safe, td_class, context)) \
       die("redaction validation failed: an unresolved identifier-shaped token remains")
   }
@@ -1386,6 +1414,8 @@ function validation_text(text) {
     VALIDATE_ROW_CONTEXT = trim(VALIDATE_ROW_CONTEXT " " html_unescape(text))
   validate_segment(text, VALIDATE_STYLE, VALIDATE_TD_CLASS, \
     VALIDATE_ROW_CONTEXT, VALIDATE_EVIDENCE)
+  if (!VALIDATE_STYLE && VALIDATE_TD_CLASS == "") \
+    independent_identifier_check(text, "", VALIDATE_ROW_CONTEXT, 0, 1)
 }
 
 function validate_line(line,    rest, opening, closing, text, tag, lower, class_value) {

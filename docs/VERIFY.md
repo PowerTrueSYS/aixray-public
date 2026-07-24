@@ -80,8 +80,8 @@ PY
 For this launch revision the printed artifact digests are:
 
 ```text
-scanner 1c41c4f986f97325a201dd79e44e9c50534f1b7e752bac19f788928ae56c1501
-review de6d9189ccbfcfe650119a5141e4c12bb2a8658d6ab1f0a86805f5a1f6b1bec0
+scanner 6829bd1aa6d24648c8c142287afc0aef730cc081716250d7eb79297c61ebaf52
+review 8291000be2093176fc43164905958964d1e7bf9e197974abb54a25eabaab1ff4
 ```
 
 A digest identifies the reviewed bytes. It becomes an authenticity check only

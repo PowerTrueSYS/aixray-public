@@ -472,6 +472,21 @@ class PublicFunnelTests(unittest.TestCase):
                     footer,
                 )
 
+    def test_stig_gated_row_is_literal_and_honestly_documented(self) -> None:
+        for artifact in (SCANNER, SITE / "aixray-aix.sh"):
+            source = artifact.read_text(encoding="utf-8")
+            rows = [
+                tuple(line.split("|"))
+                for line in source.splitlines()
+                if line.startswith("V-215358|")
+            ]
+            with self.subTest(artifact=artifact.relative_to(ROOT)):
+                self.assertEqual([("V-215358", "rctcp", "gated")], rows)
+                self.assertIn(
+                    '"gated" is the AIX routing daemon service name',
+                    source,
+                )
+
     def test_scanner_audit_map_names_only_public_paths(self) -> None:
         header = "\n".join(SCANNER.read_text(encoding="utf-8").splitlines()[:30])
         audit = re.search(

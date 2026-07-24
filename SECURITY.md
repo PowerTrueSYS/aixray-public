@@ -132,12 +132,12 @@ levels, filesets, CVEs, control identifiers, and machine models remain useful.
 
 This is pseudonymization, not guaranteed anonymization. The helper independently
 re-scans its transformed output—including visible text, tag attribute values,
-and HTML comments—for original values, residual identifier-shaped values,
-unissued pseudotokens, and evidence outside its allowlist. If validation or
-publication fails, it exits nonzero and publishes no final review HTML. Strict
-validation can reject a report rather than guess; contact PowerTrue without an
-attachment if that occurs. Even after success, open and inspect the review HTML
-before sending it.
+and HTML comments—for original values, residual identifier-shaped values
+(including FQDN bases followed by `/` or `:` suffixes), unissued pseudotokens,
+and evidence outside its allowlist. If validation or publication fails, it
+exits nonzero and publishes no final review HTML. Strict validation can reject
+a report rather than guess; contact PowerTrue without an attachment if that
+occurs. Even after success, open and inspect the review HTML before sending it.
 
 The helper creates an owner-only scratch directory beside the input and removes
 its temporaries on normal or handled exit. On success it publishes both files
