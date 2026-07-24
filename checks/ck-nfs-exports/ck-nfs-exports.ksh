@@ -306,7 +306,7 @@ function standalone_check {
   typeset NFS_CONFIG_LINES NFS_LIVE_LINES NFS_CONFIG_COUNT NFS_LIVE_COUNT
   typeset NFS_LINES NFS_ASSESS NFS_HIGH_COUNT NFS_MED_COUNT NFS_RO_COUNT
   typeset NFS_TOTAL_COUNT NFS_EVIDENCE
-  typeset NFS_CONFIGURED_ONLY NFS_OBS
+  typeset NFS_CONFIGURED_ONLY NFS_OBS NFS_PARTIAL_NOTE
 
   NFS_CONFIG=$(aix etc_exports cat /etc/exports); NFS_CONFIG_RC=$?
   NFS_LIVE=$(aix exportfs exportfs); NFS_LIVE_RC=$?
@@ -424,12 +424,24 @@ function standalone_check {
   ')
 
   NFS_CONFIGURED_ONLY=0
-  if [ "$NFS_CONFIG_COUNT" -gt 0 ] && [ "$NFS_LIVE_COUNT" -eq 0 ]; then
+  if [ "$NFS_CONFIG_RC" -eq 0 ] && [ "$NFS_LIVE_RC" -eq 0 ] \
+      && [ "$NFS_CONFIG_COUNT" -gt 0 ] && [ "$NFS_LIVE_COUNT" -eq 0 ]; then
     NFS_CONFIGURED_ONLY=1
+  fi
+
+  NFS_PARTIAL_NOTE=""
+  if [ "$NFS_CONFIG_RC" -ne 0 ] && [ "$NFS_LIVE_RC" -eq 0 ]; then
+    NFS_PARTIAL_NOTE="partially assessed — /etc/exports read failed; live exportfs evidence follows"
+  elif [ "$NFS_CONFIG_RC" -eq 0 ] && [ "$NFS_LIVE_RC" -ne 0 ]; then
+    NFS_PARTIAL_NOTE="partially assessed — current exportfs listing failed; configured /etc/exports evidence follows"
   fi
 
   if [ "$NFS_HIGH_COUNT" -gt 0 ]; then
     NFS_OBS=$NFS_EVIDENCE
+    if [ -n "$NFS_PARTIAL_NOTE" ]; then
+      NFS_OBS="${NFS_PARTIAL_NOTE}
+${NFS_OBS}"
+    fi
     if [ "$NFS_CONFIGURED_ONLY" -eq 1 ]; then
       NFS_OBS="${NFS_OBS}
 configured-but-not-live: $NFS_CONFIG_COUNT uncommented /etc/exports line(s); exportfs listed no current exports"
@@ -439,6 +451,10 @@ configured-but-not-live: $NFS_CONFIG_COUNT uncommented /etc/exports line(s); exp
         "remove anon=0 and restrict every root= list to explicit trusted hostnames or IP addresses; then re-export the corrected definitions during an approved change." "cis-l1"
   elif [ "$NFS_MED_COUNT" -gt 0 ]; then
     NFS_OBS=$NFS_EVIDENCE
+    if [ -n "$NFS_PARTIAL_NOTE" ]; then
+      NFS_OBS="${NFS_PARTIAL_NOTE}
+${NFS_OBS}"
+    fi
     if [ "$NFS_CONFIGURED_ONLY" -eq 1 ]; then
       NFS_OBS="${NFS_OBS}
 configured-but-not-live: $NFS_CONFIG_COUNT uncommented /etc/exports line(s); exportfs listed no current exports"
@@ -446,6 +462,21 @@ configured-but-not-live: $NFS_CONFIG_COUNT uncommented /etc/exports line(s); exp
     add security nfs_exports "NFS exports" WARN med "$NFS_OBS" \
         "One or more exports are writable by default and have no access= client restriction, so any client that can reach the NFS service can attempt to mount them." \
         "add an explicit access= host list and use ro unless the clients genuinely require writes; re-export only through the normal approved change process." "cis-l1"
+  elif [ "$NFS_CONFIG_RC" -ne 0 ] && [ "$NFS_LIVE_RC" -ne 0 ]; then
+    add security nfs_exports "NFS exports" NOT_ASSESSED high \
+        "not assessed — both NFS evidence reads failed (/etc/exports exit=$NFS_CONFIG_RC; exportfs exit=$NFS_LIVE_RC)" \
+        "Neither configured nor current NFS export evidence was readable, so absence of exports and safe export options cannot be established." \
+        "restore read access to /etc/exports and the no-argument exportfs listing, then re-run AIXray." "cis-l1"
+  elif [ "$NFS_CONFIG_RC" -ne 0 ]; then
+    add security nfs_exports "NFS exports" NOT_ASSESSED high \
+        "not assessed — /etc/exports read failed (exit=$NFS_CONFIG_RC); no unsafe option was established from the current exportfs listing" \
+        "The live listing alone did not establish an unsafe export, but unreadable configuration can contain dormant definitions that later become active." \
+        "restore read access to /etc/exports and re-run AIXray." "cis-l1"
+  elif [ "$NFS_LIVE_RC" -ne 0 ]; then
+    add security nfs_exports "NFS exports" NOT_ASSESSED high \
+        "not assessed — current exportfs listing failed (exit=$NFS_LIVE_RC); no unsafe option was established from /etc/exports" \
+        "The configuration alone did not establish an unsafe export, but the unreadable live listing can contain currently exported state not represented by that file." \
+        "restore access to the no-argument exportfs listing and re-run AIXray." "cis-l1"
   elif [ "$NFS_CONFIGURED_ONLY" -eq 1 ]; then
     add security nfs_exports "NFS exports" WARN low \
         "configured-but-not-live: $NFS_CONFIG_COUNT uncommented /etc/exports line(s); exportfs listed no current exports" \

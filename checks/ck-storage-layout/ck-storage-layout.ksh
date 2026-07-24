@@ -491,7 +491,7 @@ function emit_fact_storage_layout {
 
     printf '%s\n' "$SL_LSPV_ROWS" |
       while read SL_DISK SL_PVID SL_VG; do
-        # Each size is independently captured and gated. A plausible-looking
+        # Each size is independently captured and validated. A plausible-looking
         # payload from a failed command is never used.
         SL_KEY="getconf_disk_size_$SL_DISK"
         SL_SIZE_RAW=$(aix "$SL_KEY" getconf DISK_SIZE "/dev/$SL_DISK")

@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="aixray-report-version" content="1">
+<meta name="aixray-report-date" content="2026-07-20">
+<meta name="aixray-report-host" content="estate-report01">
+<title>AIXray — estate-report01</title>
+<style>:root{--ink:#23272E} @page{@top-left{content:"AIXray · estate-report01"}}</style>
+</head><body>
+<table><tbody>
+<tr class="FAIL"><td class="ctl">NFS exports</td><td class="st FAIL">FAIL</td><td class="sev">high</td><td class="cis">1.1.1 PASS</td><td class="obs">/oracle/PRODCU -root=admin01 access=nimmaster01:db2node02 rw=webapp03:10.44.5.17 ro=peer01.finance.internal mac=aa:bb:cc:dd:ee:91<br>/nfs/appdata -root=admin01 access=db-ha-04:nfspeer.customer.internal</td><td>Restrict every export to approved clients.</td></tr>
+<div class="top-risk-observed"><b>Observed:</b> /oracle/PRODCU -root=admin01:db2node02 access=nimmaster01:webapp03</div>
+<tr><td class="ctl">NFS exports</td><td class="evidence">/numeric/clientset -root=987654321</td></tr>
+<tr><td class="ctl">People</td><td class="obs">username=alice01; user=bob02; account=svcbackup; email=ops.lead@customer.internal</td></tr>
+<tr><td class="ctl">Foreign hardware evidence</td><td class="evidence">peer=roguepeer05 address=172.20.6.9 dns=storage01.customer.internal MAC=12-34-56-78-9a-cd UUID=7f2504e0-4f89-41d3-9a0c-0305e82c3399 WWPN=10:00:00:90:fa:53:76:ab location=U9009.22A.78AB12C-P1-C4-T1</td></tr>
+<tr><td class="ctl">Unlabeled short evidence</td><td class="evidence">orphanpeer</td></tr>
+<tr><td class="ctl">AIX hardware location</td><td class="obs">location=U9009.22A.78AB12C-P1-C4-T1</td></tr>
+<tr><td class="ctl">Hardware identity</td><td class="obs">Machine Serial Number: 78AB12C</td></tr>
+<tr><td class="ctl">CIS routing guard</td><td class="cis">192.0.2.77 PASS<br>cis-route.customer.internal</td></tr>
+<tr><td class="ctl">AIX filesets</td><td class="obs">bos.mp64 bos.64bit devices.pciex.1410c183.rte bos.adt.base Java8_64.jre openssh.base.client printers.rte perl.rte sysmgt.cimserver.rte xlC.rte bos.rte.install flrtvc.ksh apar.csv</td></tr>
+<tr><td class="ctl">KEEP classes</td><td class="obs">oslevel=7300-04-00-2549 firmware=VL950_179 CVE=CVE-2026-98765 status=NOT_ASSESSED model=9009-22A hash=ssha256</td></tr>
+<tr><td class="ctl">Documentation prose</td><td>the hostname A is a local label; A remains prose</td></tr>
+</tbody></table>
+<footer>review@powertruesystems.com</footer>
+</body></html>

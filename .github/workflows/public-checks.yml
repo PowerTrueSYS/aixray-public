@@ -1,0 +1,25 @@
+name: Public checks
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install ksh
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ksh
+      - name: Run public tests
+        run: sh tests/run-tests.sh
+      - name: Enforce zero-egress shell surface
+        run: sh tools/ci/egress-lint.sh aixray-aix.sh aixray-review-pack.sh checks/*/*.ksh
+      - name: Reject redistributed IBM delivery data
+        run: python3 tools/check-no-ibm-redistribution.py

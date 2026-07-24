@@ -26,8 +26,10 @@ AIXray is useful for:
 ## What is included?
 
 - [`aixray-aix.sh`](aixray-aix.sh) — the complete AIX/VIOS v1 assessment, version 0.1.0
+- [`aixray-review-pack.sh`](aixray-review-pack.sh) — the offline helper that creates a pseudonymized review copy and a separate local decoding key
 - [`checks/`](checks/) — 35 standalone ksh check tools, each paired with its `manifest.json`
 - [`catalog.json`](catalog.json) — a generated, sorted catalog of all 35 manifests with SHA-256 hashes
+- [`SECURITY.md`](SECURITY.md) and [`docs/VERIFY.md`](docs/VERIFY.md) — the trust boundary, caveats, and repeatable public-repository verification commands
 - [`site/index.html`](site/index.html) — the public download page for `powertruesystems.com/aixray`
 - [`aixray.jsonld`](aixray.jsonld), [`llms.txt`](llms.txt), and [`robots.txt`](robots.txt) — machine and crawler discovery metadata
 
@@ -85,15 +87,40 @@ For a supported compliance view on stdout:
 ./aixray-aix.sh --compliance stig > aixray-stig.html
 ```
 
-## Verify what you run
+## Send a report safely for review
 
-Published SHA-256 for the assembled `aixray-aix.sh` scanner:
+Before sending a generated HTML report, run the offline review helper beside
+the report:
 
-```text
-e098e0b0f617649ba29fbf1626fefb55bcd2b467c09060bdcb4458b1340e5b16
+```sh
+./aixray-review-pack.sh aixray-<hostname>-<date>.html
 ```
 
-The `assembled_scanner.sha256` value in [`catalog.json`](catalog.json) records the same hash. Each standalone check entry in the catalog also records the SHA-256 of its own shell artifact.
+The helper produces a sendable `aixray-review-*.html` review file and a
+separate mode-`0600` `aixray-local-key-*.map` decoding key that never leaves
+this machine. Its output is pseudonymized, not anonymized: undiscovered
+pure-alphabetic barewords are the documented residual. Inspect the review file
+before sending it; never send the local decoding key. See the exact boundary
+in [`SECURITY.md`](SECURITY.md#outbound-review-pack) and the review steps in
+[`docs/VERIFY.md`](docs/VERIFY.md).
+
+## Verify what you run
+
+Published SHA-256 values for the launch artifacts:
+
+```text
+aixray-aix.sh
+6829bd1aa6d24648c8c142287afc0aef730cc081716250d7eb79297c61ebaf52
+
+aixray-review-pack.sh
+8291000be2093176fc43164905958964d1e7bf9e197974abb54a25eabaab1ff4
+```
+
+The top-level `assembled_scanner` entry in [`catalog.json`](catalog.json)
+binds the root and site scanner copies to the first hash. The top-level
+`review_pack` entry binds the review helper to the second. Each sorted
+`checks[]` entry records its standalone artifact and SHA-256; `check_count`
+remains 35.
 
 On a review workstation with `jq`, `rg`, and SHA-256 tooling:
 
@@ -103,6 +130,10 @@ find checks -name manifest.json | wc -l
 jq -e 'all(.checks[]; .read_only == true and .license == "Apache-2.0")' catalog.json
 rg -n 'VERSION="0\.1\.0"|AIXRAY_STANDALONE_VERSION="0\.1\.0"' aixray-aix.sh checks --glob '*.ksh'
 rg -n 'NOT_ASSESSED' aixray-aix.sh
+cmp aixray-aix.sh site/aixray-aix.sh
+sh tools/ci/egress-lint.sh aixray-aix.sh aixray-review-pack.sh checks/*/*.ksh
+python3 tools/check-no-ibm-redistribution.py
+sh tests/run-tests.sh
 ```
 
 To verify a standalone artifact, compare its digest with the `sha256` value in its catalog entry. To audit behavior, inspect its manifest’s declared commands and then read the paired ksh file; both are adjacent by design.
