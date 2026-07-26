@@ -30,6 +30,7 @@ EGRESS_LINTER = ROOT / "tools" / "ci" / "egress-lint.sh"
 IBM_DATA_GUARD = ROOT / "tools" / "check-no-ibm-redistribution.py"
 PUBLIC_WORKFLOW = ROOT / ".github" / "workflows" / "public-checks.yml"
 DOWNLOAD_PAGE_URL = "https://powertruesystems.com/aixray/"
+ASSESSMENT_URL = "https://powertruesystems.com/assessment/"
 RELEASE_ASSET_URL = (
     "https://github.com/PowerTrueSYS/aixray-public/releases/latest/download/aixray-aix.sh"
 )
@@ -234,6 +235,31 @@ class PublicFunnelTests(unittest.TestCase):
         self.assertIsNotNone(notify, "optional notify field is missing")
         if notify is not None:
             self.assertNotRegex(notify.group(0), r"\brequired\b")
+
+    def test_blueprint_cta_uses_existing_assessment_funnel(self) -> None:
+        site_html = (SITE / "index.html").read_text(encoding="utf-8")
+        blueprint_cta = re.search(
+            rf'<a\b(?=[^>]*\bclass="button alt")'
+            rf'(?=[^>]*\bhref="{re.escape(ASSESSMENT_URL)}")[^>]*>'
+            r"([^<]*Blueprint[^<]*)</a>",
+            site_html,
+        )
+        self.assertIsNotNone(
+            blueprint_cta,
+            "the Blueprint button must use the existing assessment funnel",
+        )
+
+        retired_booking_host = "".join(("cal", ".com")).encode()
+        tracked_paths = subprocess.check_output(
+            ["git", "ls-files", "-z"],
+            cwd=ROOT,
+        ).split(b"\0")
+        for relative_path in tracked_paths:
+            if not relative_path:
+                continue
+            path = ROOT / os.fsdecode(relative_path)
+            with self.subTest(path=relative_path.decode(errors="replace")):
+                self.assertNotIn(retired_booking_host, path.read_bytes())
 
     def test_download_references_are_direct(self) -> None:
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
