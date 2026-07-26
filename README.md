@@ -110,7 +110,7 @@ Published SHA-256 values for the launch artifacts:
 
 ```text
 aixray-aix.sh
-6829bd1aa6d24648c8c142287afc0aef730cc081716250d7eb79297c61ebaf52
+a9542dfe333f82e707a2f0711c77aa81f74e673e936a60f538ae775bf7027492
 
 aixray-review-pack.sh
 8291000be2093176fc43164905958964d1e7bf9e197974abb54a25eabaab1ff4

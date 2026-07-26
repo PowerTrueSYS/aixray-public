@@ -305,7 +305,7 @@ if [ -n "$OUT_DIR" ]; then
 fi
 
 if [ -z "${AIXRAY_FIXTURES:-}" ] && [ "$(uname -s 2>/dev/null)" != "AIX" ]; then
-  echo "aixray-aix.sh: this is the AIX/VIOS edition (this host is not AIX). Use aixray.sh for Linux." >&2
+  echo "aixray-aix.sh: this is the AIX/VIOS edition and this host is not AIX; AIXray assesses only AIX and VIOS." >&2
   exit 2
 fi
 
@@ -11653,7 +11653,7 @@ footer b,footer a{color:var(--copper-d)}
 }
 @media (max-width:620px){.band,.meta,.score,.cathead,footer{padding-inline:22px;margin-inline:0}.start-here{margin-inline:22px;padding:16px}.top-risk-head{align-items:flex-start;flex-direction:column;gap:3px}table{width:calc(100% - 44px);margin-inline:22px}.scorebox{min-width:calc(50% - 1px)}}
 </style></head><body>
-<div class="band"><div class="wm">AIXray<div class="tag">by PowerTrue Systems · AIX · IBM Power · VIOS · Linux</div></div><div class="ey">${SNAP_EY}</div><h1>${SNAP_H1}</h1></div>
+<div class="band"><div class="wm">AIXray<div class="tag">by PowerTrue Systems · AIX · IBM Power · VIOS</div></div><div class="ey">${SNAP_EY}</div><h1>${SNAP_H1}</h1></div>
 <div class="meta"><b>Host:</b> ${HOST_H} &nbsp;·&nbsp; <b>Generated:</b> ${NOW} &nbsp;·&nbsp; <b>Reference data:</b> ${DATA_VINTAGE}${FLRTVC_HTML_META} &nbsp;·&nbsp; <span class="ro">READ-ONLY — nothing was changed</span></div>
 <div class="score">
   <div class="scorebox"><div class="n">${SCORE}%</div><div class="l">Pass rate</div></div>

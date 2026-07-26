@@ -30,6 +30,8 @@ EGRESS_LINTER = ROOT / "tools" / "ci" / "egress-lint.sh"
 IBM_DATA_GUARD = ROOT / "tools" / "check-no-ibm-redistribution.py"
 PUBLIC_WORKFLOW = ROOT / ".github" / "workflows" / "public-checks.yml"
 DOWNLOAD_PAGE_URL = "https://powertruesystems.com/aixray/"
+ASSESSMENT_GUIDED_PATH = "/assessment/#guided"
+ASSESSMENT_GUIDED_URL = f"https://powertruesystems.com{ASSESSMENT_GUIDED_PATH}"
 RELEASE_ASSET_URL = (
     "https://github.com/PowerTrueSYS/aixray-public/releases/latest/download/aixray-aix.sh"
 )
@@ -204,6 +206,23 @@ class ReportParser(HTMLParser):
 
 
 class PublicFunnelTests(unittest.TestCase):
+    def test_funnel_ctas_use_the_deployed_assessment_route(self) -> None:
+        site_html = (SITE / "index.html").read_text(encoding="utf-8")
+
+        self.assertIn(f'href="{ASSESSMENT_GUIDED_PATH}"', site_html)
+        self.assertIn(
+            f'name="_next" value="{ASSESSMENT_GUIDED_URL}"',
+            site_html,
+        )
+        self.assertNotIn(
+            "https://cal.com/powertruesystems/free-blueprint",
+            site_html,
+        )
+        self.assertNotIn(
+            "https://powertruesystems.com/aixray/ready/",
+            site_html,
+        )
+
     def test_download_is_frictionless_and_direct(self) -> None:
         site_html = (SITE / "index.html").read_text(encoding="utf-8")
 
@@ -668,7 +687,7 @@ START_HERE_ITEMS=""
 
     def test_public_shell_and_metadata_syntax(self) -> None:
         for artifact in (SCANNER, REVIEW_HELPER):
-            for shell in ("sh", "ksh"):
+            for shell in ("ksh", "bash"):
                 result = subprocess.run(
                     [shell, "-n", str(artifact)],
                     stdout=subprocess.PIPE,
