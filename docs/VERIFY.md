@@ -25,7 +25,29 @@ Record the commit ID. The status command should print nothing. For a release,
 check out the trusted release tag or commit before continuing; every digest and
 result below is revision-specific.
 
-## Verify byte identity and published hashes
+## Run the release-integrity gate
+
+Before pushing a release tag, run the tree-only gate from the committed
+candidate revision. Replace `v0.1.0` with the tag being prepared:
+
+```sh
+python3 tools/verify-release-integrity.py --tag v0.1.0
+```
+
+Before uploading assets, place exactly `aixray-aix.sh` and
+`aixray-review-pack.sh` in a separate directory and compare them with the same
+candidate tree:
+
+```sh
+python3 tools/verify-release-integrity.py --tag v0.1.0 \
+  --assets-dir release-assets
+```
+
+The gate checks the required tree paths, all catalog digests, root/site scanner
+identity, artifact version declarations, the exact release asset set, and
+asset bytes. Any `FAIL` line blocks the release.
+
+## Verify byte identity and catalog hashes
 
 First require the root and site scanner payloads to be byte-identical:
 
@@ -41,35 +63,158 @@ repository root:
 python3 - <<'PY'
 import hashlib
 import json
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 root = Path(".")
-catalog = json.loads((root / "catalog.json").read_text(encoding="utf-8"))
-readme = (root / "README.md").read_text(encoding="utf-8")
+resolved_root = root.resolve(strict=False)
+guidance = (
+    "check out the intended release tag or commit and retry with clean files "
+    "from that revision"
+)
+
+def fail(message):
+    raise SystemExit(f"artifact verification failed: {message}; {guidance}")
+
+def require_file(relative):
+    candidate = PurePosixPath(relative)
+    if (
+        candidate.is_absolute()
+        or ".." in candidate.parts
+        or relative in ("", ".")
+    ):
+        fail(f"unsafe required path {relative!r}")
+    path = root
+    components = []
+    for part in candidate.parts:
+        path /= part
+        components.append(part)
+        try:
+            is_symlink = path.is_symlink()
+        except OSError as exc:
+            fail(f"could not inspect required path {relative}: {exc}")
+        if is_symlink:
+            component = PurePosixPath(*components).as_posix()
+            fail(
+                f"required path {relative} traverses symlink component "
+                f"{component}"
+            )
+    try:
+        resolved_path = path.resolve(strict=False)
+        resolved_path.relative_to(resolved_root)
+    except ValueError:
+        fail(f"required path {relative} resolves outside the repository")
+    except (OSError, RuntimeError) as exc:
+        fail(f"could not resolve required path {relative}: {exc}")
+    if not path.is_file():
+        fail(f"missing required file {relative}")
+    return path
+
+def read_bytes(relative):
+    path = require_file(relative)
+    try:
+        return path.read_bytes()
+    except OSError as exc:
+        fail(f"could not read {relative}: {exc}")
+
+def read_text(relative):
+    content = read_bytes(relative)
+    try:
+        return content.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        fail(f"{relative} is not valid UTF-8: {exc}")
 
 def sha256(relative):
-    return hashlib.sha256((root / relative).read_bytes()).hexdigest()
+    return hashlib.sha256(read_bytes(relative)).hexdigest()
+
+def require_equal(actual, expected, message):
+    if actual != expected:
+        fail(message)
+
+try:
+    catalog = json.loads(read_text("catalog.json"))
+except json.JSONDecodeError as exc:
+    fail(f"catalog.json is not valid JSON: {exc}")
+if not isinstance(catalog, dict):
+    fail("catalog.json root is not an object")
+readme = read_text("README.md")
 
 scanner = sha256("aixray-aix.sh")
 review = sha256("aixray-review-pack.sh")
-assert sha256("site/aixray-aix.sh") == scanner
-assert catalog["assembled_scanner"] == {
+site_scanner = sha256("site/aixray-aix.sh")
+require_equal(
+    site_scanner,
+    scanner,
+    "byte mismatch between aixray-aix.sh and site/aixray-aix.sh "
+    f"(sha256 {scanner} != {site_scanner})",
+)
+
+expected_scanner = {
     "artifact": "aixray-aix.sh",
     "site_artifact": "site/aixray-aix.sh",
     "sha256": scanner,
 }
-assert catalog["review_pack"] == {
+require_equal(
+    catalog.get("assembled_scanner"),
+    expected_scanner,
+    "catalog.json assembled_scanner does not match aixray-aix.sh and "
+    f"site/aixray-aix.sh; expected {expected_scanner!r}, "
+    f"found {catalog.get('assembled_scanner')!r}",
+)
+
+expected_review = {
     "artifact": "aixray-review-pack.sh",
     "sha256": review,
 }
-assert scanner in readme
-assert review in readme
+require_equal(
+    catalog.get("review_pack"),
+    expected_review,
+    "catalog.json review_pack does not match aixray-review-pack.sh; "
+    f"expected {expected_review!r}, found {catalog.get('review_pack')!r}",
+)
+if scanner not in readme:
+    fail(f"README.md does not contain the aixray-aix.sh digest {scanner}")
+if review not in readme:
+    fail(
+        "README.md does not contain the aixray-review-pack.sh digest "
+        f"{review}"
+    )
 
-checks = catalog["checks"]
-assert catalog["check_count"] == len(checks) == 35
-assert [entry["id"] for entry in checks] == sorted(entry["id"] for entry in checks)
+checks = catalog.get("checks")
+if not isinstance(checks, list):
+    fail("catalog.json checks is not a list")
+require_equal(
+    catalog.get("check_count"),
+    len(checks),
+    "catalog.json check_count does not match the checks list "
+    f"({catalog.get('check_count')!r} != {len(checks)})",
+)
+require_equal(
+    len(checks),
+    35,
+    f"catalog.json contains {len(checks)} checks; expected 35",
+)
+if not all(isinstance(entry, dict) for entry in checks):
+    fail("catalog.json contains a check entry that is not an object")
+ids = [entry.get("id") for entry in checks]
+if not all(isinstance(check_id, str) for check_id in ids):
+    fail("catalog.json contains a check without a string id")
+require_equal(
+    ids,
+    sorted(ids),
+    "catalog.json checks are not sorted by id",
+)
 for entry in checks:
-    assert sha256(entry["artifact"]) == entry["sha256"], entry["id"]
+    artifact = entry.get("artifact")
+    if not isinstance(artifact, str) or not artifact:
+        fail(f"catalog check {entry.get('id')!r} has no artifact path")
+    expected = entry.get("sha256")
+    actual = sha256(artifact)
+    require_equal(
+        actual,
+        expected,
+        f"catalog digest mismatch for {artifact} "
+        f"(catalog sha256 {expected!r}, file sha256 {actual})",
+    )
 
 print("scanner", scanner)
 print("review", review)
@@ -77,12 +222,16 @@ print("catalog/hash verification OK")
 PY
 ```
 
-For this launch revision the printed artifact digests are:
+For this repository revision the printed artifact digests are:
 
 ```text
 scanner 6829bd1aa6d24648c8c142287afc0aef730cc081716250d7eb79297c61ebaf52
-review 8291000be2093176fc43164905958964d1e7bf9e197974abb54a25eabaab1ff4
+review f7fa42539cb1f9f9e6ec4a9bfa6c367bd11bcef623b8aa6ab986697f18268bf7
 ```
+
+The published `v0.1.0` assets have a documented tag/asset discrepancy. See the
+[`v0.1.0` release-integrity note](RELEASE-NOTES.md#v010-release-integrity-note)
+before comparing that release.
 
 A digest identifies the reviewed bytes. It becomes an authenticity check only
 when compared with a digest obtained through an independently trusted release

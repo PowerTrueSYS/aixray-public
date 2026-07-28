@@ -4,6 +4,8 @@
 # owner-only local decoding map. It never opens a socket or performs DNS.
 set -u
 
+AIXRAY_REVIEW_PACK_VERSION="0.1.0"
+
 PATH=/usr/bin:/etc:/usr/sbin:/usr/ucb:/usr/bin/X11:/sbin:${PATH:-}
 export PATH
 LC_ALL=C

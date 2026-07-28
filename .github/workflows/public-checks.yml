@@ -4,15 +4,23 @@ on:
   pull_request:
   push:
     branches: [master]
+    tags: ["v*"]
+  release:
+    types: [published, edited, released]
 
 permissions:
   contents: read
 
 jobs:
   verify:
+    if: >-
+      github.event_name != 'release' ||
+      startsWith(github.event.release.tag_name, 'v')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Install ksh
         run: |
           sudo apt-get update
@@ -23,3 +31,44 @@ jobs:
         run: sh tools/ci/egress-lint.sh aixray-aix.sh aixray-review-pack.sh checks/*/*.ksh
       - name: Reject redistributed IBM delivery data
         run: python3 tools/check-no-ibm-redistribution.py
+
+  release-integrity:
+    if: >-
+      (github.event_name == 'push' &&
+       startsWith(github.ref, 'refs/tags/v')) ||
+      (github.event_name == 'release' &&
+       startsWith(github.event.release.tag_name, 'v'))
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: >-
+            ${{ github.event_name == 'release' &&
+                github.event.release.tag_name || github.ref }}
+      - name: Validate tagged release tree
+        env:
+          RELEASE_TAG: >-
+            ${{ github.event_name == 'release' &&
+                github.event.release.tag_name || github.ref_name }}
+        run: |
+          python3 tools/verify-release-integrity.py --tag "$RELEASE_TAG"
+      - name: Download published release assets
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/release-assets"
+          gh release download "$RELEASE_TAG" \
+            --repo "$GITHUB_REPOSITORY" \
+            --dir "$RUNNER_TEMP/release-assets"
+      - name: Match published assets to tagged tree
+        if: github.event_name == 'release'
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          python3 tools/verify-release-integrity.py \
+            --tag "$RELEASE_TAG" \
+            --assets-dir "$RUNNER_TEMP/release-assets"

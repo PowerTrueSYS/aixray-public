@@ -29,7 +29,10 @@ FIXTURE_ROOT = os.environ.get("AIXRAY_FIXTURE_ROOT")
 FIXTURE = Path(FIXTURE_ROOT) if FIXTURE_ROOT else None
 EGRESS_LINTER = ROOT / "tools" / "ci" / "egress-lint.sh"
 IBM_DATA_GUARD = ROOT / "tools" / "check-no-ibm-redistribution.py"
+RELEASE_INTEGRITY_GATE = ROOT / "tools" / "verify-release-integrity.py"
 PUBLIC_WORKFLOW = ROOT / ".github" / "workflows" / "public-checks.yml"
+VERIFY_GUIDE = ROOT / "docs" / "VERIFY.md"
+RELEASE_NOTES = ROOT / "docs" / "RELEASE-NOTES.md"
 DOWNLOAD_PAGE_URL = "https://powertruesystems.com/aixray/"
 RELEASE_ASSET_URL = (
     "https://github.com/PowerTrueSYS/aixray-public/releases/latest/download/aixray-aix.sh"
@@ -92,6 +95,22 @@ def inline_jsonld(site_html: str) -> dict[str, object]:
     if match is None:
         raise AssertionError("site has no inline JSON-LD block")
     return json.loads(match.group(1))
+
+
+def verification_python_block() -> str:
+    guide = VERIFY_GUIDE.read_text(encoding="utf-8")
+    section_marker = "## Verify byte identity and catalog hashes"
+    if section_marker not in guide:
+        raise AssertionError(f"{VERIFY_GUIDE} has no {section_marker!r} section")
+    section = guide.split(section_marker, 1)[1]
+    match = re.search(
+        r"```sh\npython3 - <<'PY'\n(.*?)\nPY\n```",
+        section,
+        flags=re.DOTALL,
+    )
+    if match is None:
+        raise AssertionError(f"{VERIFY_GUIDE} has no verification Python block")
+    return match.group(1)
 
 
 class QuietHandler(http.server.SimpleHTTPRequestHandler):
@@ -205,6 +224,112 @@ class ReportParser(HTMLParser):
 
 
 class PublicFunnelTests(unittest.TestCase):
+    def copy_verification_inputs(self, destination: Path) -> None:
+        (destination / "site").mkdir(parents=True)
+        for relative in (
+            "README.md",
+            "catalog.json",
+            "aixray-aix.sh",
+            "aixray-review-pack.sh",
+            "site/aixray-aix.sh",
+        ):
+            source = ROOT / relative
+            target = destination / relative
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(source, target)
+
+    def run_verification_block(
+        self, cwd: Path
+    ) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(
+            ["python3", "-c", verification_python_block()],
+            cwd=cwd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=False,
+        )
+
+    def test_documented_hash_verification_succeeds_on_current_tree(self) -> None:
+        result = self.run_verification_block(ROOT)
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        self.assertIn("catalog/hash verification OK", result.stdout)
+
+    def test_documented_hash_verification_names_missing_artifact(self) -> None:
+        with tempfile.TemporaryDirectory(
+            prefix="aixray-verify-missing-"
+        ) as temporary:
+            candidate = Path(temporary)
+            self.copy_verification_inputs(candidate)
+            (candidate / "aixray-review-pack.sh").unlink()
+            result = self.run_verification_block(candidate)
+
+        combined = result.stdout + result.stderr
+        self.assertNotEqual(0, result.returncode, combined)
+        self.assertIn(
+            "artifact verification failed: missing required file "
+            "aixray-review-pack.sh",
+            combined,
+        )
+        self.assertIn(
+            "check out the intended release tag or commit and retry with "
+            "clean files from that revision",
+            combined,
+        )
+        self.assertNotIn("Traceback", combined)
+
+    def test_documented_hash_verification_names_mismatched_artifacts(self) -> None:
+        with tempfile.TemporaryDirectory(
+            prefix="aixray-verify-mismatch-"
+        ) as temporary:
+            candidate = Path(temporary)
+            self.copy_verification_inputs(candidate)
+            with (candidate / "site" / "aixray-aix.sh").open("ab") as stream:
+                stream.write(b"\n# deliberately different test bytes\n")
+            result = self.run_verification_block(candidate)
+
+        combined = result.stdout + result.stderr
+        self.assertNotEqual(0, result.returncode, combined)
+        self.assertIn(
+            "artifact verification failed: byte mismatch between "
+            "aixray-aix.sh and site/aixray-aix.sh",
+            combined,
+        )
+        self.assertIn(
+            "check out the intended release tag or commit and retry with "
+            "clean files from that revision",
+            combined,
+        )
+        self.assertNotIn("Traceback", combined)
+
+    def test_documented_hash_verification_rejects_symlinked_parent(self) -> None:
+        with tempfile.TemporaryDirectory(
+            prefix="aixray-verify-symlink-"
+        ) as temporary:
+            base = Path(temporary)
+            candidate = base / "candidate"
+            candidate.mkdir()
+            self.copy_verification_inputs(candidate)
+            shutil.copytree(ROOT / "checks", candidate / "checks")
+            check_directory = candidate / "checks" / "ck-adapter-microcode"
+            external_directory = base / "external-check"
+            check_directory.rename(external_directory)
+            check_directory.symlink_to(
+                external_directory,
+                target_is_directory=True,
+            )
+            result = self.run_verification_block(candidate)
+
+        combined = result.stdout + result.stderr
+        self.assertNotEqual(0, result.returncode, combined)
+        self.assertIn(
+            "artifact verification failed: required path "
+            "checks/ck-adapter-microcode/ck-adapter-microcode.ksh "
+            "traverses symlink component checks/ck-adapter-microcode",
+            combined,
+        )
+        self.assertNotIn("Traceback", combined)
+
     def test_download_is_frictionless_and_direct(self) -> None:
         site_html = (SITE / "index.html").read_text(encoding="utf-8")
 
@@ -394,6 +519,20 @@ class PublicFunnelTests(unittest.TestCase):
             with self.subTest(path=path.name, contract="current count"):
                 self.assertRegex(text, r"\b35\b")
 
+    def test_readme_and_docs_exclude_disallowed_framework_claims(self) -> None:
+        disallowed = tuple(
+            re.compile(term, flags=re.IGNORECASE)
+            for term in ("ffi" + "ec", "nc" + "ua", "hi" + "paa")
+        )
+        paths = [ROOT / "README.md", *sorted((ROOT / "docs").rglob("*"))]
+        for path in paths:
+            if not path.is_file():
+                continue
+            text = path.read_text(encoding="utf-8")
+            for pattern in disallowed:
+                with self.subTest(path=path.relative_to(ROOT), term=pattern.pattern):
+                    self.assertIsNone(pattern.search(text))
+
     def test_readme_leads_a_new_customer_through_the_easy_run(self) -> None:
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
         lower = readme.lower()
@@ -448,6 +587,29 @@ class PublicFunnelTests(unittest.TestCase):
         self.assertTrue(REVIEW_HELPER.is_file())
         if REVIEW_HELPER.is_file():
             self.assertIn(sha256(REVIEW_HELPER), readme)
+
+    def test_v010_release_note_records_exact_tag_asset_discrepancy(self) -> None:
+        self.assertTrue(RELEASE_NOTES.is_file())
+        if not RELEASE_NOTES.is_file():
+            return
+        note = RELEASE_NOTES.read_text(encoding="utf-8")
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        for exact_value in (
+            "d0587e17bc4fc387c11e8df317cc85e6aa8c2f4a",
+            "ed854a50801a050ebf9932ac99af522f76caa4a6",
+            "e098e0b0f617649ba29fbf1626fefb55bcd2b467c09060bdcb4458b1340e5b16",
+            "6829bd1aa6d24648c8c142287afc0aef730cc081716250d7eb79297c61ebaf52",
+            "8291000be2093176fc43164905958964d1e7bf9e197974abb54a25eabaab1ff4",
+        ):
+            with self.subTest(exact_value=exact_value):
+                self.assertIn(exact_value, note)
+        self.assertIn("aixray-review-pack.sh` is absent", note)
+        self.assertIn(
+            "[`v0.1.0` release-integrity note](docs/RELEASE-NOTES.md"
+            "#v010-release-integrity-note)",
+            readme,
+        )
+        self.assertIn("artifacts in this repository revision", readme)
 
     def test_report_keeps_marketing_hooks_and_safe_send_footer(self) -> None:
         source = SCANNER.read_text(encoding="utf-8")
@@ -693,6 +855,7 @@ START_HERE_ITEMS=""
     def test_public_ci_runs_all_release_guards(self) -> None:
         self.assertTrue(PUBLIC_WORKFLOW.is_file())
         self.assertTrue(IBM_DATA_GUARD.is_file())
+        self.assertTrue(RELEASE_INTEGRITY_GATE.is_file())
         if not PUBLIC_WORKFLOW.is_file():
             return
         workflow = PUBLIC_WORKFLOW.read_text(encoding="utf-8")
@@ -700,6 +863,16 @@ START_HERE_ITEMS=""
         self.assertRegex(workflow, r"(?m)^\s+pull_request:\s*$")
         self.assertRegex(workflow, r"(?m)^\s+push:\s*$")
         self.assertRegex(workflow, r"(?m)^\s+branches:\s*\[master\]\s*$")
+        self.assertRegex(
+            workflow,
+            r'(?m)^\s+tags:\s*\["v\*"\]\s*$',
+        )
+        self.assertRegex(workflow, r"(?m)^\s+release:\s*$")
+        self.assertRegex(
+            workflow,
+            r"(?m)^\s+types:\s*\[published, edited, released\]\s*$",
+        )
+        self.assertIn("fetch-depth: 0", workflow)
         self.assertIn("sudo apt-get install -y ksh", workflow)
         self.assertIn("sh tests/run-tests.sh", workflow)
         self.assertIn(
@@ -710,6 +883,28 @@ START_HERE_ITEMS=""
         self.assertIn(
             "python3 tools/check-no-ibm-redistribution.py",
             workflow,
+        )
+        self.assertIn(
+            'python3 tools/verify-release-integrity.py --tag "$RELEASE_TAG"',
+            workflow,
+        )
+        self.assertIn('gh release download "$RELEASE_TAG"', workflow)
+        self.assertIn(
+            '--assets-dir "$RUNNER_TEMP/release-assets"',
+            workflow,
+        )
+        self.assertIn(
+            "startsWith(github.event.release.tag_name, 'v')",
+            workflow,
+        )
+        verify_guide = VERIFY_GUIDE.read_text(encoding="utf-8")
+        self.assertIn(
+            "python3 tools/verify-release-integrity.py --tag v0.1.0",
+            verify_guide,
+        )
+        self.assertIn(
+            '--assets-dir release-assets',
+            verify_guide,
         )
 
     def test_scanner_has_no_egress_command_primitive(self) -> None:

@@ -106,14 +106,14 @@ in [`SECURITY.md`](SECURITY.md#outbound-review-pack) and the review steps in
 
 ## Verify what you run
 
-Published SHA-256 values for the launch artifacts:
+SHA-256 values for the artifacts in this repository revision:
 
 ```text
 aixray-aix.sh
 6829bd1aa6d24648c8c142287afc0aef730cc081716250d7eb79297c61ebaf52
 
 aixray-review-pack.sh
-8291000be2093176fc43164905958964d1e7bf9e197974abb54a25eabaab1ff4
+f7fa42539cb1f9f9e6ec4a9bfa6c367bd11bcef623b8aa6ab986697f18268bf7
 ```
 
 The top-level `assembled_scanner` entry in [`catalog.json`](catalog.json)
@@ -121,6 +121,10 @@ binds the root and site scanner copies to the first hash. The top-level
 `review_pack` entry binds the review helper to the second. Each sorted
 `checks[]` entry records its standalone artifact and SHA-256; `check_count`
 remains 35.
+
+The published `v0.1.0` assets do not match its immutable tag. See the
+[`v0.1.0` release-integrity note](docs/RELEASE-NOTES.md#v010-release-integrity-note)
+for the exact commits and published-asset digests.
 
 On a review workstation with `jq`, `rg`, and SHA-256 tooling:
 
