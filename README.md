@@ -35,6 +35,15 @@ AIXray is useful for:
 
 The 35 standalone tools are independently callable check modules. They are not a numerical claim about every finding produced by the larger assembled assessment.
 
+## Standards coverage
+
+AIXray evaluates selected controls against observed system state. Coverage is partial: a `PASS` applies only to the implemented rule and available evidence, not to the standard as a whole.
+
+| Claim | Proof |
+|---|---|
+| **DISA STIG for IBM AIX 7.x coverage is partial: 65 distinct rule V-IDs receive an engine verdict.** This count is not a single-release coverage fraction. | The live `R_FILEPERM`, `R_SECATTR`, `R_NETTUNE`, and `R_SVCOFF` tables in [`aixray-aix.sh`](aixray-aix.sh) contain 65 distinct V-IDs. `checks_security` calls all four evaluators, and each emits per-rule `PASS`, `FAIL`, or `NA` evidence in JSON `rules[]`. `V-215399` is counted for its `clean_partial_conns` tunable verdict; the package-commit condition in that rule is not checked. Deferred `V-215429` is not in a live table and is not counted. |
+| **Partial: 10 CIS L1-aligned checks.** Their scope is NFS exports, password hashing, file ownership and permissions, and network tunables. | The numeric-only `cis_l1_map` in [`aixray-aix.sh`](aixray-aix.sh) names each source finding or STIG rule used by the cross-check. The renderer resolves those mappings from the run's actual verdicts and emits no numeric verdict when evidence is unavailable. This is an alignment cross-check, not a claim of completeness against CIS. |
+
 ## Why can a cautious AIX administrator inspect it first?
 
 | Claim | Proof |
@@ -110,7 +119,7 @@ SHA-256 values for the artifacts in this repository revision:
 
 ```text
 aixray-aix.sh
-6829bd1aa6d24648c8c142287afc0aef730cc081716250d7eb79297c61ebaf52
+c8b7b67e0b24ff0087eb12b8796118c77ea8dfb454594d755a62ba113cc1f362
 
 aixray-review-pack.sh
 f7fa42539cb1f9f9e6ec4a9bfa6c367bd11bcef623b8aa6ab986697f18268bf7

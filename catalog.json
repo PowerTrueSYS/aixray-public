@@ -721,7 +721,7 @@
   "assembled_scanner": {
     "artifact": "aixray-aix.sh",
     "site_artifact": "site/aixray-aix.sh",
-    "sha256": "6829bd1aa6d24648c8c142287afc0aef730cc081716250d7eb79297c61ebaf52"
+    "sha256": "c8b7b67e0b24ff0087eb12b8796118c77ea8dfb454594d755a62ba113cc1f362"
   },
   "review_pack": {
     "artifact": "aixray-review-pack.sh",

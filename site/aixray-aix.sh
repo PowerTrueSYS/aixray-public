@@ -458,10 +458,8 @@ V-215337|/etc/security/login.cfg|default|logindelay|ge|4
 #   op le does NOT special-case 0: for a network tunable 0 is normally the SECURE (disabled)
 #   value, so it is compared literally. A tunable absent from the capture is NA; 'no -a' is a
 #   NON-root read (listing a tunable never needs privilege — only setting one does — so there
-#   is no root gate). SCOPE (honest count): the AIX 7.x STIG defines exactly FOUR 'no' rules
-#   and ZERO 'nfso' rules. Verified rule-by-rule against ALL 283 STIG rules' Check/Fix text via
-#   the cyber.trackr.live structured API (verbatim DISA XCCDF content; V-IDs/values stable
-#   across V2R2/V3R2). Source-routing / redirect / directed-broadcast / path-MTU / TCP-secure /
+#   is no root gate). SCOPE: only the live rows below receive network-tunable rule verdicts.
+#   Source-routing / redirect / directed-broadcast / path-MTU / TCP-secure /
 #   rfc1323 tunables (ipsrcroute*, ipsendredirects, directed_broadcast, tcp/udp_pmtu_discover,
 #   tcp_tcpsecure) have NO STIG rule — a term scan of every rule found zero hits; none is
 #   invented here. V-215429 ("must not process ICMP timestamp requests") is a genfilt/IPsec

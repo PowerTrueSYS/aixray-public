@@ -225,7 +225,7 @@ PY
 For this repository revision the printed artifact digests are:
 
 ```text
-scanner 6829bd1aa6d24648c8c142287afc0aef730cc081716250d7eb79297c61ebaf52
+scanner c8b7b67e0b24ff0087eb12b8796118c77ea8dfb454594d755a62ba113cc1f362
 review f7fa42539cb1f9f9e6ec4a9bfa6c367bd11bcef623b8aa6ab986697f18268bf7
 ```
 
