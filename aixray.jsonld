@@ -31,7 +31,7 @@
     "HTML and JSON reports",
     "Supported compliance-oriented views",
     "Explicit NOT_ASSESSED status for unavailable evidence",
-    "Partial DISA STIG for IBM AIX 7.x evaluation: 65 of 283 rule V-IDs receive an engine verdict, with V2R2/V3R2 source provenance; V-215399 covers only the clean_partial_conns tunable, not its package-commit condition; deferred V-215429 is not counted",
+    "DISA STIG for IBM AIX 7.x coverage is partial: 65 distinct rule V-IDs receive an engine verdict; this count is not a single-release coverage fraction; V-215399 covers only the clean_partial_conns tunable, not its package-commit condition; deferred V-215429 is not counted",
     "10 CIS L1-aligned checks across NFS exports, password hashing, file ownership and permissions, and network tunables; alignment only",
     "35 standalone check tools with machine-readable manifests"
   ],

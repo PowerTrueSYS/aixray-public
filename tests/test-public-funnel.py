@@ -742,19 +742,14 @@ class PublicFunnelTests(unittest.TestCase):
             len(set(stig_ids)),
             "a V-ID appears in more than one evaluated rule table",
         )
-        denominators = {
-            int(value)
-            for value in re.findall(
-                r"ALL\s+([0-9]+)\s+STIG rules",
-                source,
-                flags=re.IGNORECASE,
-            )
-        }
-        self.assertEqual(1, len(denominators))
-        stig_denominator = denominators.pop()
-        revisions = set(re.findall(r"V[0-9]+R[0-9]+/V[0-9]+R[0-9]+", source))
-        self.assertEqual(1, len(revisions))
-        stig_revision = revisions.pop()
+        self.assertIsNone(
+            re.search(r"(?i)\bALL\s+[0-9]+\s+STIG rules\b", source),
+            "scanner prose must not supply a public STIG denominator",
+        )
+        self.assertFalse(
+            "V-IDs/values stable" in source,
+            "scanner must not claim rule-set stability across releases",
+        )
 
         crosswalk = re.search(
             r"^cis_l1_map='(.*?)\n'$",
@@ -813,9 +808,12 @@ class PublicFunnelTests(unittest.TestCase):
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
         llms = (ROOT / "llms.txt").read_text(encoding="utf-8")
         jsonld = (ROOT / "aixray.jsonld").read_text(encoding="utf-8")
+        stig_claim = (
+            "DISA STIG for IBM AIX 7.x coverage is partial: "
+            f"{len(stig_ids)} distinct rule V-IDs receive an engine verdict"
+        )
         claim_fragments = (
-            f"{len(stig_ids)} of {stig_denominator}",
-            stig_revision,
+            stig_claim,
             f"{len(cis_rows)} CIS L1-aligned checks",
         )
         for artifact, text in (
@@ -825,12 +823,16 @@ class PublicFunnelTests(unittest.TestCase):
         ):
             with self.subTest(artifact=artifact):
                 for claim in claim_fragments:
-                    self.assertIn(claim, text)
+                    self.assertTrue(
+                        claim in text,
+                        f"{artifact} is missing source-derived claim: {claim}",
+                    )
                 for limit in (
                     "V-215399",
                     "package-commit condition",
                     "V-215429",
                     "not counted",
+                    "not a single-release coverage fraction",
                 ):
                     self.assertIn(limit, text)
                 self.assertRegex(text, r"(?i)\bpartial\b")
@@ -839,8 +841,23 @@ class PublicFunnelTests(unittest.TestCase):
                     or "not a completeness claim" in text
                     or "alignment only" in text
                 )
-                self.assertNotRegex(text, r"(?i)\b(?:ffiec|ncua|hipaa)\b")
-                self.assertNotRegex(text, r"(?i)\blinux\b")
+                for banned in (
+                    r"(?i)\b(?:ffiec|ncua|hipaa)\b",
+                    r"(?i)\blinux\b",
+                    (
+                        r"(?i)CIS Benchmark coverage|certified|accredited|"
+                        r"fully compliant"
+                    ),
+                    (
+                        r"(?i)(?:\b[0-9]+\s+of\s+[0-9]+\b[^\n.]*"
+                        r"\bDISA STIG\b|\bDISA STIG\b[^\n.]*"
+                        r"\b[0-9]+\s+of\s+[0-9]+\b)"
+                    ),
+                ):
+                    self.assertIsNone(
+                        re.search(banned, text),
+                        f"{artifact} contains banned public wording: {banned}",
+                    )
 
         included = readme.index("## What is included?")
         standards = readme.index("## Standards coverage")
@@ -857,10 +874,6 @@ class PublicFunnelTests(unittest.TestCase):
         ):
             self.assertIn(area, readme)
         self.assertIn("V-215399", readme)
-        self.assertNotRegex(
-            readme,
-            r"(?i)CIS Benchmark coverage|certified|accredited|fully compliant",
-        )
 
     def test_scanner_audit_map_names_only_public_paths(self) -> None:
         header = "\n".join(SCANNER.read_text(encoding="utf-8").splitlines()[:30])

@@ -31,7 +31,7 @@ License text: https://www.apache.org/licenses/LICENSE-2.0
 
 ## Standards coverage
 
-- DISA STIG for IBM AIX 7.x coverage is partial: 65 of 283 rule V-IDs receive an engine verdict, with V2R2/V3R2 source provenance. The count is the distinct V-IDs in the four live rule tables that the security pass evaluates. V-215399 covers the clean_partial_conns tunable verdict but not the rule's package-commit condition; deferred V-215429 is not counted.
+- DISA STIG for IBM AIX 7.x coverage is partial: 65 distinct rule V-IDs receive an engine verdict. This count is not a single-release coverage fraction. The count is the distinct V-IDs in the four live rule tables that the security pass evaluates. V-215399 covers the clean_partial_conns tunable verdict but not the rule's package-commit condition; deferred V-215429 is not counted.
 - AIXray has 10 CIS L1-aligned checks across NFS exports, password hashing, file ownership and permissions, and network tunables. This is a numeric alignment cross-check, not a completeness claim; unavailable evidence does not produce a numeric verdict.
 
 ## Language guardrails
