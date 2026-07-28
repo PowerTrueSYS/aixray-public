@@ -11,6 +11,7 @@ import json
 import os
 from pathlib import Path
 import re
+import shutil
 import socketserver
 import stat
 import subprocess
@@ -667,17 +668,24 @@ START_HERE_ITEMS=""
         self.assertTrue(result.stdout.rstrip().endswith("</html>"))
 
     def test_public_shell_and_metadata_syntax(self) -> None:
+        # AIX /bin/sh is ksh; these artifacts intentionally use ksh88 syntax.
+        # Ubuntu's dash is not part of the supported shell contract.
+        ksh = shutil.which("ksh")
+        self.assertIsNotNone(
+            ksh,
+            "ksh is required for the AIX shell contract syntax check",
+        )
+        assert ksh is not None
         for artifact in (SCANNER, REVIEW_HELPER):
-            for shell in ("sh", "ksh"):
-                result = subprocess.run(
-                    [shell, "-n", str(artifact)],
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    text=True,
-                    check=False,
-                )
-                with self.subTest(shell=shell, artifact=artifact.name):
-                    self.assertEqual(0, result.returncode, result.stderr)
+            result = subprocess.run(
+                [ksh, "-n", str(artifact)],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                check=False,
+            )
+            with self.subTest(shell="ksh", artifact=artifact.name):
+                self.assertEqual(0, result.returncode, result.stderr)
         json.loads((ROOT / "catalog.json").read_text())
         json.loads((ROOT / "aixray.jsonld").read_text())
         inline_jsonld((SITE / "index.html").read_text(encoding="utf-8"))
@@ -692,6 +700,7 @@ START_HERE_ITEMS=""
         self.assertRegex(workflow, r"(?m)^\s+pull_request:\s*$")
         self.assertRegex(workflow, r"(?m)^\s+push:\s*$")
         self.assertRegex(workflow, r"(?m)^\s+branches:\s*\[master\]\s*$")
+        self.assertIn("sudo apt-get install -y ksh", workflow)
         self.assertIn("sh tests/run-tests.sh", workflow)
         self.assertIn(
             "sh tools/ci/egress-lint.sh "
