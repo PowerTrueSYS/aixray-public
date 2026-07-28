@@ -650,6 +650,218 @@ class PublicFunnelTests(unittest.TestCase):
                     source,
                 )
 
+    def test_public_standards_claims_are_source_derived_and_bounded(self) -> None:
+        source = SCANNER.read_text(encoding="utf-8")
+        families = {
+            "R_FILEPERM": ("eval_fileperms", "stig_fileperms", 5),
+            "R_SECATTR": ("eval_secattr", "stig_secattr", 6),
+            "R_NETTUNE": ("eval_nettune", "stig_nettune", 5),
+            "R_SVCOFF": ("eval_svcoff", "stig_svcoff", 3),
+        }
+        security = re.search(
+            r"^function checks_security \{\n(.*?)^\}\n\n# eval_fileperms",
+            source,
+            flags=re.MULTILINE | re.DOTALL,
+        )
+        self.assertIsNotNone(security, "checks_security body is missing")
+        if security is None:
+            return
+        self.assertEqual(
+            1,
+            len(re.findall(r"(?m)^checks_security$", source)),
+            "checks_security is not invoked exactly once by the main scan path",
+        )
+        stig_ids: list[str] = []
+        evaluator_bodies: list[str] = []
+        for table, (evaluator, finding, field_count) in families.items():
+            block = re.search(
+                rf'^{table}="\n(.*?)\n"$',
+                source,
+                flags=re.MULTILINE | re.DOTALL,
+            )
+            self.assertIsNotNone(block, f"{table} rule table is missing")
+            if block is None:
+                continue
+            rows = [
+                line.split("|")
+                for line in block.group(1).splitlines()
+                if line
+            ]
+            for row in rows:
+                self.assertEqual(field_count, len(row), f"malformed {table} row")
+                self.assertRegex(row[0], r"^V-[0-9]+$")
+                if table == "R_FILEPERM":
+                    self.assertTrue(row[1].startswith("/"))
+                    self.assertTrue(any(row[2:]))
+                    for value in row[2:]:
+                        self.assertRegex(value, r"^(?:[0-9]+)?$")
+                elif table == "R_SECATTR":
+                    self.assertTrue(row[1].startswith("/"))
+                    self.assertTrue(row[2] and row[3])
+                    self.assertIn(row[4], ("eq", "ge", "le"))
+                    self.assertRegex(row[5], r"^-?[0-9]+$")
+                elif table == "R_NETTUNE":
+                    self.assertIn(row[1], ("no", "nfso"))
+                    self.assertTrue(row[2])
+                    self.assertIn(row[3], ("eq", "ge", "le"))
+                    self.assertRegex(row[4], r"^-?[0-9]+$")
+                else:
+                    self.assertIn(row[1], ("inetd", "lssrc", "rctcp"))
+                    self.assertRegex(row[2], r"^[A-Za-z0-9_.-]+$")
+            family_ids = [row[0] for row in rows]
+            self.assertEqual(
+                len(family_ids),
+                len(set(family_ids)),
+                f"{table} repeats a V-ID",
+            )
+            evaluator_body = re.search(
+                rf"^function {evaluator} \{{\n(.*?)^\}}$",
+                source,
+                flags=re.MULTILINE | re.DOTALL,
+            )
+            self.assertIsNotNone(
+                evaluator_body,
+                f"{evaluator} implementation is missing",
+            )
+            if evaluator_body is None:
+                continue
+            body = evaluator_body.group(1)
+            self.assertIn(f'"${table}"', body)
+            self.assertIn('print "stig:" R_id[i]', body)
+            self.assertRegex(body, rf"\badd security {finding}\b")
+            self.assertEqual(
+                1,
+                len(re.findall(rf"(?m)^  {evaluator}$", security.group(1))),
+                f"{evaluator} is not dispatched exactly once by checks_security",
+            )
+            evaluator_bodies.append(body)
+            stig_ids.extend(family_ids)
+
+        self.assertEqual(
+            len(stig_ids),
+            len(set(stig_ids)),
+            "a V-ID appears in more than one evaluated rule table",
+        )
+        denominators = {
+            int(value)
+            for value in re.findall(
+                r"ALL\s+([0-9]+)\s+STIG rules",
+                source,
+                flags=re.IGNORECASE,
+            )
+        }
+        self.assertEqual(1, len(denominators))
+        stig_denominator = denominators.pop()
+        revisions = set(re.findall(r"V[0-9]+R[0-9]+/V[0-9]+R[0-9]+", source))
+        self.assertEqual(1, len(revisions))
+        stig_revision = revisions.pop()
+
+        crosswalk = re.search(
+            r"^cis_l1_map='(.*?)\n'$",
+            source,
+            flags=re.MULTILINE | re.DOTALL,
+        )
+        self.assertIsNotNone(crosswalk, "numeric CIS L1 crosswalk is missing")
+        if crosswalk is None:
+            return
+        cis_rows = [
+            tuple(line.split("|"))
+            for line in crosswalk.group(1).splitlines()
+            if line
+        ]
+        cis_sources = [row[0] for row in cis_rows]
+        self.assertEqual(
+            len(cis_sources),
+            len(set(cis_sources)),
+            "numeric CIS L1 crosswalk repeats a source check",
+        )
+        active_security = security.group(1) + "\n".join(evaluator_bodies)
+        for source_id, control in cis_rows:
+            self.assertRegex(source_id, r"^(?:finding:[a-z0-9_]+|stig:V-[0-9]+)$")
+            self.assertRegex(control, r"^[0-9]+(?:\.[0-9]+)+$")
+            if source_id.startswith("stig:"):
+                self.assertIn(source_id.removeprefix("stig:"), stig_ids)
+            else:
+                finding = source_id.removeprefix("finding:")
+                self.assertRegex(
+                    active_security,
+                    rf"\b(?:add|nr_warn) security {finding}\b",
+                )
+        cis_renderer = re.search(
+            r"^function cis_l1_verdicts \{.*?\n(.*?)^\}$",
+            source,
+            flags=re.MULTILINE | re.DOTALL,
+        )
+        self.assertIsNotNone(cis_renderer, "CIS L1 verdict resolver is missing")
+        if cis_renderer is not None:
+            self.assertIn('"$cis_l1_map"', cis_renderer.group(1))
+            self.assertIn('"${F_RULES[$CIS_INDEX]}"', cis_renderer.group(1))
+        ctl_match = re.search(
+            r"^  function ctl_match \{.*?\n(.*?)^  \}$",
+            source,
+            flags=re.MULTILINE | re.DOTALL,
+        )
+        self.assertIsNotNone(ctl_match, "compliance control resolver is missing")
+        if ctl_match is not None:
+            self.assertIn('cis_l1_verdicts "$1"', ctl_match.group(1))
+        self.assertGreaterEqual(
+            source.count("$(ctl_match $i)"),
+            1,
+            "compliance renderer does not invoke ctl_match",
+        )
+
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        llms = (ROOT / "llms.txt").read_text(encoding="utf-8")
+        jsonld = (ROOT / "aixray.jsonld").read_text(encoding="utf-8")
+        claim_fragments = (
+            f"{len(stig_ids)} of {stig_denominator}",
+            stig_revision,
+            f"{len(cis_rows)} CIS L1-aligned checks",
+        )
+        for artifact, text in (
+            ("README.md", readme),
+            ("llms.txt", llms),
+            ("aixray.jsonld", jsonld),
+        ):
+            with self.subTest(artifact=artifact):
+                for claim in claim_fragments:
+                    self.assertIn(claim, text)
+                for limit in (
+                    "V-215399",
+                    "package-commit condition",
+                    "V-215429",
+                    "not counted",
+                ):
+                    self.assertIn(limit, text)
+                self.assertRegex(text, r"(?i)\bpartial\b")
+                self.assertTrue(
+                    "not a claim of completeness" in text
+                    or "not a completeness claim" in text
+                    or "alignment only" in text
+                )
+                self.assertNotRegex(text, r"(?i)\b(?:ffiec|ncua|hipaa)\b")
+                self.assertNotRegex(text, r"(?i)\blinux\b")
+
+        included = readme.index("## What is included?")
+        standards = readme.index("## Standards coverage")
+        proof = readme.index("## Why can a cautious AIX administrator inspect it first?")
+        self.assertLess(included, standards)
+        self.assertLess(standards, proof)
+        for table in families:
+            self.assertIn(table, readme)
+        for area in (
+            "NFS exports",
+            "password hashing",
+            "file ownership and permissions",
+            "network tunables",
+        ):
+            self.assertIn(area, readme)
+        self.assertIn("V-215399", readme)
+        self.assertNotRegex(
+            readme,
+            r"(?i)CIS Benchmark coverage|certified|accredited|fully compliant",
+        )
+
     def test_scanner_audit_map_names_only_public_paths(self) -> None:
         header = "\n".join(SCANNER.read_text(encoding="utf-8").splitlines()[:30])
         audit = re.search(
