@@ -52,7 +52,8 @@ the release.
 
 ## Verify byte identity and catalog hashes
 
-The publisher derives every numeric customer-facing standalone-count claim from
+The publisher derives every mechanical customer-facing release-version claim
+from `catalog.json.tool_version` and every numeric standalone-count claim from
 `catalog.json.check_count`. After generating a release catalog, run the renderer
 once; committed candidates and CI use check mode so stale copy cannot pass:
 

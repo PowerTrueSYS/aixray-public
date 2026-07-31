@@ -424,9 +424,15 @@ class PublicFunnelTests(unittest.TestCase):
                 encoding="utf-8",
             )
             readme_path = candidate / "README.md"
+            stale_digest = "0" * 64
             readme = (
-                readme_path.read_text(encoding="utf-8")
+                re.sub(
+                    r"\b[0-9A-Fa-f]{64}\b",
+                    "",
+                    readme_path.read_text(encoding="utf-8"),
+                )
                 + "\nVerify all release payloads with `SHA256SUMS`.\n"
+                + f"Stale pasted digest: `{stale_digest}`.\n"
             )
             readme_path.write_text(readme, encoding="utf-8")
 
@@ -439,8 +445,7 @@ class PublicFunnelTests(unittest.TestCase):
                 "SHA256SUMS",
                 stale_combined,
             )
-            for relative in ("aixray-aix.sh", "aixray-review-pack.sh"):
-                readme = readme.replace(sha256(candidate / relative), "")
+            readme = readme.replace(stale_digest, "")
             readme_path.write_text(readme, encoding="utf-8")
 
             result = self.run_verification_block(candidate)
@@ -795,22 +800,87 @@ class PublicFunnelTests(unittest.TestCase):
         if not isinstance(declared_version, str):
             return
         version_claim = re.compile(
-            r"\bversion\s+`?"
-            r"([0-9]+(?:\.[0-9A-Za-z-]+)+(?:\+[0-9A-Za-z.-]+)?)`?",
+            r"\bversion(?:\s*:\s*|\s+)`?"
+            r"([0-9]+(?:\.[0-9A-Za-z-]+)+"
+            r"(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?)`?",
             re.IGNORECASE,
         )
-        for path in (ROOT / "README.md", SITE / "index.html", ROOT / "llms.txt"):
-            claims = set(version_claim.findall(path.read_text(encoding="utf-8")))
-            with self.subTest(path=path.name, contract="version claim exists"):
-                self.assertTrue(claims, "no current version claim found")
+        for path, expected_claims in (
+            (ROOT / "README.md", 3),
+            (SITE / "index.html", 3),
+            (ROOT / "llms.txt", 3),
+        ):
+            claims = version_claim.findall(path.read_text(encoding="utf-8"))
             with self.subTest(path=path.name, contract="all claims are current"):
-                self.assertEqual({declared_version}, claims)
+                self.assertEqual([declared_version] * expected_claims, claims)
 
         root_jsonld = json.loads((ROOT / "aixray.jsonld").read_text())
         site_jsonld = inline_jsonld((SITE / "index.html").read_text(encoding="utf-8"))
         for label, metadata in (("root", root_jsonld), ("site", site_jsonld)):
             with self.subTest(metadata=label, contract="current version"):
                 self.assertEqual(declared_version, metadata.get("softwareVersion"))
+
+    def test_customer_version_copy_is_generated_from_catalog(self) -> None:
+        with tempfile.TemporaryDirectory(
+            prefix="aixray-release-version-sync-"
+        ) as temporary:
+            candidate = Path(temporary)
+            for relative in (
+                "README.md",
+                "catalog.json",
+                "aixray.jsonld",
+                "llms.txt",
+                "site/index.html",
+            ):
+                source = ROOT / relative
+                target = candidate / relative
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(source, target)
+            catalog_path = candidate / "catalog.json"
+            catalog = json.loads(catalog_path.read_text(encoding="utf-8"))
+            declared_version = f"{catalog['tool_version']}.999"
+            catalog["tool_version"] = declared_version
+            catalog_path.write_text(
+                json.dumps(catalog, indent=2) + "\n",
+                encoding="utf-8",
+            )
+
+            stale = self.run_release_shape_sync(candidate, check=True)
+            self.assertNotEqual(0, stale.returncode, stale.stdout + stale.stderr)
+            updated = self.run_release_shape_sync(candidate, check=False)
+            self.assertEqual(0, updated.returncode, updated.stdout + updated.stderr)
+            verified = self.run_release_shape_sync(candidate, check=True)
+            self.assertEqual(0, verified.returncode, verified.stdout + verified.stderr)
+
+            version_claim = re.compile(
+                r"\bversion(?:\s*:\s*|\s+)`?"
+                r"([0-9]+(?:\.[0-9A-Za-z-]+)+"
+                r"(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?)`?",
+                re.IGNORECASE,
+            )
+            for relative, expected_claims in (
+                ("README.md", 3),
+                ("llms.txt", 3),
+                ("site/index.html", 3),
+            ):
+                claims = version_claim.findall(
+                    (candidate / relative).read_text(encoding="utf-8")
+                )
+                with self.subTest(relative=relative, contract="rendered version"):
+                    self.assertEqual([declared_version] * expected_claims, claims)
+
+            root_jsonld = json.loads(
+                (candidate / "aixray.jsonld").read_text(encoding="utf-8")
+            )
+            site_jsonld = inline_jsonld(
+                (candidate / "site/index.html").read_text(encoding="utf-8")
+            )
+            for label, metadata in (("root", root_jsonld), ("site", site_jsonld)):
+                with self.subTest(metadata=label, contract="rendered version"):
+                    self.assertEqual(
+                        declared_version,
+                        metadata.get("softwareVersion"),
+                    )
 
     def test_readme_and_docs_exclude_disallowed_framework_claims(self) -> None:
         disallowed = tuple(

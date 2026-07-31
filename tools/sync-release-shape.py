@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Render customer-facing check counts from catalog.json.check_count."""
+"""Render customer-facing release shape from catalog.json."""
 
 from __future__ import annotations
 
@@ -22,6 +22,15 @@ COUNT_PROPERTY_TARGETS = {
     "aixray.jsonld": 1,
     "site/index.html": 1,
 }
+VERSION_CLAIM_TARGETS = {
+    "README.md": 3,
+    "llms.txt": 3,
+    "site/index.html": 3,
+}
+VERSION_PROPERTY_TARGETS = {
+    "aixray.jsonld": 1,
+    "site/index.html": 1,
+}
 COUNT_CLAIM_RE = re.compile(
     r"\b[1-9][0-9]*(?=\s+standalone\b)",
     re.IGNORECASE,
@@ -30,13 +39,25 @@ COUNT_PROPERTY_RE = re.compile(
     r'("name"\s*:\s*"standaloneCheckCount"\s*,\s*'
     r'"value"\s*:\s*)[1-9][0-9]*'
 )
+VERSION_VALUE_PATTERN = (
+    r"[0-9]+(?:\.[0-9A-Za-z-]+)+"
+    r"(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?"
+)
+VERSION_RE = re.compile(rf"{VERSION_VALUE_PATTERN}\Z")
+VERSION_CLAIM_RE = re.compile(
+    rf"(\bversion(?:\s*:\s*|\s+)`?){VERSION_VALUE_PATTERN}(`?)",
+    re.IGNORECASE,
+)
+VERSION_PROPERTY_RE = re.compile(
+    r'("softwareVersion"\s*:\s*")[^"\r\n]+(")'
+)
 
 
 class ShapeError(Exception):
     """A release-shape input or customer-copy structure is invalid."""
 
 
-def declared_check_count(root: Path) -> int:
+def declared_release_shape(root: Path) -> tuple[int, str]:
     catalog_path = root / "catalog.json"
     try:
         catalog = json.loads(catalog_path.read_text(encoding="utf-8"))
@@ -49,10 +70,20 @@ def declared_check_count(root: Path) -> int:
         raise ShapeError(
             f"catalog.json check_count must be a positive integer; found {count!r}"
         )
-    return count
+    version = catalog.get("tool_version")
+    if not isinstance(version, str) or VERSION_RE.fullmatch(version) is None:
+        raise ShapeError(
+            "catalog.json tool_version must be a dotted version string; "
+            f"found {version!r}"
+        )
+    return count, version
 
 
-def render_customer_copy(root: Path, count: int) -> dict[Path, tuple[str, str]]:
+def render_customer_copy(
+    root: Path,
+    count: int,
+    version: str,
+) -> dict[Path, tuple[str, str]]:
     rendered: dict[Path, tuple[str, str]] = {}
     for relative, expected_claims in COUNT_CLAIM_TARGETS.items():
         path = root / relative
@@ -75,6 +106,26 @@ def render_customer_copy(root: Path, count: int) -> dict[Path, tuple[str, str]]:
             raise ShapeError(
                 f"{relative} has {property_count} standaloneCheckCount "
                 f"property value(s); expected {expected_properties}"
+            )
+        expected_versions = VERSION_CLAIM_TARGETS.get(relative, 0)
+        updated, version_count = VERSION_CLAIM_RE.subn(
+            lambda match: f"{match.group(1)}{version}{match.group(2)}",
+            updated,
+        )
+        if version_count != expected_versions:
+            raise ShapeError(
+                f"{relative} has {version_count} numeric version claim(s); "
+                f"expected {expected_versions}"
+            )
+        expected_version_properties = VERSION_PROPERTY_TARGETS.get(relative, 0)
+        updated, version_property_count = VERSION_PROPERTY_RE.subn(
+            lambda match: f"{match.group(1)}{version}{match.group(2)}",
+            updated,
+        )
+        if version_property_count != expected_version_properties:
+            raise ShapeError(
+                f"{relative} has {version_property_count} softwareVersion "
+                f"property value(s); expected {expected_version_properties}"
             )
         rendered[path] = (source, updated)
     return rendered
@@ -106,7 +157,7 @@ def write_atomic(path: Path, content: str) -> None:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
-            "render customer-facing check counts from catalog.json.check_count"
+            "render customer-facing check counts and versions from catalog.json"
         )
     )
     parser.add_argument(
@@ -127,8 +178,8 @@ def main() -> int:
     args = parse_args()
     root = args.repo_root
     try:
-        count = declared_check_count(root)
-        rendered = render_customer_copy(root, count)
+        count, version = declared_release_shape(root)
+        rendered = render_customer_copy(root, count, version)
     except ShapeError as exc:
         print(f"release-shape: FAIL: {exc}", file=sys.stderr)
         return 1
@@ -142,12 +193,15 @@ def main() -> int:
         if changed:
             names = ", ".join(str(path.relative_to(root)) for path in changed)
             print(
-                "release-shape: FAIL: customer count copy is out of date: "
+                "release-shape: FAIL: customer release-shape copy is out of date: "
                 f"{names}; run python3 tools/sync-release-shape.py",
                 file=sys.stderr,
             )
             return 1
-        print(f"release-shape: PASS: customer count copy matches {count}")
+        print(
+            "release-shape: PASS: customer copy matches "
+            f"count {count} and version {version}"
+        )
         return 0
 
     try:
@@ -160,7 +214,10 @@ def main() -> int:
         )
         return 1
     names = ", ".join(str(path.relative_to(root)) for path in changed) or "no files"
-    print(f"release-shape: updated {names} from declared count {count}")
+    print(
+        f"release-shape: updated {names} from declared count {count} "
+        f"and version {version}"
+    )
     return 0
 
 
