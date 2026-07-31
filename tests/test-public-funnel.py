@@ -38,6 +38,9 @@ DOWNLOAD_PAGE_URL = "https://powertruesystems.com/aixray/"
 RELEASE_ASSET_URL = (
     "https://github.com/PowerTrueSYS/aixray-public/releases/latest/download/aixray-aix.sh"
 )
+CURRENCY_STATUS_URL = (
+    "https://github.com/PowerTrueSYS/aixray-public/blob/currency-status/CURRENCY.md"
+)
 REVIEW_CTA = (
     "Free engineer review: email your report to "
     "review@powertruesystems.com — a principal engineer replies within "
@@ -64,6 +67,14 @@ CUSTOMER_FILES = (
     ROOT / "aixray.jsonld",
     ROOT / "llms.txt",
 )
+
+
+def require_currency_status_links(readme: str, site_html: str) -> None:
+    """Require the stable human currency URL on both public entry points."""
+    if CURRENCY_STATUS_URL not in readme:
+        raise AssertionError("README is missing the stable currency status URL")
+    if CURRENCY_STATUS_URL not in site_html:
+        raise AssertionError("site is missing the stable currency status URL")
 
 
 def sha256(path: Path) -> str:
@@ -511,6 +522,32 @@ class PublicFunnelTests(unittest.TestCase):
         self.assertIsNotNone(notify, "optional notify field is missing")
         if notify is not None:
             self.assertNotRegex(notify.group(0), r"\brequired\b")
+
+    def test_currency_status_is_discoverable_and_guard_has_teeth(self) -> None:
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        site_html = (SITE / "index.html").read_text(encoding="utf-8")
+        require_currency_status_links(readme, site_html)
+
+        for surface, candidate_readme, candidate_site, expected in (
+            (
+                "README",
+                readme.replace(CURRENCY_STATUS_URL, "https://example.invalid/missing"),
+                site_html,
+                "README is missing",
+            ),
+            (
+                "site",
+                readme,
+                site_html.replace(
+                    CURRENCY_STATUS_URL,
+                    "https://example.invalid/missing",
+                ),
+                "site is missing",
+            ),
+        ):
+            with self.subTest(surface=surface):
+                with self.assertRaisesRegex(AssertionError, expected):
+                    require_currency_status_links(candidate_readme, candidate_site)
 
     def test_download_references_are_direct(self) -> None:
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
