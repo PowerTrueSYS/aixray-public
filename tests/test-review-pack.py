@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 import re
+import shutil
 import stat
 import subprocess
 import tempfile
@@ -14,6 +15,7 @@ import unittest
 ROOT = Path(__file__).resolve().parents[1]
 SCANNER = ROOT / "aixray-aix.sh"
 REVIEW_HELPER = ROOT / "aixray-review-pack.sh"
+REVIEW_VALIDATOR = ROOT / "aixray-review-validate.awk"
 FIXTURE_ROOT = os.environ.get("AIXRAY_FIXTURE_ROOT")
 FIXTURE = Path(FIXTURE_ROOT) if FIXTURE_ROOT else None
 REVIEW_FIXTURES = ROOT / "tests" / "fixtures" / "review-pack"
@@ -69,15 +71,26 @@ class ReviewPackTests(unittest.TestCase):
         report: Path,
     ) -> tuple[subprocess.CompletedProcess[str], Path | None, Path | None]:
         directory = report.parent
+        helper = directory / REVIEW_HELPER.name
+        shutil.copy2(REVIEW_HELPER, helper)
+        staged = [helper]
+        if REVIEW_VALIDATOR.is_file():
+            validator = directory / REVIEW_VALIDATOR.name
+            shutil.copy2(REVIEW_VALIDATOR, validator)
+            staged.append(validator)
         before = set(directory.iterdir())
-        result = subprocess.run(
-            ["ksh", str(REVIEW_HELPER), str(report)],
-            cwd=directory,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            check=False,
-        )
+        try:
+            result = subprocess.run(
+                ["ksh", str(helper), str(report)],
+                cwd=directory,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                check=False,
+            )
+        finally:
+            for path in staged:
+                path.unlink(missing_ok=True)
         created = set(directory.iterdir()) - before
         html = sorted(
             path

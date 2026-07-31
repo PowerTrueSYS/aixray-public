@@ -34,9 +34,11 @@ candidate revision. Replace `v0.1.0` with the tag being prepared:
 python3 tools/verify-release-integrity.py --tag v0.1.0
 ```
 
-Before uploading assets, place exactly `aixray-aix.sh` and
-`aixray-review-pack.sh` in a separate directory and compare them with the same
-candidate tree:
+For `v0.2.0` and later, place exactly `aixray-aix.sh`,
+`aixray-review-pack.sh`, `aixray-review-validate.awk`, and `SHA256SUMS` in a
+separate directory and compare them with the same candidate tree. The immutable
+`v0.1.0` release retains its historical two-asset contract (`aixray-aix.sh` and
+`aixray-review-pack.sh`):
 
 ```sh
 python3 tools/verify-release-integrity.py --tag v0.1.0 \
@@ -44,10 +46,21 @@ python3 tools/verify-release-integrity.py --tag v0.1.0 \
 ```
 
 The gate checks the required tree paths, all catalog digests, root/site scanner
-identity, artifact version declarations, the exact release asset set, and
-asset bytes. Any `FAIL` line blocks the release.
+identity, artifact version declarations, the exact versioned release asset set,
+the v0.2.0-and-later checksum manifest, and asset bytes. Any `FAIL` line blocks
+the release.
 
 ## Verify byte identity and catalog hashes
+
+The publisher derives every mechanical customer-facing release-version claim
+from `catalog.json.tool_version` and every numeric standalone-count claim from
+`catalog.json.check_count`. After generating a release catalog, run the renderer
+once; committed candidates and CI use check mode so stale copy cannot pass:
+
+```sh
+python3 tools/sync-release-shape.py
+python3 tools/sync-release-shape.py --check
+```
 
 First require the root and site scanner payloads to be byte-identical:
 
@@ -56,7 +69,7 @@ cmp aixray-aix.sh site/aixray-aix.sh
 ```
 
 `cmp` should print nothing and exit zero. Then validate the catalog,
-README, every standalone artifact, and the sorted 35-check schema from the
+README, every standalone artifact, and the declared sorted-check schema from the
 repository root:
 
 ```sh
@@ -64,6 +77,7 @@ python3 - <<'PY'
 import hashlib
 import json
 from pathlib import Path, PurePosixPath
+import re
 
 root = Path(".")
 resolved_root = root.resolve(strict=False)
@@ -171,27 +185,71 @@ require_equal(
     "catalog.json review_pack does not match aixray-review-pack.sh; "
     f"expected {expected_review!r}, found {catalog.get('review_pack')!r}",
 )
-if scanner not in readme:
-    fail(f"README.md does not contain the aixray-aix.sh digest {scanner}")
-if review not in readme:
+
+legacy_release = catalog.get("tool_version") == "0.1.0"
+release_digests = {}
+if not legacy_release:
+    payloads = (
+        "aixray-aix.sh",
+        "aixray-review-pack.sh",
+        "aixray-review-validate.awk",
+    )
+    checksum_source = read_text("SHA256SUMS")
+    for line_number, line in enumerate(checksum_source.splitlines(), start=1):
+        match = re.fullmatch(r"([0-9A-Fa-f]{64})[ \t]+\*?(\S+)", line)
+        if match is None:
+            fail(
+                f"SHA256SUMS line {line_number} is malformed; expected a "
+                "SHA-256 digest and top-level artifact name"
+            )
+        digest, relative = match.groups()
+        if relative in release_digests:
+            fail(f"SHA256SUMS contains duplicate entry: {relative}")
+        release_digests[relative] = digest.lower()
+    require_equal(
+        set(release_digests),
+        set(payloads),
+        "SHA256SUMS payload set does not match the three release payloads",
+    )
+    for relative in payloads:
+        actual = sha256(relative)
+        expected = release_digests[relative]
+        require_equal(
+            actual,
+            expected,
+            f"SHA256SUMS digest mismatch for {relative} "
+            f"(manifest sha256 {expected}, file sha256 {actual})",
+        )
+if legacy_release:
+    if scanner not in readme:
+        fail(f"README.md does not contain the aixray-aix.sh digest {scanner}")
+    if review not in readme:
+        fail(
+            "README.md does not contain the aixray-review-pack.sh digest "
+            f"{review}"
+        )
+elif "SHA256SUMS" not in readme:
+    fail("README.md does not direct readers to the SHA256SUMS manifest")
+elif re.search(r"\b[0-9A-Fa-f]{64}\b", readme):
     fail(
-        "README.md does not contain the aixray-review-pack.sh digest "
-        f"{review}"
+        "README.md retains pasted artifact digests instead of using "
+        "SHA256SUMS"
     )
 
 checks = catalog.get("checks")
 if not isinstance(checks, list):
     fail("catalog.json checks is not a list")
+declared_count = catalog.get("check_count")
+if type(declared_count) is not int or declared_count < 1:
+    fail(
+        "catalog.json check_count is not a positive integer "
+        f"({declared_count!r})"
+    )
 require_equal(
-    catalog.get("check_count"),
+    declared_count,
     len(checks),
     "catalog.json check_count does not match the checks list "
-    f"({catalog.get('check_count')!r} != {len(checks)})",
-)
-require_equal(
-    len(checks),
-    35,
-    f"catalog.json contains {len(checks)} checks; expected 35",
+    f"({declared_count} != {len(checks)})",
 )
 if not all(isinstance(entry, dict) for entry in checks):
     fail("catalog.json contains a check entry that is not an object")
@@ -202,6 +260,37 @@ require_equal(
     ids,
     sorted(ids),
     "catalog.json checks are not sorted by id",
+)
+check_root = root / "checks"
+directory_ids = sorted(
+    path.name for path in check_root.glob("ck-*") if path.is_dir()
+)
+manifest_ids = sorted(
+    path.parent.name for path in check_root.glob("ck-*/manifest.json")
+)
+require_equal(
+    directory_ids,
+    ids,
+    "checks/ directory IDs do not match catalog.json checks",
+)
+require_equal(
+    manifest_ids,
+    ids,
+    "checks/ manifest IDs do not match catalog.json checks",
+)
+copy_counts = {
+    int(value)
+    for value in re.findall(
+        r"\b([1-9][0-9]*)\s+standalone\b",
+        readme,
+        flags=re.IGNORECASE,
+    )
+}
+require_equal(
+    copy_counts,
+    {declared_count},
+    "README.md standalone-check count claims do not match "
+    f"catalog.json check_count ({sorted(copy_counts)!r} != {declared_count})",
 )
 for entry in checks:
     artifact = entry.get("artifact")
@@ -218,16 +307,15 @@ for entry in checks:
 
 print("scanner", scanner)
 print("review", review)
+if release_digests:
+    print("validator", release_digests["aixray-review-validate.awk"])
+    print("SHA256SUMS", sha256("SHA256SUMS"))
 print("catalog/hash verification OK")
 PY
 ```
 
-For this repository revision the printed artifact digests are:
-
-```text
-scanner c8b7b67e0b24ff0087eb12b8796118c77ea8dfb454594d755a62ba113cc1f362
-review f7fa42539cb1f9f9e6ec4a9bfa6c367bd11bcef623b8aa6ab986697f18268bf7
-```
+The program prints the revision-specific artifact digests it actually verifies;
+there is no second hand-maintained digest list in this guide.
 
 The published `v0.1.0` assets have a documented tag/asset discrepancy. See the
 [`v0.1.0` release-integrity note](RELEASE-NOTES.md#v010-release-integrity-note)
@@ -239,24 +327,28 @@ channel.
 
 ## Inspect and test the zero-egress boundary
 
-Start with a deliberately broad source search against both shell artifacts:
+Start with a deliberately broad source search against the scanner, review
+helper, and companion validator when present:
 
 ```sh
-git grep -n -E '(^|[^[:alnum:]_])(curl|wget|ftp|tftp|telnet|nc|socat|ssh|scp|sftp|rcp|rsh|rexec|ping|traceroute|sendmail|host|nslookup|dig)([^[:alnum:]_]|$)|/dev/(tcp|udp)|socket[[:space:]]*\(|connect[[:space:]]*\(' -- aixray-aix.sh aixray-review-pack.sh || true
+set -- aixray-aix.sh aixray-review-pack.sh
+[ ! -f aixray-review-validate.awk ] || set -- "$@" aixray-review-validate.awk
+git grep -n -E '(^|[^[:alnum:]_])(curl|wget|ftp|tftp|telnet|nc|socat|ssh|scp|sftp|rcp|rsh|rexec|ping|traceroute|sendmail|host|nslookup|dig)([^[:alnum:]_]|$)|/dev/(tcp|udp)|socket[[:space:]]*\(|connect[[:space:]]*\(' -- "$@" || true
 ```
 
 This is a review aid, not a pass/fail gate. The artifacts contain network words
 in comments, local-configuration reads, report text, and remediation text.
 Review every hit. An unexplained executable client or socket call is a failure.
 
-Run the shipped command-position lint against both exact artifacts:
+Run the shipped command-position lint against those exact sources:
 
 ```sh
-sh tools/ci/egress-lint.sh aixray-aix.sh
-sh tools/ci/egress-lint.sh aixray-review-pack.sh
+set -- aixray-aix.sh aixray-review-pack.sh
+[ ! -f aixray-review-validate.awk ] || set -- "$@" aixray-review-validate.awk
+sh tools/ci/egress-lint.sh "$@"
 ```
 
-Both commands must exit zero. An artifact with no candidate references reports
+The command must exit zero. An artifact with no candidate references reports
 `egress-lint: PASS`; reviewed scanner text can instead produce explicit
 `ALLOWED` lines. Any `FAIL` line or nonzero exit is a failure. The lint
 catches direct and wrapped network-client forms. It is a static tripwire, not a

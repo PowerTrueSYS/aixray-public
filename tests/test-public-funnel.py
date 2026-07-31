@@ -30,6 +30,7 @@ FIXTURE = Path(FIXTURE_ROOT) if FIXTURE_ROOT else None
 EGRESS_LINTER = ROOT / "tools" / "ci" / "egress-lint.sh"
 IBM_DATA_GUARD = ROOT / "tools" / "check-no-ibm-redistribution.py"
 RELEASE_INTEGRITY_GATE = ROOT / "tools" / "verify-release-integrity.py"
+RELEASE_SHAPE_SYNC = ROOT / "tools" / "sync-release-shape.py"
 PUBLIC_WORKFLOW = ROOT / ".github" / "workflows" / "public-checks.yml"
 VERIFY_GUIDE = ROOT / "docs" / "VERIFY.md"
 RELEASE_NOTES = ROOT / "docs" / "RELEASE-NOTES.md"
@@ -224,6 +225,28 @@ class ReportParser(HTMLParser):
 
 
 class PublicFunnelTests(unittest.TestCase):
+    def run_release_shape_sync(
+        self,
+        root: Path,
+        *,
+        check: bool,
+    ) -> subprocess.CompletedProcess[str]:
+        command = [
+            "python3",
+            str(RELEASE_SHAPE_SYNC),
+            "--repo-root",
+            str(root),
+        ]
+        if check:
+            command.append("--check")
+        return subprocess.run(
+            command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=False,
+        )
+
     def copy_verification_inputs(self, destination: Path) -> None:
         (destination / "site").mkdir(parents=True)
         for relative in (
@@ -231,9 +254,16 @@ class PublicFunnelTests(unittest.TestCase):
             "catalog.json",
             "aixray-aix.sh",
             "aixray-review-pack.sh",
+            "aixray-review-validate.awk",
+            "SHA256SUMS",
             "site/aixray-aix.sh",
         ):
             source = ROOT / relative
+            if not source.exists() and relative in (
+                "aixray-review-validate.awk",
+                "SHA256SUMS",
+            ):
+                continue
             target = destination / relative
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(source, target)
@@ -252,6 +282,40 @@ class PublicFunnelTests(unittest.TestCase):
 
     def test_documented_hash_verification_succeeds_on_current_tree(self) -> None:
         result = self.run_verification_block(ROOT)
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        self.assertIn("catalog/hash verification OK", result.stdout)
+
+    def test_documented_hash_verification_accepts_declared_shape(self) -> None:
+        with tempfile.TemporaryDirectory(
+            prefix="aixray-verify-declared-shape-"
+        ) as temporary:
+            candidate = Path(temporary)
+            self.copy_verification_inputs(candidate)
+            shutil.copytree(ROOT / "checks", candidate / "checks")
+            catalog_path = candidate / "catalog.json"
+            catalog = json.loads(catalog_path.read_text(encoding="utf-8"))
+            original_count = catalog["check_count"]
+            removed = catalog["checks"].pop()
+            declared_count = original_count - 1
+            catalog["check_count"] = declared_count
+            catalog_path.write_text(
+                json.dumps(catalog, indent=2) + "\n",
+                encoding="utf-8",
+            )
+            shutil.rmtree(candidate / "checks" / removed["id"])
+            readme_path = candidate / "README.md"
+            readme = readme_path.read_text(encoding="utf-8")
+            readme_path.write_text(
+                re.sub(
+                    rf"\b{re.escape(str(original_count))}\b",
+                    str(declared_count),
+                    readme,
+                ),
+                encoding="utf-8",
+            )
+
+            result = self.run_verification_block(candidate)
+
         self.assertEqual(0, result.returncode, result.stdout + result.stderr)
         self.assertIn("catalog/hash verification OK", result.stdout)
 
@@ -301,6 +365,93 @@ class PublicFunnelTests(unittest.TestCase):
             combined,
         )
         self.assertNotIn("Traceback", combined)
+
+    def test_documented_hash_verification_checks_v020_manifest(self) -> None:
+        with tempfile.TemporaryDirectory(
+            prefix="aixray-verify-v020-manifest-"
+        ) as temporary:
+            candidate = Path(temporary)
+            self.copy_verification_inputs(candidate)
+            shutil.copytree(ROOT / "checks", candidate / "checks")
+            catalog_path = candidate / "catalog.json"
+            catalog = json.loads(catalog_path.read_text(encoding="utf-8"))
+            catalog["tool_version"] = "0.2.0"
+            catalog_path.write_text(
+                json.dumps(catalog, indent=2) + "\n",
+                encoding="utf-8",
+            )
+            validator = candidate / "aixray-review-validate.awk"
+            validator.write_text('BEGIN { print "validated" }\n', encoding="utf-8")
+            (candidate / "SHA256SUMS").write_text(
+                f"{sha256(candidate / 'aixray-aix.sh')}  aixray-aix.sh\n"
+                f"{sha256(candidate / 'aixray-review-pack.sh')}  "
+                "aixray-review-pack.sh\n"
+                f"{'0' * 64}  aixray-review-validate.awk\n",
+                encoding="utf-8",
+            )
+
+            result = self.run_verification_block(candidate)
+
+        combined = result.stdout + result.stderr
+        self.assertNotEqual(0, result.returncode, combined)
+        self.assertIn(
+            "SHA256SUMS digest mismatch for aixray-review-validate.awk",
+            combined,
+        )
+        self.assertNotIn("Traceback", combined)
+
+    def test_documented_hash_verification_accepts_v020_manifest_docs(self) -> None:
+        with tempfile.TemporaryDirectory(
+            prefix="aixray-verify-v020-manifest-docs-"
+        ) as temporary:
+            candidate = Path(temporary)
+            self.copy_verification_inputs(candidate)
+            shutil.copytree(ROOT / "checks", candidate / "checks")
+            catalog_path = candidate / "catalog.json"
+            catalog = json.loads(catalog_path.read_text(encoding="utf-8"))
+            catalog["tool_version"] = "0.2.0"
+            catalog_path.write_text(
+                json.dumps(catalog, indent=2) + "\n",
+                encoding="utf-8",
+            )
+            validator = candidate / "aixray-review-validate.awk"
+            validator.write_text('BEGIN { print "validated" }\n', encoding="utf-8")
+            (candidate / "SHA256SUMS").write_text(
+                f"{sha256(candidate / 'aixray-aix.sh')}  aixray-aix.sh\n"
+                f"{sha256(candidate / 'aixray-review-pack.sh')}  "
+                "aixray-review-pack.sh\n"
+                f"{sha256(validator)}  aixray-review-validate.awk\n",
+                encoding="utf-8",
+            )
+            readme_path = candidate / "README.md"
+            stale_digest = "0" * 64
+            readme = (
+                re.sub(
+                    r"\b[0-9A-Fa-f]{64}\b",
+                    "",
+                    readme_path.read_text(encoding="utf-8"),
+                )
+                + "\nVerify all release payloads with `SHA256SUMS`.\n"
+                + f"Stale pasted digest: `{stale_digest}`.\n"
+            )
+            readme_path.write_text(readme, encoding="utf-8")
+
+            stale_result = self.run_verification_block(candidate)
+
+            stale_combined = stale_result.stdout + stale_result.stderr
+            self.assertNotEqual(0, stale_result.returncode, stale_combined)
+            self.assertIn(
+                "README.md retains pasted artifact digests instead of using "
+                "SHA256SUMS",
+                stale_combined,
+            )
+            readme = readme.replace(stale_digest, "")
+            readme_path.write_text(readme, encoding="utf-8")
+
+            result = self.run_verification_block(candidate)
+
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        self.assertIn("catalog/hash verification OK", result.stdout)
 
     def test_documented_hash_verification_rejects_symlinked_parent(self) -> None:
         with tempfile.TemporaryDirectory(
@@ -442,16 +593,23 @@ class PublicFunnelTests(unittest.TestCase):
     def test_catalog_covers_every_public_artifact_and_scanner(self) -> None:
         catalog = json.loads((ROOT / "catalog.json").read_text())
         checks = catalog.get("checks", [])
+        declared_version = catalog.get("tool_version")
+        self.assertIsInstance(declared_version, str)
+        if isinstance(declared_version, str):
+            self.assertRegex(declared_version, r"^[0-9][0-9A-Za-z.+-]*$")
         check_dirs = sorted((ROOT / "checks").glob("ck-*"))
         manifests = sorted((ROOT / "checks").glob("ck-*/manifest.json"))
-        with self.subTest(contract="current check count"):
-            self.assertEqual(35, catalog.get("check_count"))
+        declared_count = catalog.get("check_count")
+        with self.subTest(contract="declared check count is a positive integer"):
+            self.assertIs(type(declared_count), int)
+            if type(declared_count) is int:
+                self.assertGreater(declared_count, 0)
         with self.subTest(contract="catalog list count"):
-            self.assertEqual(35, len(checks))
+            self.assertEqual(declared_count, len(checks))
         with self.subTest(contract="public directory count"):
-            self.assertEqual(35, len(check_dirs))
+            self.assertEqual(declared_count, len(check_dirs))
         with self.subTest(contract="manifest count"):
-            self.assertEqual(35, len(manifests))
+            self.assertEqual(declared_count, len(manifests))
 
         for entry in checks:
             check_id = entry["id"]
@@ -461,6 +619,12 @@ class PublicFunnelTests(unittest.TestCase):
                 self.assertTrue(artifact.is_file())
                 if artifact.is_file():
                     self.assertEqual(entry["sha256"], sha256(artifact))
+                    versions = re.findall(
+                        r'(?m)^AIXRAY_STANDALONE_VERSION=["\']([^"\']+)["\']'
+                        r"[ \t]*$",
+                        artifact.read_text(encoding="utf-8"),
+                    )
+                    self.assertEqual([declared_version], versions)
             with self.subTest(check=check_id, file="manifest"):
                 self.assertTrue(manifest.is_file())
 
@@ -511,13 +675,212 @@ class PublicFunnelTests(unittest.TestCase):
                     review_pack.get("sha256"),
                 )
 
-    def test_customer_copy_describes_the_current_35_checks(self) -> None:
-        for path in (ROOT / "README.md", SITE / "index.html", ROOT / "llms.txt"):
+        for artifact, variable in (
+            (SCANNER, "VERSION"),
+            (REVIEW_HELPER, "AIXRAY_REVIEW_PACK_VERSION"),
+        ):
+            versions = re.findall(
+                rf'(?m)^{variable}=["\']([^"\']+)["\'][ \t]*$',
+                artifact.read_text(encoding="utf-8"),
+            )
+            with self.subTest(artifact=artifact.name, contract="current version"):
+                self.assertEqual([declared_version], versions)
+
+    def test_customer_copy_matches_the_declared_check_count(self) -> None:
+        catalog = json.loads((ROOT / "catalog.json").read_text())
+        declared_count = catalog.get("check_count")
+        self.assertIs(type(declared_count), int)
+        if type(declared_count) is not int:
+            return
+        count_claim = re.compile(r"\b([1-9][0-9]*)\s+standalone\b", re.IGNORECASE)
+        for path in (
+            ROOT / "README.md",
+            SITE / "index.html",
+            ROOT / "aixray.jsonld",
+            ROOT / "llms.txt",
+        ):
             text = path.read_text(encoding="utf-8")
-            with self.subTest(path=path.name, contract="no stale count"):
-                self.assertNotRegex(text, r"\b31 standalone\b")
-            with self.subTest(path=path.name, contract="current count"):
-                self.assertRegex(text, r"\b35\b")
+            claims = {int(value) for value in count_claim.findall(text)}
+            with self.subTest(path=path.name, contract="count claim exists"):
+                self.assertTrue(claims, "no numeric standalone-check claim found")
+            with self.subTest(path=path.name, contract="all claims are current"):
+                self.assertEqual({declared_count}, claims)
+
+        root_jsonld = json.loads((ROOT / "aixray.jsonld").read_text())
+        site_jsonld = inline_jsonld((SITE / "index.html").read_text(encoding="utf-8"))
+        for label, metadata in (("root", root_jsonld), ("site", site_jsonld)):
+            count_values = [
+                item.get("value")
+                for item in metadata.get("additionalProperty", [])
+                if item.get("name") == "standaloneCheckCount"
+            ]
+            with self.subTest(metadata=label, contract="one current count"):
+                self.assertEqual([declared_count], count_values)
+
+    def test_customer_count_copy_is_generated_from_catalog(self) -> None:
+        self.assertTrue(
+            RELEASE_SHAPE_SYNC.is_file(),
+            "missing catalog-driven release-shape sync tool",
+        )
+        if not RELEASE_SHAPE_SYNC.is_file():
+            return
+
+        current = self.run_release_shape_sync(ROOT, check=True)
+        self.assertEqual(0, current.returncode, current.stdout + current.stderr)
+
+        with tempfile.TemporaryDirectory(
+            prefix="aixray-release-shape-sync-"
+        ) as temporary:
+            candidate = Path(temporary)
+            for relative in (
+                "README.md",
+                "catalog.json",
+                "aixray.jsonld",
+                "llms.txt",
+                "site/index.html",
+            ):
+                source = ROOT / relative
+                target = candidate / relative
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(source, target)
+            catalog_path = candidate / "catalog.json"
+            catalog = json.loads(catalog_path.read_text(encoding="utf-8"))
+            catalog["check_count"] -= 1
+            declared_count = catalog["check_count"]
+            catalog_path.write_text(
+                json.dumps(catalog, indent=2) + "\n",
+                encoding="utf-8",
+            )
+
+            stale = self.run_release_shape_sync(candidate, check=True)
+            self.assertNotEqual(0, stale.returncode, stale.stdout + stale.stderr)
+            updated = self.run_release_shape_sync(candidate, check=False)
+            self.assertEqual(0, updated.returncode, updated.stdout + updated.stderr)
+            verified = self.run_release_shape_sync(candidate, check=True)
+            self.assertEqual(0, verified.returncode, verified.stdout + verified.stderr)
+
+            claim_pattern = re.compile(
+                r"\b([1-9][0-9]*)\s+standalone\b",
+                re.IGNORECASE,
+            )
+            for relative in (
+                "README.md",
+                "aixray.jsonld",
+                "llms.txt",
+                "site/index.html",
+            ):
+                claims = {
+                    int(value)
+                    for value in claim_pattern.findall(
+                        (candidate / relative).read_text(encoding="utf-8")
+                    )
+                }
+                with self.subTest(relative=relative, contract="rendered count"):
+                    self.assertEqual({declared_count}, claims)
+
+            root_jsonld = json.loads(
+                (candidate / "aixray.jsonld").read_text(encoding="utf-8")
+            )
+            site_jsonld = inline_jsonld(
+                (candidate / "site/index.html").read_text(encoding="utf-8")
+            )
+            for label, metadata in (("root", root_jsonld), ("site", site_jsonld)):
+                values = [
+                    item.get("value")
+                    for item in metadata.get("additionalProperty", [])
+                    if item.get("name") == "standaloneCheckCount"
+                ]
+                with self.subTest(metadata=label, contract="rendered property"):
+                    self.assertEqual([declared_count], values)
+
+    def test_customer_copy_matches_the_declared_version(self) -> None:
+        catalog = json.loads((ROOT / "catalog.json").read_text())
+        declared_version = catalog.get("tool_version")
+        self.assertIsInstance(declared_version, str)
+        if not isinstance(declared_version, str):
+            return
+        version_claim = re.compile(
+            r"\bversion(?:\s*:\s*|\s+)`?"
+            r"([0-9]+(?:\.[0-9A-Za-z-]+)+"
+            r"(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?)`?",
+            re.IGNORECASE,
+        )
+        for path, expected_claims in (
+            (ROOT / "README.md", 3),
+            (SITE / "index.html", 3),
+            (ROOT / "llms.txt", 3),
+        ):
+            claims = version_claim.findall(path.read_text(encoding="utf-8"))
+            with self.subTest(path=path.name, contract="all claims are current"):
+                self.assertEqual([declared_version] * expected_claims, claims)
+
+        root_jsonld = json.loads((ROOT / "aixray.jsonld").read_text())
+        site_jsonld = inline_jsonld((SITE / "index.html").read_text(encoding="utf-8"))
+        for label, metadata in (("root", root_jsonld), ("site", site_jsonld)):
+            with self.subTest(metadata=label, contract="current version"):
+                self.assertEqual(declared_version, metadata.get("softwareVersion"))
+
+    def test_customer_version_copy_is_generated_from_catalog(self) -> None:
+        with tempfile.TemporaryDirectory(
+            prefix="aixray-release-version-sync-"
+        ) as temporary:
+            candidate = Path(temporary)
+            for relative in (
+                "README.md",
+                "catalog.json",
+                "aixray.jsonld",
+                "llms.txt",
+                "site/index.html",
+            ):
+                source = ROOT / relative
+                target = candidate / relative
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(source, target)
+            catalog_path = candidate / "catalog.json"
+            catalog = json.loads(catalog_path.read_text(encoding="utf-8"))
+            declared_version = f"{catalog['tool_version']}.999"
+            catalog["tool_version"] = declared_version
+            catalog_path.write_text(
+                json.dumps(catalog, indent=2) + "\n",
+                encoding="utf-8",
+            )
+
+            stale = self.run_release_shape_sync(candidate, check=True)
+            self.assertNotEqual(0, stale.returncode, stale.stdout + stale.stderr)
+            updated = self.run_release_shape_sync(candidate, check=False)
+            self.assertEqual(0, updated.returncode, updated.stdout + updated.stderr)
+            verified = self.run_release_shape_sync(candidate, check=True)
+            self.assertEqual(0, verified.returncode, verified.stdout + verified.stderr)
+
+            version_claim = re.compile(
+                r"\bversion(?:\s*:\s*|\s+)`?"
+                r"([0-9]+(?:\.[0-9A-Za-z-]+)+"
+                r"(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?)`?",
+                re.IGNORECASE,
+            )
+            for relative, expected_claims in (
+                ("README.md", 3),
+                ("llms.txt", 3),
+                ("site/index.html", 3),
+            ):
+                claims = version_claim.findall(
+                    (candidate / relative).read_text(encoding="utf-8")
+                )
+                with self.subTest(relative=relative, contract="rendered version"):
+                    self.assertEqual([declared_version] * expected_claims, claims)
+
+            root_jsonld = json.loads(
+                (candidate / "aixray.jsonld").read_text(encoding="utf-8")
+            )
+            site_jsonld = inline_jsonld(
+                (candidate / "site/index.html").read_text(encoding="utf-8")
+            )
+            for label, metadata in (("root", root_jsonld), ("site", site_jsonld)):
+                with self.subTest(metadata=label, contract="rendered version"):
+                    self.assertEqual(
+                        declared_version,
+                        metadata.get("softwareVersion"),
+                    )
 
     def test_readme_and_docs_exclude_disallowed_framework_claims(self) -> None:
         disallowed = tuple(
@@ -571,7 +934,12 @@ class PublicFunnelTests(unittest.TestCase):
         self.assertRegex(readme, r"aixray-<hostname>-<date>\.html")
 
         scanner_hash = sha256(SCANNER)
-        self.assertIn(scanner_hash, readme)
+        catalog = json.loads((ROOT / "catalog.json").read_text())
+        if catalog.get("tool_version") == "0.1.0":
+            self.assertIn(scanner_hash, readme)
+        else:
+            self.assertIn("SHA256SUMS", readme)
+            self.assertTrue((ROOT / "SHA256SUMS").is_file())
 
     def test_readme_documents_safe_send_limits_and_hashes(self) -> None:
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
@@ -583,10 +951,17 @@ class PublicFunnelTests(unittest.TestCase):
         self.assertIn("pseudonymized, not anonymized", normalized)
         self.assertIn("undiscovered pure-alphabetic barewords", normalized)
         self.assertIn("inspect the review file before sending", normalized)
-        self.assertIn(sha256(SCANNER), readme)
+        catalog = json.loads((ROOT / "catalog.json").read_text())
         self.assertTrue(REVIEW_HELPER.is_file())
-        if REVIEW_HELPER.is_file():
-            self.assertIn(sha256(REVIEW_HELPER), readme)
+        if catalog.get("tool_version") == "0.1.0":
+            self.assertIn(sha256(SCANNER), readme)
+            if REVIEW_HELPER.is_file():
+                self.assertIn(sha256(REVIEW_HELPER), readme)
+        else:
+            self.assertIn("SHA256SUMS", readme)
+            self.assertTrue((ROOT / "aixray-review-validate.awk").is_file())
+            self.assertTrue((ROOT / "SHA256SUMS").is_file())
+            self.assertNotRegex(readme, r"\b[0-9A-Fa-f]{64}\b")
 
     def test_v010_release_note_records_exact_tag_asset_discrepancy(self) -> None:
         self.assertTrue(RELEASE_NOTES.is_file())
@@ -1099,12 +1474,15 @@ START_HERE_ITEMS=""
         )
         self.assertIn("fetch-depth: 0", workflow)
         self.assertIn("sudo apt-get install -y ksh", workflow)
+        self.assertIn("python3 tools/sync-release-shape.py --check", workflow)
         self.assertIn("sh tests/run-tests.sh", workflow)
         self.assertIn(
-            "sh tools/ci/egress-lint.sh "
-            "aixray-aix.sh aixray-review-pack.sh checks/*/*.ksh",
+            "set -- aixray-aix.sh aixray-review-pack.sh checks/*/*.ksh",
             workflow,
         )
+        self.assertIn("if [ -f aixray-review-validate.awk ]; then", workflow)
+        self.assertIn('set -- "$@" aixray-review-validate.awk', workflow)
+        self.assertIn('sh tools/ci/egress-lint.sh "$@"', workflow)
         self.assertIn(
             "python3 tools/check-no-ibm-redistribution.py",
             workflow,
