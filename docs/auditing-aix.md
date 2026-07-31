@@ -72,7 +72,7 @@ Finally, verify the system can tell you when something goes wrong and that you c
 
 ## A note on the HMC
 
-If you manage Power through a Hardware Management Console, the HMC deserves its own pass: HMC firmware currency, user accounts and roles, certificate validity, connectivity to managed systems, and console backups. This is worth doing manually as part of a full estate audit. Be clear-eyed about scope, though — AIXray v0.1.0 assesses the AIX and VIOS partitions, not the HMC appliance itself. Treat the HMC review as a complementary, manual step.
+If you manage Power through a Hardware Management Console, the HMC deserves its own pass: HMC firmware currency, user accounts and roles, certificate validity, connectivity to managed systems, and console backups. This is worth doing manually as part of a full estate audit. Be clear-eyed about scope, though — AIXray assesses the AIX and VIOS partitions, not the HMC appliance itself. Treat the HMC review as a complementary, manual step.
 
 ## Doing all of this in one honest pass: AIXray
 

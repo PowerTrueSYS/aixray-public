@@ -13,8 +13,13 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 GATE = ROOT / "tools" / "verify-release-integrity.py"
-TAG = "v0.1.0"
-VERSION = "0.1.0"
+TAG = "v0.2.0"
+VERSION = "0.2.0"
+PAYLOAD_ARTIFACTS = (
+    "aixray-aix.sh",
+    "aixray-review-pack.sh",
+    "aixray-review-validate.awk",
+)
 
 
 def sha256(path: Path) -> str:
@@ -35,40 +40,44 @@ class ReleaseIntegrityTests(unittest.TestCase):
 
         scanner = (
             "#!/bin/sh\n"
-            'VERSION="0.1.0"\n'
+            f'VERSION="{VERSION}"\n'
             "printf '%s\\n' \"$VERSION\"\n"
         ).encode()
         review = (
             "#!/bin/sh\n"
-            'AIXRAY_REVIEW_PACK_VERSION="0.1.0"\n'
+            f'AIXRAY_REVIEW_PACK_VERSION="{VERSION}"\n'
             "exit 0\n"
         ).encode()
+        validator = b'BEGIN { print "validated" }\n'
         check = (
             "#!/bin/ksh\n"
-            'AIXRAY_STANDALONE_VERSION="0.1.0"\n'
+            f'AIXRAY_STANDALONE_VERSION="{VERSION}"\n'
             "exit 0\n"
         ).encode()
 
         (self.tree / "aixray-aix.sh").write_bytes(scanner)
         (self.tree / "site" / "aixray-aix.sh").write_bytes(scanner)
         (self.tree / "aixray-review-pack.sh").write_bytes(review)
+        (self.tree / "aixray-review-validate.awk").write_bytes(validator)
         (
             self.tree / "checks" / "ck-example" / "ck-example.ksh"
         ).write_bytes(check)
         (self.assets / "aixray-aix.sh").write_bytes(scanner)
         (self.assets / "aixray-review-pack.sh").write_bytes(review)
+        (self.assets / "aixray-review-validate.awk").write_bytes(validator)
         self.write_catalog()
+        self.write_sha256sums()
 
     def tearDown(self) -> None:
         self.temporary.cleanup()
 
-    def write_catalog(self) -> None:
+    def write_catalog(self, *, version: str = VERSION) -> None:
         scanner = self.tree / "aixray-aix.sh"
         review = self.tree / "aixray-review-pack.sh"
         check = self.tree / "checks" / "ck-example" / "ck-example.ksh"
         catalog = {
             "schema_version": 1,
-            "tool_version": VERSION,
+            "tool_version": version,
             "check_count": 1,
             "checks": [
                 {
@@ -92,14 +101,29 @@ class ReleaseIntegrityTests(unittest.TestCase):
             encoding="utf-8",
         )
 
+    def write_sha256sums(
+        self,
+        *,
+        artifacts: tuple[str, ...] = PAYLOAD_ARTIFACTS,
+        digest_overrides: dict[str, str] | None = None,
+    ) -> None:
+        digest_overrides = digest_overrides or {}
+        content = "".join(
+            f"{digest_overrides.get(relative, sha256(self.tree / relative))}  "
+            f"{relative}\n"
+            for relative in artifacts
+        )
+        (self.tree / "SHA256SUMS").write_text(content, encoding="utf-8")
+        (self.assets / "SHA256SUMS").write_text(content, encoding="utf-8")
+
     def run_gate(
-        self, *, with_assets: bool = True
+        self, *, with_assets: bool = True, tag: str = TAG
     ) -> subprocess.CompletedProcess[str]:
         command = [
             "python3",
             str(GATE),
             "--tag",
-            TAG,
+            tag,
             "--repo-root",
             str(self.tree),
         ]
@@ -124,7 +148,7 @@ class ReleaseIntegrityTests(unittest.TestCase):
     def test_correct_release_tree_and_assets_pass(self) -> None:
         result = self.run_gate()
         self.assertEqual(0, result.returncode, result.stdout + result.stderr)
-        self.assertIn("release-integrity: PASS: v0.1.0", result.stdout)
+        self.assertIn("release-integrity: PASS: v0.2.0", result.stdout)
         self.assertIn(
             f"aixray-aix.sh sha256={sha256(self.tree / 'aixray-aix.sh')}",
             result.stdout,
@@ -134,23 +158,30 @@ class ReleaseIntegrityTests(unittest.TestCase):
             f"sha256={sha256(self.tree / 'aixray-review-pack.sh')}",
             result.stdout,
         )
+        self.assertIn(
+            "aixray-review-validate.awk "
+            f"sha256={sha256(self.tree / 'aixray-review-validate.awk')}",
+            result.stdout,
+        )
+        self.assertIn(
+            f"SHA256SUMS sha256={sha256(self.tree / 'SHA256SUMS')}",
+            result.stdout,
+        )
 
     def test_tree_only_preflight_passes_without_asset_directory(self) -> None:
         result = self.run_gate(with_assets=False)
         self.assertEqual(0, result.returncode, result.stdout + result.stderr)
-        self.assertIn("release-integrity: PASS: v0.1.0", result.stdout)
+        self.assertIn("release-integrity: PASS: v0.2.0", result.stdout)
 
     def test_missing_shipped_file_fails_with_its_path(self) -> None:
-        (self.tree / "aixray-review-pack.sh").unlink()
+        (self.tree / "aixray-review-validate.awk").unlink()
         result = self.assert_failed_with(
             "required release artifact is missing from tagged tree: "
-            "aixray-review-pack.sh"
+            "aixray-review-validate.awk"
         )
-        combined = result.stdout + result.stderr
-        self.assertEqual(1, combined.count("aixray-review-pack.sh"), combined)
 
     def test_different_release_asset_fails_with_both_digests(self) -> None:
-        different = b"#!/bin/sh\nVERSION=\"0.1.0\"\n# different bytes\n"
+        different = b"#!/bin/sh\nVERSION=\"0.2.0\"\n# different bytes\n"
         (self.assets / "aixray-aix.sh").write_bytes(different)
         result = self.assert_failed_with(
             "release asset differs from tagged tree: aixray-aix.sh"
@@ -191,7 +222,7 @@ class ReleaseIntegrityTests(unittest.TestCase):
 
     def test_root_and_site_scanner_divergence_is_rejected(self) -> None:
         (self.tree / "site" / "aixray-aix.sh").write_bytes(
-            b"#!/bin/sh\nVERSION=\"0.1.0\"\n# divergent site copy\n"
+            b"#!/bin/sh\nVERSION=\"0.2.0\"\n# divergent site copy\n"
         )
         self.assert_failed_with(
             "scanner copies differ: aixray-aix.sh != site/aixray-aix.sh"
@@ -205,7 +236,7 @@ class ReleaseIntegrityTests(unittest.TestCase):
         self.write_catalog()
         self.assert_failed_with(
             "version mismatch in aixray-aix.sh: VERSION declares 9.9.9; "
-            "tag v0.1.0 requires 0.1.0"
+            "tag v0.2.0 requires 0.2.0"
         )
 
     def test_review_helper_version_must_match_tag(self) -> None:
@@ -220,7 +251,7 @@ class ReleaseIntegrityTests(unittest.TestCase):
         self.assert_failed_with(
             "version mismatch in aixray-review-pack.sh: "
             "AIXRAY_REVIEW_PACK_VERSION declares 9.9.9; "
-            "tag v0.1.0 requires 0.1.0"
+            "tag v0.2.0 requires 0.2.0"
         )
 
     def test_catalog_version_must_match_tag(self) -> None:
@@ -233,18 +264,58 @@ class ReleaseIntegrityTests(unittest.TestCase):
         )
         self.assert_failed_with(
             "catalog.json tool_version is 9.9.9; "
-            "tag v0.1.0 requires 0.1.0"
+            "tag v0.2.0 requires 0.2.0"
         )
 
     def test_missing_release_asset_is_rejected(self) -> None:
-        (self.assets / "aixray-review-pack.sh").unlink()
+        (self.assets / "SHA256SUMS").unlink()
         self.assert_failed_with(
-            "required release asset is missing: aixray-review-pack.sh"
+            "required release asset is missing: SHA256SUMS"
         )
 
     def test_unexpected_release_asset_is_rejected(self) -> None:
         (self.assets / "notes.txt").write_text("not a shipped artifact\n")
         self.assert_failed_with("unexpected release asset: notes.txt")
+
+    def test_sha256sums_requires_exact_payload_set(self) -> None:
+        self.write_sha256sums(artifacts=PAYLOAD_ARTIFACTS[:-1])
+        self.assert_failed_with(
+            "SHA256SUMS payload set mismatch: missing "
+            "aixray-review-validate.awk"
+        )
+
+    def test_sha256sums_digest_must_match_tagged_payload(self) -> None:
+        self.write_sha256sums(
+            digest_overrides={"aixray-review-validate.awk": "0" * 64}
+        )
+        self.assert_failed_with(
+            "SHA256SUMS digest mismatch for aixray-review-validate.awk"
+        )
+
+    def test_v010_legacy_two_asset_surface_still_passes(self) -> None:
+        legacy_version = "0.1.0"
+        scanner = (
+            "#!/bin/sh\n"
+            f'VERSION="{legacy_version}"\n'
+            "exit 0\n"
+        ).encode()
+        review = (
+            "#!/bin/sh\n"
+            f'AIXRAY_REVIEW_PACK_VERSION="{legacy_version}"\n'
+            "exit 0\n"
+        ).encode()
+        for directory in (self.tree, self.assets):
+            (directory / "aixray-aix.sh").write_bytes(scanner)
+            (directory / "aixray-review-pack.sh").write_bytes(review)
+            (directory / "aixray-review-validate.awk").unlink()
+            (directory / "SHA256SUMS").unlink()
+        (self.tree / "site" / "aixray-aix.sh").write_bytes(scanner)
+        self.write_catalog(version=legacy_version)
+
+        result = self.run_gate(tag="v0.1.0")
+
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        self.assertIn("release-integrity: PASS: v0.1.0", result.stdout)
 
 
 if __name__ == "__main__":

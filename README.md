@@ -28,12 +28,12 @@ AIXray is useful for:
 - [`aixray-aix.sh`](aixray-aix.sh) — the complete AIX/VIOS v1 assessment, version 0.1.0
 - [`aixray-review-pack.sh`](aixray-review-pack.sh) — the offline helper that creates a pseudonymized review copy and a separate local decoding key
 - [`checks/`](checks/) — 35 standalone ksh check tools, each paired with its `manifest.json`
-- [`catalog.json`](catalog.json) — a generated, sorted catalog of all 35 manifests with SHA-256 hashes
+- [`catalog.json`](catalog.json) — the generated, sorted manifest catalog with SHA-256 hashes and the declared check count
 - [`SECURITY.md`](SECURITY.md) and [`docs/VERIFY.md`](docs/VERIFY.md) — the trust boundary, caveats, and repeatable public-repository verification commands
 - [`site/index.html`](site/index.html) — the public download page for `powertruesystems.com/aixray`
 - [`aixray.jsonld`](aixray.jsonld), [`llms.txt`](llms.txt), and [`robots.txt`](robots.txt) — machine and crawler discovery metadata
 
-The 35 standalone tools are independently callable check modules. They are not a numerical claim about every finding produced by the larger assembled assessment.
+The standalone tools are independently callable check modules. Their inventory count is not a numerical claim about every finding produced by the larger assembled assessment.
 
 ## Standards coverage
 
@@ -52,7 +52,7 @@ AIXray evaluates selected controls against observed system state. Coverage is pa
 | zero egress during the assessment | The shell artifacts contain the assessment logic and reference data locally. They do not fetch reference data or transmit results. Review the command surface in [`catalog.json`](catalog.json) and the executable source before running it. |
 | single ksh88 file | The full scan is one inspectable [`aixray-aix.sh`](aixray-aix.sh) file. On AIX, `/bin/sh` provides the ksh88-compatible runtime used by the script; bash, Python, package installation, and GNU userland are not runtime requirements. |
 | No fabricated assessment result | `NOT_ASSESSED` is a first-class output state. Missing, unreadable, malformed, ambiguous, or unsupported evidence is reported as unavailable rather than silently converted to `PASS`. Search the assembled source for `NOT_ASSESSED` to inspect each branch. |
-| 35 standalone tools | [`catalog.json`](catalog.json) has `"check_count": 35`; each entry resolves to one paired script and manifest under [`checks/`](checks/). |
+| Declared standalone inventory | [`catalog.json`](catalog.json) records `check_count`; each entry resolves to one paired script and manifest under [`checks/`](checks/), and the public tests require all three counts to agree. |
 | Exact artifact identity | Each catalog entry carries the SHA-256 digest of its referenced standalone shell artifact. The catalog is sorted by check ID for deterministic review. |
 | v1 only | The assembled script and all standalone scripts declare version `0.1.0`. This repository does not contain a v2 implementation. |
 
@@ -105,6 +105,10 @@ the report:
 ./aixray-review-pack.sh aixray-<hostname>-<date>.html
 ```
 
+The v0.2.0-and-later release bundle also supplies
+`aixray-review-validate.awk`; keep it beside `aixray-review-pack.sh` when you
+transfer or run the helper. The historical v0.1.0 helper is self-contained.
+
 The helper produces a sendable `aixray-review-*.html` review file and a
 separate mode-`0600` `aixray-local-key-*.map` decoding key that never leaves
 this machine. Its output is pseudonymized, not anonymized: undiscovered
@@ -129,7 +133,7 @@ The top-level `assembled_scanner` entry in [`catalog.json`](catalog.json)
 binds the root and site scanner copies to the first hash. The top-level
 `review_pack` entry binds the review helper to the second. Each sorted
 `checks[]` entry records its standalone artifact and SHA-256; `check_count`
-remains 35.
+must match that list and the paired files under `checks/`.
 
 The published `v0.1.0` assets do not match its immutable tag. See the
 [`v0.1.0` release-integrity note](docs/RELEASE-NOTES.md#v010-release-integrity-note)
@@ -139,12 +143,16 @@ On a review workstation with `jq`, `rg`, and SHA-256 tooling:
 
 ```sh
 jq '.tool_version, .check_count, .license' catalog.json
+python3 tools/sync-release-shape.py --check
 find checks -name manifest.json | wc -l
 jq -e 'all(.checks[]; .read_only == true and .license == "Apache-2.0")' catalog.json
-rg -n 'VERSION="0\.1\.0"|AIXRAY_STANDALONE_VERSION="0\.1\.0"' aixray-aix.sh checks --glob '*.ksh'
+version=$(jq -r '.tool_version' catalog.json)
+rg -n -F -e "VERSION=\"${version}\"" -e "AIXRAY_REVIEW_PACK_VERSION=\"${version}\"" -e "AIXRAY_STANDALONE_VERSION=\"${version}\"" aixray-aix.sh aixray-review-pack.sh checks --glob '*.ksh'
 rg -n 'NOT_ASSESSED' aixray-aix.sh
 cmp aixray-aix.sh site/aixray-aix.sh
-sh tools/ci/egress-lint.sh aixray-aix.sh aixray-review-pack.sh checks/*/*.ksh
+set -- aixray-aix.sh aixray-review-pack.sh checks/*/*.ksh
+[ ! -f aixray-review-validate.awk ] || set -- "$@" aixray-review-validate.awk
+sh tools/ci/egress-lint.sh "$@"
 python3 tools/check-no-ibm-redistribution.py
 sh tests/run-tests.sh
 ```

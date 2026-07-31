@@ -12,10 +12,23 @@ import sys
 from typing import Any
 
 
-RELEASE_ARTIFACTS = ("aixray-aix.sh", "aixray-review-pack.sh")
 SCANNER_PATH = "aixray-aix.sh"
 SITE_SCANNER_PATH = "site/aixray-aix.sh"
 REVIEW_HELPER_PATH = "aixray-review-pack.sh"
+REVIEW_VALIDATOR_PATH = "aixray-review-validate.awk"
+CHECKSUM_MANIFEST_PATH = "SHA256SUMS"
+CURRENT_PAYLOAD_ARTIFACTS = (
+    SCANNER_PATH,
+    REVIEW_HELPER_PATH,
+    REVIEW_VALIDATOR_PATH,
+)
+CURRENT_RELEASE_ARTIFACTS = (
+    *CURRENT_PAYLOAD_ARTIFACTS,
+    CHECKSUM_MANIFEST_PATH,
+)
+LEGACY_RELEASE_ARTIFACTS = {
+    "0.1.0": (SCANNER_PATH, REVIEW_HELPER_PATH),
+}
 VERSION_VARIABLES = {
     SCANNER_PATH: "VERSION",
     REVIEW_HELPER_PATH: "AIXRAY_REVIEW_PACK_VERSION",
@@ -24,6 +37,10 @@ VERSION_VARIABLES = {
 
 def sha256_bytes(content: bytes) -> str:
     return hashlib.sha256(content).hexdigest()
+
+
+def release_artifacts_for_version(version: str | None) -> tuple[str, ...]:
+    return LEGACY_RELEASE_ARTIFACTS.get(version, CURRENT_RELEASE_ARTIFACTS)
 
 
 class Validator:
@@ -43,6 +60,7 @@ class Validator:
         self.contents: dict[str, bytes] = {}
         self.failed_reads: set[str] = set()
         self.version = self._version_from_tag()
+        self.release_artifacts = release_artifacts_for_version(self.version)
 
     def fail(self, message: str) -> None:
         self.errors.append(message)
@@ -130,7 +148,7 @@ class Validator:
         return content
 
     def validate_required_release_files(self) -> None:
-        for relative in RELEASE_ARTIFACTS:
+        for relative in self.release_artifacts:
             self.read_tree_file(
                 relative,
                 missing_message=(
@@ -138,6 +156,61 @@ class Validator:
                     f"{relative}"
                 ),
             )
+
+    def validate_sha256sums(self) -> None:
+        if CHECKSUM_MANIFEST_PATH not in self.release_artifacts:
+            return
+        content = self.read_tree_file(CHECKSUM_MANIFEST_PATH)
+        if content is None:
+            return
+        try:
+            source = content.decode("utf-8")
+        except UnicodeDecodeError as exc:
+            self.fail(f"SHA256SUMS is not valid UTF-8: {exc}")
+            return
+
+        entries: dict[str, str] = {}
+        for line_number, line in enumerate(source.splitlines(), start=1):
+            match = re.fullmatch(r"([0-9A-Fa-f]{64})[ \t]+\*?(\S+)", line)
+            if match is None:
+                self.fail(
+                    f"SHA256SUMS line {line_number} is malformed; expected "
+                    "a SHA-256 digest and top-level artifact name"
+                )
+                continue
+            digest, relative = match.groups()
+            if relative in entries:
+                self.fail(f"SHA256SUMS contains duplicate entry: {relative}")
+                continue
+            entries[relative] = digest.lower()
+
+        expected_names = set(CURRENT_PAYLOAD_ARTIFACTS)
+        actual_names = set(entries)
+        missing = sorted(expected_names - actual_names)
+        unexpected = sorted(actual_names - expected_names)
+        if missing:
+            self.fail(
+                "SHA256SUMS payload set mismatch: missing " + ", ".join(missing)
+            )
+        if unexpected:
+            self.fail(
+                "SHA256SUMS payload set mismatch: unexpected "
+                + ", ".join(unexpected)
+            )
+
+        for relative in CURRENT_PAYLOAD_ARTIFACTS:
+            expected = entries.get(relative)
+            if expected is None:
+                continue
+            payload = self.read_tree_file(relative)
+            if payload is None:
+                continue
+            actual = sha256_bytes(payload)
+            if actual != expected:
+                self.fail(
+                    f"SHA256SUMS digest mismatch for {relative}: "
+                    f"manifest sha256={expected} tagged sha256={actual}"
+                )
 
     def load_catalog(self) -> dict[str, Any] | None:
         content = self.read_tree_file(
@@ -299,13 +372,13 @@ class Validator:
             self.fail(f"cannot list release asset directory: {exc}")
             return
 
-        expected_names = set(RELEASE_ARTIFACTS)
+        expected_names = set(self.release_artifacts)
         for missing in sorted(expected_names - entries.keys()):
             self.fail(f"required release asset is missing: {missing}")
         for unexpected in sorted(entries.keys() - expected_names):
             self.fail(f"unexpected release asset: {unexpected}")
 
-        for relative in RELEASE_ARTIFACTS:
+        for relative in self.release_artifacts:
             asset = entries.get(relative)
             tagged = self.read_tree_file(relative)
             if asset is None or tagged is None:
@@ -327,6 +400,7 @@ class Validator:
 
     def run(self) -> bool:
         self.validate_required_release_files()
+        self.validate_sha256sums()
         catalog = self.load_catalog()
         if catalog is not None:
             self.validate_catalog(catalog)
@@ -346,7 +420,7 @@ class Validator:
             )
             return
 
-        for relative in RELEASE_ARTIFACTS:
+        for relative in self.release_artifacts:
             content = self.contents[relative]
             print(
                 f"release-integrity: OK: {relative} "

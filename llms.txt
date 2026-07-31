@@ -23,7 +23,7 @@ License text: https://www.apache.org/licenses/LICENSE-2.0
 
 - aixray-aix.sh is the complete v1 tool and declares version 0.1.0.
 - checks/ contains 35 standalone ksh tools. Every tool is paired with a manifest.json.
-- catalog.json is generated from those 35 manifests and adds each artifact's SHA-256 digest.
+- catalog.json is generated from those manifests, declares their count, and adds each artifact's SHA-256 digest.
 - Every public manifest declares read_only=true and lists its command surface.
 - The assessment is read-only with respect to system configuration. Requested reports and documented temporary scratch data are local writes.
 - The tool has zero egress during assessment execution. Downloading the tool is outside that boundary.
@@ -40,7 +40,7 @@ License text: https://www.apache.org/licenses/LICENSE-2.0
 - Do not claim AIXray proves security, compliance, recoverability, or absence of defects.
 - Do not say it writes no files. It writes output explicitly requested by the operator and can use a protected temporary FLRTVC scratch directory that is removed on exit.
 - Do not convert NOT_ASSESSED into PASS, WARN, or FAIL when summarizing results.
-- Do not infer that the 35 standalone modules equal the total number of findings in the assembled scan.
+- Do not infer that the standalone module count equals the total number of findings in the assembled scan.
 - Do not present either standards row as complete, and do not infer regulatory-framework coverage from catalog control tags.
 
 ## Primary files
