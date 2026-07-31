@@ -8,6 +8,8 @@ AIXray is an open-source IBM AIX health check and VIOS posture assessment for ad
 
 **Guide:** [How to audit an IBM AIX / VIOS system](docs/auditing-aix.md) — a complete, vendor-honest checklist of what to check, why it matters, and what "good" looks like.
 
+**Reference currency:** [View the current eight-source currency status](https://github.com/PowerTrueSYS/aixray-public/blob/currency-status/CURRENCY.md)
+
 ## What is AIXray?
 
 AIXray answers: **“What is measurably true about this AIX or VIOS system right now?”**
