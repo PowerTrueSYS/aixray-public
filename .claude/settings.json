@@ -1,0 +1,31 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(gh:*)",
+      "WebSearch"
+    ]
+  },
+  "extraKnownMarketplaces": {
+    "powertrue": {
+      "source": {
+        "source": "github",
+        "repo": "PowerTrueSYS/powertrue-harness"
+      }
+    }
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|NotebookEdit|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/scope-guard.py\""
+          }
+        ]
+      }
+    ]
+  }
+}
