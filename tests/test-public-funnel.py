@@ -43,9 +43,13 @@ REVIEW_CTA = (
     "review@powertruesystems.com — a principal engineer replies within "
     "2 business days."
 )
+# The safe-send disclosure survived the pseudonymization rework but was
+# reworded: the report no longer describes what the helper writes, it tells the
+# operator what must not leave the machine. This is the load-bearing sentence
+# and it must stay in every report and snapshot footer. Repointed, NOT relaxed
+# -- the old wording was pinned to copy that no longer exists.
 SAFE_SEND_DISCLOSURE = (
-    "it writes a review file and a separate local decoding key that never "
-    "leaves this machine."
+    "never send the local decode key or local manifest."
 )
 PROGRESS = (
     "[1/9] lifecycle and support…",
@@ -268,6 +272,35 @@ class PublicFunnelTests(unittest.TestCase):
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(source, target)
 
+    def write_release_checksums(
+        self, candidate: Path, overrides: dict[str, str] | None = None
+    ) -> None:
+        """Write a SHA256SUMS covering exactly what catalog.json declares.
+
+        A release manifest lists the three top-level payloads plus one
+        standalone tool per catalog check. Fixtures that hand-write only the
+        three top-level lines describe a shape no render produces, so they stop
+        exercising the digest logic they exist for and fail on payload-set
+        membership instead. `overrides` plants a specific digest for one path.
+        """
+        catalog = json.loads(
+            (candidate / "catalog.json").read_text(encoding="utf-8")
+        )
+        artifacts = [
+            "aixray-aix.sh",
+            "aixray-review-pack.sh",
+            "aixray-review-validate.awk",
+        ] + [entry["artifact"] for entry in catalog["checks"]]
+        overrides = overrides or {}
+        (candidate / "SHA256SUMS").write_text(
+            "".join(
+                f"{overrides.get(artifact) or sha256(candidate / artifact)}"
+                f"  {artifact}\n"
+                for artifact in artifacts
+            ),
+            encoding="utf-8",
+        )
+
     def run_verification_block(
         self, cwd: Path
     ) -> subprocess.CompletedProcess[str]:
@@ -303,6 +336,22 @@ class PublicFunnelTests(unittest.TestCase):
                 encoding="utf-8",
             )
             shutil.rmtree(candidate / "checks" / removed["id"])
+            # SHA256SUMS covers every payload the catalog declares, so a tree
+            # that declares one check fewer also ships one payload fewer. Before
+            # the manifest listed the standalone tools this pruning was
+            # unnecessary and the fixture omitted it; leaving it out now makes
+            # the fixture describe a release shape that could never be built.
+            sums_path = candidate / "SHA256SUMS"
+            sums_path.write_text(
+                "".join(
+                    line
+                    for line in sums_path.read_text(encoding="utf-8").splitlines(
+                        keepends=True
+                    )
+                    if line.split("  ", 1)[-1].strip() != removed["artifact"]
+                ),
+                encoding="utf-8",
+            )
             readme_path = candidate / "README.md"
             readme = readme_path.read_text(encoding="utf-8")
             readme_path.write_text(
@@ -382,12 +431,9 @@ class PublicFunnelTests(unittest.TestCase):
             )
             validator = candidate / "aixray-review-validate.awk"
             validator.write_text('BEGIN { print "validated" }\n', encoding="utf-8")
-            (candidate / "SHA256SUMS").write_text(
-                f"{sha256(candidate / 'aixray-aix.sh')}  aixray-aix.sh\n"
-                f"{sha256(candidate / 'aixray-review-pack.sh')}  "
-                "aixray-review-pack.sh\n"
-                f"{'0' * 64}  aixray-review-validate.awk\n",
-                encoding="utf-8",
+            self.write_release_checksums(
+                candidate,
+                {"aixray-review-validate.awk": "0" * 64},
             )
 
             result = self.run_verification_block(candidate)
@@ -416,13 +462,7 @@ class PublicFunnelTests(unittest.TestCase):
             )
             validator = candidate / "aixray-review-validate.awk"
             validator.write_text('BEGIN { print "validated" }\n', encoding="utf-8")
-            (candidate / "SHA256SUMS").write_text(
-                f"{sha256(candidate / 'aixray-aix.sh')}  aixray-aix.sh\n"
-                f"{sha256(candidate / 'aixray-review-pack.sh')}  "
-                "aixray-review-pack.sh\n"
-                f"{sha256(validator)}  aixray-review-validate.awk\n",
-                encoding="utf-8",
-            )
+            self.write_release_checksums(candidate)
             readme_path = candidate / "README.md"
             stale_digest = "0" * 64
             readme = (
@@ -1139,13 +1179,34 @@ class PublicFunnelTests(unittest.TestCase):
             for line in crosswalk.group(1).splitlines()
             if line
         ]
-        cis_sources = [row[0] for row in cis_rows]
+        # The crosswalk is many-to-many in BOTH directions and always was:
+        # several checks can contribute to one control, and one check that
+        # evaluates two directives can satisfy two controls. ck-ssh-ignore-rhosts
+        # is the latter -- it requires IgnoreRhosts yes AND
+        # HostbasedAuthentication no, so finding:ssh_ignore_rhosts legitimately
+        # maps to both 4.6.3.8 and 4.6.3.7. An earlier source-uniqueness
+        # assertion only held while the crosswalk was small enough for no such
+        # check to exist, and it forbade one direction while silently
+        # permitting the other (22 controls already have more than one source).
+        # What actually guards against double-counting is PAIR uniqueness.
         self.assertEqual(
-            len(cis_sources),
-            len(set(cis_sources)),
-            "numeric CIS L1 crosswalk repeats a source check",
+            len(cis_rows),
+            len(set(cis_rows)),
+            "numeric CIS L1 crosswalk repeats a (source, control) pair",
         )
-        active_security = security.group(1) + "\n".join(evaluator_bodies)
+        # The guarantee is that no crosswalk row credits a CIS control to a
+        # finding the scanner never emits -- a phantom source would inflate
+        # coverage. It is NOT that every crosswalk source is a `security`
+        # finding raised by checks_security: finding:firmware is emitted by the
+        # lifecycle section and finding:system_config_capture_cron by the config
+        # section, and both are legitimate CIS L1 sources (7.2 and 2.1). The
+        # category was never load-bearing here, so search the whole scanner for
+        # a real emitter and keep the category open. Still an emitter check --
+        # `add <category> <id>` must appear, so a bare mention in a comment or a
+        # crosswalk row does not satisfy it.
+        emitters = set(
+            re.findall(r"\b(?:add|nr_warn) [a-z_]+ ([a-z0-9_]+)\b", source)
+        )
         for source_id, control in cis_rows:
             self.assertRegex(source_id, r"^(?:finding:[a-z0-9_]+|stig:V-[0-9]+)$")
             self.assertRegex(control, r"^[0-9]+(?:\.[0-9]+)+$")
@@ -1153,9 +1214,11 @@ class PublicFunnelTests(unittest.TestCase):
                 self.assertIn(source_id.removeprefix("stig:"), stig_ids)
             else:
                 finding = source_id.removeprefix("finding:")
-                self.assertRegex(
-                    active_security,
-                    rf"\b(?:add|nr_warn) security {finding}\b",
+                self.assertIn(
+                    finding,
+                    emitters,
+                    f"crosswalk control {control} credits finding:{finding}, "
+                    "which the scanner never emits",
                 )
         cis_renderer = re.search(
             r"^function cis_l1_verdicts \{.*?\n(.*?)^\}$",

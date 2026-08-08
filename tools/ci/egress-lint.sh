@@ -196,6 +196,24 @@ PYEOF
       echo "egress-lint: ALLOWED (line $matchline, block marker): ${content# }"
       continue
     fi
+    # build/assemble.sh stamps each standalone tool with its own identity as a
+    # bare constant, `AIXRAY_TOOL=ck-<name>`. Twenty-one ck-ssh-* tools and
+    # ck-system-accounts-ftp carry a banned token inside their NAME, so the
+    # word-boundary grep flags a hyphenated identifier that is not in a command
+    # position. This exemption is anchored to the whole line and admits only
+    # [a-z0-9-] after the prefix, so it cannot cover an expansion, a command
+    # substitution, an argument, or a second command after a separator -- the
+    # first pattern below rejects anything containing such a character. It is
+    # not a file-level exemption and it does not widen BANNED_RE.
+    TOOL_IDENTITY_LINE=0
+    case "$content" in
+      AIXRAY_TOOL=ck-*[!a-z0-9-]*) ;;
+      AIXRAY_TOOL=ck-?*) TOOL_IDENTITY_LINE=1 ;;
+    esac
+    if [ "$TOOL_IDENTITY_LINE" -eq 1 ]; then
+      echo "egress-lint: ALLOWED (line $matchline, generated tool identity): ${content# }"
+      continue
+    fi
     case "$content" in
       *"$ALLOW_MARKER"*)
         echo "egress-lint: ALLOWED (line $matchline): ${content# }"
