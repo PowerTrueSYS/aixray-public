@@ -21,10 +21,10 @@ FIXTURE = Path(FIXTURE_ROOT) if FIXTURE_ROOT else None
 REVIEW_FIXTURES = ROOT / "tests" / "fixtures" / "review-pack"
 FROZEN = "2026-07-01"
 MAP_WARNING = (
-    "# DO NOT SEND THIS FILE — it is your local decoding key"
+    "# DO NOT SEND THIS FILE — local decode key"
 )
 KEEP_FRAGMENT = (
-    "oslevel=7300-04-00-2549; firmware=VL950_179; VIOS=3.1.4.21; "
+    "oslevel=7300-04-00-2549; firmware=VL950_179; VIOS=4.1; "
     "HMC=V10R3.1060.0; CVE=CVE-2026-12345; IV=IV99876; "
     "APAR=IJ55968; ifix=IJ55968s4a; check_id=security.apar_scan; "
     "status=NOT_ASSESSED; severity=high; category_score=78%; "
@@ -40,21 +40,22 @@ def profile_report() -> str:
 <html lang="en"><head>
 <meta charset="utf-8">
 <meta name="aixray-report-version" content="1">
+<meta name="aixray-privacy-schema" content="1">
 <meta name="aixray-report-date" content="2026-07-20">
 <meta name="aixray-report-host" content="prod-aix01">
 <title>AIXray — prod-aix01</title>
-<style>:root{{--ink:#23272E}} @page{{@top-left{{content:"AIXray · prod-aix01"}}}}</style>
+<style>@page{{@top-left{{content:"AIXray · prod-aix01"}}@top-right{{content:"2026-07-20"}}}}</style>
 </head><body>
-<div class="meta"><b>Host:</b> prod-aix01; hostname=prod-aix01; Node name: node-west-02; LPAR name: finance-lpar-7</div>
+<div class="meta" data-aixray-field="observed" data-aixray-location="report:host"><b>Host:</b> prod-aix01; hostname=prod-aix01; Node name: node-west-02; LPAR name: finance-lpar-7</div>
 <table><tbody>
-<tr><td class="ctl">Network identity</td><td class="obs">address=10.42.8.17; netmask=255.255.255.0; IPv6=2001:db8:12::7; gateway=10.42.8.1; MAC=aa:bb:cc:dd:ee:ff; alternate MAC=12-34-56-78-9a-bc; ODM MAC=1234.5678.9abc; DNS=db01.corp.example; address/netmask=172.16.4.7/255.255.254.0</td></tr>
-<tr><td class="ctl">Kernel tunables</td><td class="obs">tunable=maxperm%=90; management address=172.16.5.1</td></tr>
-<tr><td class="ctl">Hardware identity</td><td class="obs">Machine Serial Number: 78AB12C; Frame ID=02AF91B; WWPN=0xC050760CBDBB884A; backup WWPN=10:00:00:90:fa:53:76:ec; LPAR UUID=3f2504e0-4f89-41d3-9a0c-0305e82c3301</td></tr>
-<tr><td class="ctl">People</td><td class="obs">username=alice; home=/home/alice; email=ops.user@example.internal; GECOS=Alice Operator, Database Team</td></tr>
-<tr><td class="ctl">Secrets</td><td class="obs">password=CorrectHorseBatteryStaple!; api_key=sk_live_51M3LongOpaqueValue; Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.payload.signature; token='QuotedSecretValue9'; credential=&quot;EscapedS3cret&amp;Tail&quot;</td></tr>
-<tr><td class="ctl">KEEP classes</td><td class="obs">{KEEP_FRAGMENT}</td></tr>
-<tr><td class="ctl">Product syntax</td><td class="obs">rootvg :root chacha20-poly1305@openssh.com review@powertruesystems.com bos.rte.install flrtvc.ksh apar.csv</td></tr>
-<tr><td class="ctl">Error-log evidence</td><td class="evidence">errpt node=node-west-02 ip=10.42.8.17 opaque=abcdefghijklmnop12345678</td></tr>
+<tr><td class="ctl" data-aixray-field="observed" data-aixray-location="finding:network_exposure:label">Network identity</td><td class="obs" data-aixray-field="observed" data-aixray-location="finding:network_exposure:observed">address=10.42.8.17; netmask=255.255.255.0; IPv6=2001:db8:12::7; gateway=10.42.8.1; MAC=aa:bb:cc:dd:ee:ff; alternate MAC=12-34-56-78-9a-bc; ODM MAC=1234.5678.9abc; DNS=db01.corp.example; address/netmask=172.16.4.7/255.255.254.0</td></tr>
+<tr><td class="ctl" data-aixray-field="observed" data-aixray-location="finding:tunables:label">Kernel tunables</td><td class="obs" data-aixray-field="observed" data-aixray-location="finding:tunables:observed">tunable=maxperm%=90; management address=172.16.5.1</td></tr>
+<tr><td class="ctl" data-aixray-field="observed" data-aixray-location="finding:hw_gen:label">Hardware identity</td><td class="obs" data-aixray-field="observed" data-aixray-location="finding:hw_gen:observed">Machine Serial Number: 78AB12C; Frame ID=02AF91B; WWPN=0xC050760CBDBB884A; backup WWPN=10:00:00:90:fa:53:76:ec; LPAR UUID=3f2504e0-4f89-41d3-9a0c-0305e82c3301</td></tr>
+<tr><td class="ctl" data-aixray-field="observed" data-aixray-location="finding:account_hygiene:label">People</td><td class="obs" data-aixray-field="observed" data-aixray-location="finding:account_hygiene:observed">username=alice; home=/home/alice; email=ops.user@example.internal; GECOS=Alice Operator, Database Team</td></tr>
+<tr><td class="ctl" data-aixray-field="observed" data-aixray-location="finding:snmp_community:label">Secrets</td><td class="obs" data-aixray-field="observed" data-aixray-location="finding:snmp_community:observed">password=CorrectHorseBatteryStaple!; api_key=sk_live_51M3LongOpaqueValue; Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.payload.signature; token='QuotedSecretValue9'; credential=&quot;EscapedS3cret&amp;Tail&quot;</td></tr>
+<tr><td class="ctl" data-aixray-field="observed" data-aixray-location="finding:vios_level:label">Version and diagnostic syntax</td><td class="obs" data-aixray-field="observed" data-aixray-location="finding:vios_level:observed">{KEEP_FRAGMENT}</td></tr>
+<tr><td class="ctl" data-aixray-field="observed" data-aixray-location="finding:fileset_state:label">Product syntax</td><td class="obs" data-aixray-field="observed" data-aixray-location="finding:fileset_state:observed">rootvg :root chacha20-poly1305@openssh.com review@powertruesystems.com bos.rte.install flrtvc.ksh apar.csv</td></tr>
+<tr><td class="ctl" data-aixray-field="observed" data-aixray-location="finding:errpt_recent:label">Error-log evidence</td><td class="evidence" data-aixray-field="evidence" data-aixray-location="finding:errpt_recent:evidence">errpt node=node-west-02 ip=10.42.8.17 opaque=abcdefghijklmnop12345678</td></tr>
 </tbody></table>
 <footer>review@powertruesystems.com</footer>
 </body></html>
@@ -122,6 +123,23 @@ class ReviewPackTests(unittest.TestCase):
         report.write_bytes(source.read_bytes())
         return report
 
+    def read_failure_manifest(self, directory: Path) -> str:
+        """Return the local manifest written when validation refuses to publish.
+
+        stderr carries only the NOT READY TO SHARE banner and a pointer. The
+        specific reason a field failed validation is deliberately NOT on stderr
+        -- it quotes the offending value, which is the very thing that must not
+        leave the machine through a terminal transcript or a CI log. Assertions
+        about the reason therefore read the manifest.
+        """
+        manifests = sorted(
+            directory.glob("aixray-local-pseudonymize-failed-*.txt")
+        )
+        self.assertEqual(1, len(manifests), sorted(directory.iterdir()))
+        text = manifests[0].read_text(encoding="utf-8")
+        self.assertNotEqual("", text.strip(), "failure manifest is empty")
+        return text
+
     def parse_map(self, map_path: Path) -> dict[str, str]:
         lines = map_path.read_text(encoding="utf-8").splitlines()
         self.assertGreaterEqual(len(lines), 2)
@@ -136,7 +154,9 @@ class ReviewPackTests(unittest.TestCase):
             mappings[token] = value
         return mappings
 
-    def test_full_profile_redacts_and_keeps_exact_values(self) -> None:
+    def test_full_profile_redacts_identifiers_and_untyped_diagnostics(
+        self,
+    ) -> None:
         with tempfile.TemporaryDirectory(prefix="aixray-review-profile-") as temp:
             directory = Path(temp)
             report = self.write_profile(directory)
@@ -233,26 +253,27 @@ class ReviewPackTests(unittest.TestCase):
                 with self.subTest(removed=removed):
                     self.assertNotIn(removed, review)
                     self.assertNotIn(removed, map_path.read_text(encoding="utf-8"))
-            self.assertGreaterEqual(review.count("[redacted-secret]"), 3)
-            self.assertIn(
-                '<td class="evidence">[redacted-evidence-line]</td>',
-                review,
-            )
+            manifest = next(
+                directory.glob("aixray-local-removals-*.txt")
+            ).read_text(encoding="utf-8")
+            self.assertIn("kind=secret-in-removed-field", manifest)
+            self.assertIn("kind=GECOS-in-removed-field", manifest)
+            self.assertIn("[redacted-evidence-line]</td>", review)
 
-            self.assertIn(KEEP_FRAGMENT, review)
-            self.assertIn(":root", review)
-            self.assertIn("rootvg", review)
-            self.assertIn("chacha20-poly1305@openssh.com", review)
+            self.assertNotIn(KEEP_FRAGMENT, review)
+            self.assertNotIn("VIOS=4.1", review)
+            self.assertNotIn("chacha20-poly1305@openssh.com", review)
             self.assertIn("review@powertruesystems.com", review)
-            self.assertIn("bos.rte.install", review)
-            self.assertIn("flrtvc.ksh", review)
-            self.assertIn("apar.csv", review)
+            self.assertNotIn("bos.rte.install", review)
+            self.assertNotIn("flrtvc.ksh", review)
+            self.assertNotIn("apar.csv", review)
             self.assertNotIn("flrtvc.ksh", mapped_values)
             self.assertNotIn("apar.csv", mapped_values)
-            self.assertIn("identifiers were pseudonymized", review)
-            self.assertIn("customer's request", review)
+            self.assertIn("PSEUDONYMIZED REVIEW COPY", review)
+            self.assertIn("Automated independent validation passed", review)
             self.assertIn("redacted", review)
-            self.assertNotIn("anonymized", review.lower())
+            self.assertIn("NOT ANONYMIZED", review)
+            self.assertIn("REVIEW REQUIRED", review)
             self.assertIsNone(re.search(r"https?://", review.lower()))
 
             self.assertEqual(
@@ -277,19 +298,18 @@ class ReviewPackTests(unittest.TestCase):
 
             summary = result.stderr.splitlines()
             self.assertEqual(5, len(summary), result.stderr)
-            for position, label in enumerate(
-                ("Hostnames", "Network identifiers", "Hardware identifiers", "User identifiers")
-            ):
-                self.assertRegex(
-                    summary[position],
-                    rf"^{re.escape(label)} redacted: [0-9]+ occurrence\(s\)",
-                )
-            self.assertIn(review_path.name, summary[4])
-            self.assertIn(
-                "review the file in your browser before sending",
+            self.assertIn("Local removals manifest (DO NOT SEND):", summary[0])
+            self.assertIn("Review candidate:", summary[1])
+            self.assertIn(review_path.name, summary[1])
+            self.assertIn("Local decode key (DO NOT SEND):", summary[2])
+            self.assertEqual(
+                "REVIEW REQUIRED — inspect the review candidate and local removals manifest.",
+                summary[3],
+            )
+            self.assertEqual(
+                "Send only the review candidate after your inspection.",
                 summary[4],
             )
-            self.assertIn("review@powertruesystems.com", summary[4])
 
     def test_repeated_runs_have_random_names_and_stable_bytes(self) -> None:
         with tempfile.TemporaryDirectory(prefix="aixray-review-stable-") as temp:
@@ -314,7 +334,7 @@ class ReviewPackTests(unittest.TestCase):
             self.assertEqual(first_html.read_bytes(), second_html.read_bytes())
             self.assertEqual(first_map.read_bytes(), second_map.read_bytes())
 
-    def test_rich_fixture_has_zero_planted_identifiers_and_exact_keep_values(
+    def test_rich_fixture_has_zero_planted_identifiers_and_real_ids_only(
         self,
     ) -> None:
         with tempfile.TemporaryDirectory(prefix="aixray-review-rich-") as temp:
@@ -358,7 +378,13 @@ class ReviewPackTests(unittest.TestCase):
             for value in keep_values:
                 with self.subTest(keep=value):
                     self.assertGreater(source.count(value), 0)
-                    self.assertEqual(source.count(value), review.count(value))
+                    if value == "4.5.6 PASS":
+                        self.assertEqual(
+                            source.count(value),
+                            review.count(value),
+                        )
+                    else:
+                        self.assertEqual(0, review.count(value))
 
             reverse_mappings = {value: token for token, value in mappings.items()}
             for value in (
@@ -401,10 +427,10 @@ class ReviewPackTests(unittest.TestCase):
                 self.assertEqual("", result.stdout)
                 self.assertIsNone(review_path, sorted(directory.iterdir()))
                 self.assertIsNone(map_path, sorted(directory.iterdir()))
-                self.assertIn("redaction validation failed", result.stderr)
+                self.assertIn("NOT READY TO SHARE", result.stderr)
                 self.assertIn(
-                    "unresolved identifier-shaped token",
-                    result.stderr,
+                    "identity field is not an issued pseudotoken",
+                    self.read_failure_manifest(directory),
                 )
 
     def test_independent_validation_rejects_unissued_pseudotoken_shape(
@@ -423,8 +449,11 @@ class ReviewPackTests(unittest.TestCase):
             self.assertEqual("", result.stdout)
             self.assertIsNone(review_path, sorted(directory.iterdir()))
             self.assertIsNone(map_path, sorted(directory.iterdir()))
-            self.assertIn("redaction validation failed", result.stderr)
-            self.assertIn("unissued pseudotoken-shaped", result.stderr)
+            self.assertIn("NOT READY TO SHARE", result.stderr)
+            self.assertIn(
+                "unissued pseudotoken",
+                self.read_failure_manifest(directory),
+            )
 
     def test_independent_validation_rejects_identifiers_in_markup(self) -> None:
         for fixture in (
@@ -443,8 +472,13 @@ class ReviewPackTests(unittest.TestCase):
                 self.assertEqual("", result.stdout)
                 self.assertIsNone(review_path, sorted(directory.iterdir()))
                 self.assertIsNone(map_path, sorted(directory.iterdir()))
-                self.assertIn("redaction validation failed", result.stderr)
-                self.assertIn("unresolved IPv4 address", result.stderr)
+                self.assertIn("NOT READY TO SHARE", result.stderr)
+                failure = self.read_failure_manifest(directory)
+                self.assertTrue(
+                    "IPv4-shaped identifier remains" in failure
+                    or "remote-resource attribute is not canonical" in failure,
+                    failure,
+                )
 
     def test_independent_validation_rejects_fqdn_with_suffix(self) -> None:
         for fixture in (
@@ -464,8 +498,17 @@ class ReviewPackTests(unittest.TestCase):
                 self.assertEqual("", result.stdout)
                 self.assertIsNone(review_path, sorted(directory.iterdir()))
                 self.assertIsNone(map_path, sorted(directory.iterdir()))
-                self.assertIn("redaction validation failed", result.stderr)
-                self.assertIn("unresolved FQDN", result.stderr)
+                self.assertIn("NOT READY TO SHARE", result.stderr)
+                # An FQDN in an href is caught as a non-canonical remote
+                # resource; one in a visible assessment cell is caught as an
+                # unresolved identity. Both are the refusal this test is for --
+                # which one fires depends on where the fixture plants it.
+                failure = self.read_failure_manifest(directory)
+                self.assertTrue(
+                    "identity field is not an issued pseudotoken" in failure
+                    or "remote-resource attribute is not canonical" in failure,
+                    failure,
+                )
 
     def test_independent_validation_rejects_issued_pseudotoken_collision(
         self,
@@ -483,8 +526,11 @@ class ReviewPackTests(unittest.TestCase):
             self.assertEqual("", result.stdout)
             self.assertIsNone(review_path, sorted(directory.iterdir()))
             self.assertIsNone(map_path, sorted(directory.iterdir()))
-            self.assertIn("redaction validation failed", result.stderr)
-            self.assertIn("unissued pseudotoken-shaped", result.stderr)
+            self.assertIn("NOT READY TO SHARE", result.stderr)
+            self.assertIn(
+                "unissued pseudotoken",
+                self.read_failure_manifest(directory),
+            )
 
     def test_unmarked_or_duplicate_marker_input_fails_without_artifacts(self) -> None:
         cases = {
@@ -509,8 +555,13 @@ class ReviewPackTests(unittest.TestCase):
                 self.assertEqual("", result.stdout)
                 self.assertIsNone(review_path)
                 self.assertIsNone(map_path)
+                # The helper now names the count it requires rather than just
+                # the marker, because zero and two are different operator
+                # mistakes with the same fix. Repointed at the current wording;
+                # both cases below (absent marker, duplicated marker) must still
+                # be rejected before any artifact is written.
                 self.assertIn(
-                    "expected AIXray report version marker",
+                    "expected AIXray report version 1 exactly once",
                     result.stderr,
                 )
                 self.assertEqual([report], sorted(directory.iterdir()))
