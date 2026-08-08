@@ -1,6 +1,6 @@
 # AIXray: read-only IBM AIX and VIOS health, risk, and security assessment
 
-AIXray is an open-source IBM AIX health check and VIOS posture assessment for administrators who need evidence before they change a system. Version 0.1.0 runs as a single ksh88 file under AIX `/bin/sh`, reads system state, makes zero network calls during assessment execution, and reports findings without remediating the host.
+AIXray is an open-source IBM AIX health check and VIOS posture assessment for administrators who need evidence before they change a system. Version 1.0.0 runs as a single ksh88 file under AIX `/bin/sh`, reads system state, makes zero network calls during assessment execution, and reports findings without remediating the host.
 
 **Official page:** [powertruesystems.com/aixray](https://powertruesystems.com/aixray)
 
@@ -25,9 +25,9 @@ AIXray is useful for:
 
 ## What is included?
 
-- [`aixray-aix.sh`](aixray-aix.sh) — the complete AIX/VIOS v1 assessment, version 0.1.0
+- [`aixray-aix.sh`](aixray-aix.sh) — the complete AIX/VIOS v1 assessment, version 1.0.0
 - [`aixray-review-pack.sh`](aixray-review-pack.sh) — the offline helper that creates a pseudonymized review copy and a separate local decoding key
-- [`checks/`](checks/) — 35 standalone ksh check tools, each paired with its `manifest.json`
+- [`checks/`](checks/) — 324 standalone ksh check tools, each paired with its `manifest.json`
 - [`catalog.json`](catalog.json) — the generated, sorted manifest catalog with SHA-256 hashes and the declared check count
 - [`SECURITY.md`](SECURITY.md) and [`docs/VERIFY.md`](docs/VERIFY.md) — the trust boundary, caveats, and repeatable public-repository verification commands
 - [`site/index.html`](site/index.html) — the public download page for `powertruesystems.com/aixray`
@@ -41,8 +41,9 @@ AIXray evaluates selected controls against observed system state. Coverage is pa
 
 | Claim | Proof |
 |---|---|
-| **DISA STIG for IBM AIX 7.x coverage is partial: 65 distinct rule V-IDs receive an engine verdict.** This count is not a single-release coverage fraction. | The live `R_FILEPERM`, `R_SECATTR`, `R_NETTUNE`, and `R_SVCOFF` tables in [`aixray-aix.sh`](aixray-aix.sh) contain 65 distinct V-IDs. `checks_security` calls all four evaluators, and each emits per-rule `PASS`, `FAIL`, or `NA` evidence in JSON `rules[]`. `V-215399` is counted for its `clean_partial_conns` tunable verdict; the package-commit condition in that rule is not checked. Deferred `V-215429` is not in a live table and is not counted. |
-| **Partial: 10 CIS L1-aligned checks.** Their scope is NFS exports, password hashing, file ownership and permissions, and network tunables. | The numeric-only `cis_l1_map` in [`aixray-aix.sh`](aixray-aix.sh) names each source finding or STIG rule used by the cross-check. The renderer resolves those mappings from the run's actual verdicts and emits no numeric verdict when evidence is unavailable. This is an alignment cross-check, not a claim of completeness against CIS. |
+| **DISA STIG for IBM AIX 7.x coverage is partial: 66 distinct rule V-IDs receive an engine verdict.** This count is not a single-release coverage fraction. | The live `R_FILEPERM`, `R_SECATTR`, `R_NETTUNE`, and `R_SVCOFF` tables in [`aixray-aix.sh`](aixray-aix.sh) contain 66 distinct V-IDs. `checks_security` calls all four evaluators, and each emits per-rule `PASS`, `FAIL`, or `NA` evidence in JSON `rules[]`. `V-215399` is counted for its `clean_partial_conns` tunable verdict; the package-commit condition in that rule is not checked. Deferred `V-215429` is not in a live table and is not counted. |
+| **Partial: 260 CIS L1-aligned checks** resolve to 209 distinct Level 1 control numbers of the CIS IBM AIX 7 Benchmark v1.2.0, which has 212 Level 1 controls. Their scope spans NFS exports, password hashing, file ownership and permissions, and network tunables, plus login policy, auditing, cron and at, home directories, system accounts, and the r-command services. The three controls with no mapping — 5.1.4, 5.1.5 and 7.1 — are not claimed. A mapping is not a verdict: a mapped control whose evidence is unreadable or absent renders `NOT_ASSESSED`, never `PASS`. This is an alignment cross-check, not a claim of completeness against CIS. | The numeric-only `cis_l1_map` in [`aixray-aix.sh`](aixray-aix.sh) names each source finding or STIG rule the cross-check reads, one per line as `source\|control`. Count its rows and its distinct control numbers directly from the file. The 212 denominator is the Level 1 control count of the benchmark itself; the benchmark PDF is licensed by CIS and is deliberately not redistributed here. The renderer resolves the mappings from the run's actual verdicts and emits no verdict for a control whose evidence is unavailable. |
+| **Level 2 is reachable as `--compliance cis-l2`.** Its scope is narrower than Level 1 and is not summarised as a fraction here. | `--compliance cis-l2` is accepted by the argument parser in [`aixray-aix.sh`](aixray-aix.sh) and renders the same evidence-backed verdict states, `NOT_ASSESSED` included. |
 
 ## Why can a cautious AIX administrator inspect it first?
 
@@ -54,7 +55,7 @@ AIXray evaluates selected controls against observed system state. Coverage is pa
 | No fabricated assessment result | `NOT_ASSESSED` is a first-class output state. Missing, unreadable, malformed, ambiguous, or unsupported evidence is reported as unavailable rather than silently converted to `PASS`. Search the assembled source for `NOT_ASSESSED` to inspect each branch. |
 | Declared standalone inventory | [`catalog.json`](catalog.json) records `check_count`; each entry resolves to one paired script and manifest under [`checks/`](checks/), and the public tests require all three counts to agree. |
 | Exact artifact identity | Each catalog entry carries the SHA-256 digest of its referenced standalone shell artifact. The catalog is sorted by check ID for deterministic review. |
-| v1 only | The assembled script and all standalone scripts declare version `0.1.0`. This repository does not contain a v2 implementation. |
+| v1 only | The assembled script and all standalone scripts declare version `1.0.0`. This repository does not contain a v2 implementation. |
 
 “Read-only” describes the tool’s effect on target system configuration. If you redirect output or request an export, AIXray writes the output path you selected. The optional offline FLRTVC mode also uses a private temporary directory and removes it on exit. “zero egress” describes assessment execution; obtaining the script is, of course, a separate download.
 
@@ -119,19 +120,19 @@ in [`SECURITY.md`](SECURITY.md#outbound-review-pack) and the review steps in
 
 ## Verify what you run
 
-SHA-256 values for the artifacts in this repository revision:
+SHA-256 values for the artifacts in this repository revision are published in
+[`SHA256SUMS`](SHA256SUMS), one line per released file, rather than pasted into
+this page where they would rot. Verify every release payload against it:
 
-```text
-aixray-aix.sh
-c8b7b67e0b24ff0087eb12b8796118c77ea8dfb454594d755a62ba113cc1f362
-
-aixray-review-pack.sh
-f7fa42539cb1f9f9e6ec4a9bfa6c367bd11bcef623b8aa6ab986697f18268bf7
+```sh
+sha256sum -c SHA256SUMS
 ```
 
+On AIX, `csum -h SHA256 <file>` produces the same digest for a single file.
+
 The top-level `assembled_scanner` entry in [`catalog.json`](catalog.json)
-binds the root and site scanner copies to the first hash. The top-level
-`review_pack` entry binds the review helper to the second. Each sorted
+binds the root and site scanner copies to the scanner's `SHA256SUMS` line. The
+top-level `review_pack` entry binds the review helper to its line. Each sorted
 `checks[]` entry records its standalone artifact and SHA-256; `check_count`
 must match that list and the paired files under `checks/`.
 
