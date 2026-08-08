@@ -38,10 +38,16 @@ DOWNLOAD_PAGE_URL = "https://powertruesystems.com/aixray/"
 RELEASE_ASSET_URL = (
     "https://github.com/PowerTrueSYS/aixray-public/releases/latest/download/aixray-aix.sh"
 )
+# Tracks the shipped artifact, not the v0.1.0 one this file was written
+# against. Private commit 93c14326 ("remove review CTA response-time promise")
+# deliberately dropped "replies within 2 business days" -- a response-time SLA
+# on a free review is a commitment the product does not want to make. Pinning
+# the old wording here made this gate assert a promise the scanner no longer
+# prints, so it could only pass against a stale artifact.
 REVIEW_CTA = (
     "Free engineer review: email your report to "
-    "review@powertruesystems.com — a principal engineer replies within "
-    "2 business days."
+    "review@powertruesystems.com — a principal engineer will review it "
+    "personally and follow up."
 )
 # The safe-send disclosure survived the pseudonymization rework but was
 # reworded: the report no longer describes what the helper writes, it tells the
@@ -183,6 +189,10 @@ class ReportParser(HTMLParser):
             self._risk = {
                 "statuses": statuses,
                 "severity": attributes.get("data-severity"),
+                # The card names the finding it came from. Matching cards to
+                # findings by id rather than by position is what lets the
+                # ranking be checked as a contract instead of as a fixed list.
+                "finding_id": attributes.get("data-aixray-finding-id"),
                 "label": "",
                 "rank": "",
                 "observed": "",
@@ -1411,17 +1421,54 @@ class PublicFunnelTests(unittest.TestCase):
             structured = run_scanner("--json")
             self.assertEqual(0, structured.returncode, structured.stderr)
             findings = json.loads(structured.stdout)["findings"]
-            expected = [
+            by_id = {finding["id"]: finding for finding in findings}
+
+            # Severity priority, worst first. This is the ONLY part of the
+            # ranking this test models, and deliberately so: within a
+            # (status, severity) bucket the scanner orders by CVE action tier,
+            # then by descending framework corroboration, then by finding id,
+            # and caps any one category at two entries on a first pass before
+            # relaxing the cap on a second. Re-implementing that here would
+            # make the test a copy of the code it is supposed to check, and it
+            # would pass for a reimplementation that is wrong in the same way.
+            # So assert the properties the ranking must have instead.
+            priority = {
+                (status, severity): rank
+                for rank, (status, severity) in enumerate(
+                    (status, severity)
+                    for status in ("FAIL", "WARN")
+                    for severity in ("high", "med", "low")
+                )
+            }
+            actionable = [
                 finding
-                for status in ("FAIL", "WARN")
-                for severity in ("high", "med", "low")
                 for finding in findings
-                if finding["status"] == status and finding["severity"] == severity
-            ][:5]
+                if (finding["status"], finding["severity"]) in priority
+            ]
+
             self.assertGreaterEqual(len(parser.top_risks), 1)
-            self.assertLessEqual(len(parser.top_risks), 5)
-            self.assertEqual(len(expected), len(parser.top_risks))
-            for rendered, source in zip(parser.top_risks, expected):
+            self.assertEqual(min(5, len(actionable)), len(parser.top_risks))
+
+            rendered_ids = [risk["finding_id"] for risk in parser.top_risks]
+            self.assertNotIn(None, rendered_ids, "a top-risk card names no finding")
+            self.assertEqual(
+                len(set(rendered_ids)),
+                len(rendered_ids),
+                f"a finding occupies more than one of the five slots: {rendered_ids}",
+            )
+
+            for rendered in parser.top_risks:
+                source = by_id.get(rendered["finding_id"])
+                self.assertIsNotNone(
+                    source,
+                    f"top-risk card names {rendered['finding_id']}, which is "
+                    "absent from --json",
+                )
+                if source is None:
+                    continue
+                # Every visible value on the card must be the value of the
+                # finding the card names -- a card that renders another
+                # finding's evidence is a false accusation against the box.
                 self.assertEqual((source["status"],), rendered["statuses"])
                 self.assertEqual(source["severity"], rendered["severity"])
                 self.assertEqual(source["label"], str(rendered["label"]).strip())
@@ -1433,9 +1480,54 @@ class PublicFunnelTests(unittest.TestCase):
                     f"Observed: {source['observed']}",
                     " ".join(str(rendered["observed"]).split()),
                 )
+                # INVERTED, not hollowed out. This assertion used to require
+                # `Fix: <text>` in the top-risk card. AIXray reports gaps and
+                # says nothing about remediation, so the card no longer renders
+                # a fix span at all -- and the guard that used to prove the
+                # span was present now proves it is absent. The parser still
+                # collects a "top-risk-fix" element into rendered["fix"]
+                # precisely so this can fail if the span ever comes back; the
+                # collector is the mechanism of the guard, not a leftover.
                 self.assertEqual(
-                    f"Fix: {source['fix']}",
-                    " ".join(str(rendered["fix"]).split()),
+                    "",
+                    str(rendered["fix"]).strip(),
+                    "the top-risk card rendered remediation text; AIXray "
+                    "reports findings and does not tell the operator how to "
+                    "fix them",
+                )
+                # The JSON `fix` field is a separate surface and stays this
+                # release, so the fixture still supplies one. Asserting that
+                # keeps the two surfaces from being conflated: a non-empty
+                # source fix must still not reach the HTML card.
+                self.assertNotEqual("", str(source["fix"]).strip())
+
+            # The two invariants that make "top risks" an honest heading.
+            shown_ranks = [
+                priority[(by_id[fid]["status"], by_id[fid]["severity"])]
+                for fid in rendered_ids
+            ]
+            self.assertEqual(
+                sorted(shown_ranks),
+                shown_ranks,
+                "the cards are out of severity order -- a less severe finding "
+                f"is shown above a more severe one: {rendered_ids}",
+            )
+            # Nothing worse than the worst card may be left out. The scanner
+            # drains a whole (status, severity) bucket before moving to the
+            # next -- the category cap only reorders within a bucket, it never
+            # defers a bucket -- so an omitted finding may tie the last card
+            # but must never outrank it. This is the assertion that would
+            # catch "the top five are not the five worst".
+            worst_shown = max(shown_ranks)
+            for finding in actionable:
+                if finding["id"] in rendered_ids:
+                    continue
+                self.assertGreaterEqual(
+                    priority[(finding["status"], finding["severity"])],
+                    worst_shown,
+                    f"{finding['id']} ({finding['status']}/"
+                    f"{finding['severity']}) outranks a rendered top risk but "
+                    "was left out of the five",
                 )
 
     @unittest.skipUnless(
