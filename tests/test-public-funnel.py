@@ -38,14 +38,24 @@ DOWNLOAD_PAGE_URL = "https://powertruesystems.com/aixray/"
 RELEASE_ASSET_URL = (
     "https://github.com/PowerTrueSYS/aixray-public/releases/latest/download/aixray-aix.sh"
 )
+# Tracks the shipped artifact, not the v0.1.0 one this file was written
+# against. Private commit 93c14326 ("remove review CTA response-time promise")
+# deliberately dropped "replies within 2 business days" -- a response-time SLA
+# on a free review is a commitment the product does not want to make. Pinning
+# the old wording here made this gate assert a promise the scanner no longer
+# prints, so it could only pass against a stale artifact.
 REVIEW_CTA = (
     "Free engineer review: email your report to "
-    "review@powertruesystems.com — a principal engineer replies within "
-    "2 business days."
+    "review@powertruesystems.com — a principal engineer will review it "
+    "personally and follow up."
 )
+# The safe-send disclosure survived the pseudonymization rework but was
+# reworded: the report no longer describes what the helper writes, it tells the
+# operator what must not leave the machine. This is the load-bearing sentence
+# and it must stay in every report and snapshot footer. Repointed, NOT relaxed
+# -- the old wording was pinned to copy that no longer exists.
 SAFE_SEND_DISCLOSURE = (
-    "it writes a review file and a separate local decoding key that never "
-    "leaves this machine."
+    "never send the local decode key or local manifest."
 )
 PROGRESS = (
     "[1/9] lifecycle and support…",
@@ -179,6 +189,10 @@ class ReportParser(HTMLParser):
             self._risk = {
                 "statuses": statuses,
                 "severity": attributes.get("data-severity"),
+                # The card names the finding it came from. Matching cards to
+                # findings by id rather than by position is what lets the
+                # ranking be checked as a contract instead of as a fixed list.
+                "finding_id": attributes.get("data-aixray-finding-id"),
                 "label": "",
                 "rank": "",
                 "observed": "",
@@ -268,6 +282,35 @@ class PublicFunnelTests(unittest.TestCase):
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(source, target)
 
+    def write_release_checksums(
+        self, candidate: Path, overrides: dict[str, str] | None = None
+    ) -> None:
+        """Write a SHA256SUMS covering exactly what catalog.json declares.
+
+        A release manifest lists the three top-level payloads plus one
+        standalone tool per catalog check. Fixtures that hand-write only the
+        three top-level lines describe a shape no render produces, so they stop
+        exercising the digest logic they exist for and fail on payload-set
+        membership instead. `overrides` plants a specific digest for one path.
+        """
+        catalog = json.loads(
+            (candidate / "catalog.json").read_text(encoding="utf-8")
+        )
+        artifacts = [
+            "aixray-aix.sh",
+            "aixray-review-pack.sh",
+            "aixray-review-validate.awk",
+        ] + [entry["artifact"] for entry in catalog["checks"]]
+        overrides = overrides or {}
+        (candidate / "SHA256SUMS").write_text(
+            "".join(
+                f"{overrides.get(artifact) or sha256(candidate / artifact)}"
+                f"  {artifact}\n"
+                for artifact in artifacts
+            ),
+            encoding="utf-8",
+        )
+
     def run_verification_block(
         self, cwd: Path
     ) -> subprocess.CompletedProcess[str]:
@@ -303,6 +346,22 @@ class PublicFunnelTests(unittest.TestCase):
                 encoding="utf-8",
             )
             shutil.rmtree(candidate / "checks" / removed["id"])
+            # SHA256SUMS covers every payload the catalog declares, so a tree
+            # that declares one check fewer also ships one payload fewer. Before
+            # the manifest listed the standalone tools this pruning was
+            # unnecessary and the fixture omitted it; leaving it out now makes
+            # the fixture describe a release shape that could never be built.
+            sums_path = candidate / "SHA256SUMS"
+            sums_path.write_text(
+                "".join(
+                    line
+                    for line in sums_path.read_text(encoding="utf-8").splitlines(
+                        keepends=True
+                    )
+                    if line.split("  ", 1)[-1].strip() != removed["artifact"]
+                ),
+                encoding="utf-8",
+            )
             readme_path = candidate / "README.md"
             readme = readme_path.read_text(encoding="utf-8")
             readme_path.write_text(
@@ -382,12 +441,9 @@ class PublicFunnelTests(unittest.TestCase):
             )
             validator = candidate / "aixray-review-validate.awk"
             validator.write_text('BEGIN { print "validated" }\n', encoding="utf-8")
-            (candidate / "SHA256SUMS").write_text(
-                f"{sha256(candidate / 'aixray-aix.sh')}  aixray-aix.sh\n"
-                f"{sha256(candidate / 'aixray-review-pack.sh')}  "
-                "aixray-review-pack.sh\n"
-                f"{'0' * 64}  aixray-review-validate.awk\n",
-                encoding="utf-8",
+            self.write_release_checksums(
+                candidate,
+                {"aixray-review-validate.awk": "0" * 64},
             )
 
             result = self.run_verification_block(candidate)
@@ -416,13 +472,7 @@ class PublicFunnelTests(unittest.TestCase):
             )
             validator = candidate / "aixray-review-validate.awk"
             validator.write_text('BEGIN { print "validated" }\n', encoding="utf-8")
-            (candidate / "SHA256SUMS").write_text(
-                f"{sha256(candidate / 'aixray-aix.sh')}  aixray-aix.sh\n"
-                f"{sha256(candidate / 'aixray-review-pack.sh')}  "
-                "aixray-review-pack.sh\n"
-                f"{sha256(validator)}  aixray-review-validate.awk\n",
-                encoding="utf-8",
-            )
+            self.write_release_checksums(candidate)
             readme_path = candidate / "README.md"
             stale_digest = "0" * 64
             readme = (
@@ -1139,13 +1189,34 @@ class PublicFunnelTests(unittest.TestCase):
             for line in crosswalk.group(1).splitlines()
             if line
         ]
-        cis_sources = [row[0] for row in cis_rows]
+        # The crosswalk is many-to-many in BOTH directions and always was:
+        # several checks can contribute to one control, and one check that
+        # evaluates two directives can satisfy two controls. ck-ssh-ignore-rhosts
+        # is the latter -- it requires IgnoreRhosts yes AND
+        # HostbasedAuthentication no, so finding:ssh_ignore_rhosts legitimately
+        # maps to both 4.6.3.8 and 4.6.3.7. An earlier source-uniqueness
+        # assertion only held while the crosswalk was small enough for no such
+        # check to exist, and it forbade one direction while silently
+        # permitting the other (22 controls already have more than one source).
+        # What actually guards against double-counting is PAIR uniqueness.
         self.assertEqual(
-            len(cis_sources),
-            len(set(cis_sources)),
-            "numeric CIS L1 crosswalk repeats a source check",
+            len(cis_rows),
+            len(set(cis_rows)),
+            "numeric CIS L1 crosswalk repeats a (source, control) pair",
         )
-        active_security = security.group(1) + "\n".join(evaluator_bodies)
+        # The guarantee is that no crosswalk row credits a CIS control to a
+        # finding the scanner never emits -- a phantom source would inflate
+        # coverage. It is NOT that every crosswalk source is a `security`
+        # finding raised by checks_security: finding:firmware is emitted by the
+        # lifecycle section and finding:system_config_capture_cron by the config
+        # section, and both are legitimate CIS L1 sources (7.2 and 2.1). The
+        # category was never load-bearing here, so search the whole scanner for
+        # a real emitter and keep the category open. Still an emitter check --
+        # `add <category> <id>` must appear, so a bare mention in a comment or a
+        # crosswalk row does not satisfy it.
+        emitters = set(
+            re.findall(r"\b(?:add|nr_warn) [a-z_]+ ([a-z0-9_]+)\b", source)
+        )
         for source_id, control in cis_rows:
             self.assertRegex(source_id, r"^(?:finding:[a-z0-9_]+|stig:V-[0-9]+)$")
             self.assertRegex(control, r"^[0-9]+(?:\.[0-9]+)+$")
@@ -1153,9 +1224,11 @@ class PublicFunnelTests(unittest.TestCase):
                 self.assertIn(source_id.removeprefix("stig:"), stig_ids)
             else:
                 finding = source_id.removeprefix("finding:")
-                self.assertRegex(
-                    active_security,
-                    rf"\b(?:add|nr_warn) security {finding}\b",
+                self.assertIn(
+                    finding,
+                    emitters,
+                    f"crosswalk control {control} credits finding:{finding}, "
+                    "which the scanner never emits",
                 )
         cis_renderer = re.search(
             r"^function cis_l1_verdicts \{.*?\n(.*?)^\}$",
@@ -1348,17 +1421,54 @@ class PublicFunnelTests(unittest.TestCase):
             structured = run_scanner("--json")
             self.assertEqual(0, structured.returncode, structured.stderr)
             findings = json.loads(structured.stdout)["findings"]
-            expected = [
+            by_id = {finding["id"]: finding for finding in findings}
+
+            # Severity priority, worst first. This is the ONLY part of the
+            # ranking this test models, and deliberately so: within a
+            # (status, severity) bucket the scanner orders by CVE action tier,
+            # then by descending framework corroboration, then by finding id,
+            # and caps any one category at two entries on a first pass before
+            # relaxing the cap on a second. Re-implementing that here would
+            # make the test a copy of the code it is supposed to check, and it
+            # would pass for a reimplementation that is wrong in the same way.
+            # So assert the properties the ranking must have instead.
+            priority = {
+                (status, severity): rank
+                for rank, (status, severity) in enumerate(
+                    (status, severity)
+                    for status in ("FAIL", "WARN")
+                    for severity in ("high", "med", "low")
+                )
+            }
+            actionable = [
                 finding
-                for status in ("FAIL", "WARN")
-                for severity in ("high", "med", "low")
                 for finding in findings
-                if finding["status"] == status and finding["severity"] == severity
-            ][:5]
+                if (finding["status"], finding["severity"]) in priority
+            ]
+
             self.assertGreaterEqual(len(parser.top_risks), 1)
-            self.assertLessEqual(len(parser.top_risks), 5)
-            self.assertEqual(len(expected), len(parser.top_risks))
-            for rendered, source in zip(parser.top_risks, expected):
+            self.assertEqual(min(5, len(actionable)), len(parser.top_risks))
+
+            rendered_ids = [risk["finding_id"] for risk in parser.top_risks]
+            self.assertNotIn(None, rendered_ids, "a top-risk card names no finding")
+            self.assertEqual(
+                len(set(rendered_ids)),
+                len(rendered_ids),
+                f"a finding occupies more than one of the five slots: {rendered_ids}",
+            )
+
+            for rendered in parser.top_risks:
+                source = by_id.get(rendered["finding_id"])
+                self.assertIsNotNone(
+                    source,
+                    f"top-risk card names {rendered['finding_id']}, which is "
+                    "absent from --json",
+                )
+                if source is None:
+                    continue
+                # Every visible value on the card must be the value of the
+                # finding the card names -- a card that renders another
+                # finding's evidence is a false accusation against the box.
                 self.assertEqual((source["status"],), rendered["statuses"])
                 self.assertEqual(source["severity"], rendered["severity"])
                 self.assertEqual(source["label"], str(rendered["label"]).strip())
@@ -1370,9 +1480,54 @@ class PublicFunnelTests(unittest.TestCase):
                     f"Observed: {source['observed']}",
                     " ".join(str(rendered["observed"]).split()),
                 )
+                # INVERTED, not hollowed out. This assertion used to require
+                # `Fix: <text>` in the top-risk card. AIXray reports gaps and
+                # says nothing about remediation, so the card no longer renders
+                # a fix span at all -- and the guard that used to prove the
+                # span was present now proves it is absent. The parser still
+                # collects a "top-risk-fix" element into rendered["fix"]
+                # precisely so this can fail if the span ever comes back; the
+                # collector is the mechanism of the guard, not a leftover.
                 self.assertEqual(
-                    f"Fix: {source['fix']}",
-                    " ".join(str(rendered["fix"]).split()),
+                    "",
+                    str(rendered["fix"]).strip(),
+                    "the top-risk card rendered remediation text; AIXray "
+                    "reports findings and does not tell the operator how to "
+                    "fix them",
+                )
+                # The JSON `fix` field is a separate surface and stays this
+                # release, so the fixture still supplies one. Asserting that
+                # keeps the two surfaces from being conflated: a non-empty
+                # source fix must still not reach the HTML card.
+                self.assertNotEqual("", str(source["fix"]).strip())
+
+            # The two invariants that make "top risks" an honest heading.
+            shown_ranks = [
+                priority[(by_id[fid]["status"], by_id[fid]["severity"])]
+                for fid in rendered_ids
+            ]
+            self.assertEqual(
+                sorted(shown_ranks),
+                shown_ranks,
+                "the cards are out of severity order -- a less severe finding "
+                f"is shown above a more severe one: {rendered_ids}",
+            )
+            # Nothing worse than the worst card may be left out. The scanner
+            # drains a whole (status, severity) bucket before moving to the
+            # next -- the category cap only reorders within a bucket, it never
+            # defers a bucket -- so an omitted finding may tie the last card
+            # but must never outrank it. This is the assertion that would
+            # catch "the top five are not the five worst".
+            worst_shown = max(shown_ranks)
+            for finding in actionable:
+                if finding["id"] in rendered_ids:
+                    continue
+                self.assertGreaterEqual(
+                    priority[(finding["status"], finding["severity"])],
+                    worst_shown,
+                    f"{finding['id']} ({finding['status']}/"
+                    f"{finding['severity']}) outranks a rendered top risk but "
+                    "was left out of the five",
                 )
 
     @unittest.skipUnless(

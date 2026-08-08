@@ -4,7 +4,7 @@ CVE-2026-98765
 NOT_ASSESSED
 ssha256
 9009-22A
-1.1.1 PASS
+4.5.6 PASS
 bos.mp64
 bos.64bit
 devices.pciex.1410c183.rte
@@ -18,4 +18,3 @@ xlC.rte
 bos.rte.install
 flrtvc.ksh
 apar.csv
-the hostname A is a local label; A remains prose

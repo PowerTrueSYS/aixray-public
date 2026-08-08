@@ -8,7 +8,7 @@
   "url": "https://powertruesystems.com/aixray",
   "codeRepository": "https://github.com/PowerTrueSYS/aixray-public",
   "downloadUrl": "https://powertruesystems.com/aixray/",
-  "softwareVersion": "0.1.0",
+  "softwareVersion": "1.0.0",
   "applicationCategory": "System administration and security assessment",
   "applicationSubCategory": "IBM AIX health check and VIOS posture assessment",
   "operatingSystem": [
@@ -31,9 +31,9 @@
     "HTML and JSON reports",
     "Supported compliance-oriented views",
     "Explicit NOT_ASSESSED status for unavailable evidence",
-    "DISA STIG for IBM AIX 7.x coverage is partial: 65 distinct rule V-IDs receive an engine verdict; this count is not a single-release coverage fraction; V-215399 covers only the clean_partial_conns tunable, not its package-commit condition; deferred V-215429 is not counted",
-    "10 CIS L1-aligned checks across NFS exports, password hashing, file ownership and permissions, and network tunables; alignment only",
-    "35 standalone check tools with machine-readable manifests"
+    "DISA STIG for IBM AIX 7.x coverage is partial: 66 distinct rule V-IDs receive an engine verdict; this count is not a single-release coverage fraction; V-215399 covers only the clean_partial_conns tunable, not its package-commit condition; deferred V-215429 is not counted",
+    "260 CIS L1-aligned checks across NFS exports, password hashing, file ownership and permissions, and network tunables, plus login policy, auditing, cron and at, home directories, system accounts and the r-command services, resolving to 209 distinct Level 1 control numbers of the 212 in CIS IBM AIX 7 Benchmark v1.2.0; 5.1.4, 5.1.5 and 7.1 are not claimed; alignment only",
+    "324 standalone check tools with machine-readable manifests"
   ],
   "keywords": "IBM AIX health check, VIOS assessment, IBM Power security audit, AIX posture assessment, AIX risk scanner, DISA STIG IBM AIX 7.x, CIS L1-aligned checks, ksh88, read-only, zero egress",
   "additionalProperty": [
@@ -45,7 +45,7 @@
     {
       "@type": "PropertyValue",
       "name": "standaloneCheckCount",
-      "value": 35
+      "value": 324
     },
     {
       "@type": "PropertyValue",
