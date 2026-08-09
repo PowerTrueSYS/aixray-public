@@ -106,7 +106,7 @@ the report:
 ./aixray-review-pack.sh aixray-<hostname>-<date>.html
 ```
 
-The v0.2.0-and-later release bundle also supplies
+The v1.0.0-and-later release bundle also supplies
 `aixray-review-validate.awk`; keep it beside `aixray-review-pack.sh` when you
 transfer or run the helper. The historical v0.1.0 helper is self-contained.
 
@@ -122,11 +122,23 @@ in [`SECURITY.md`](SECURITY.md#outbound-review-pack) and the review steps in
 
 SHA-256 values for the artifacts in this repository revision are published in
 [`SHA256SUMS`](SHA256SUMS), one line per released file, rather than pasted into
-this page where they would rot. Verify every release payload against it:
+this page where they would rot. Verify every release payload against it.
+
+When verifying a full repository tree (a `git clone` or tag archive), use:
 
 ```sh
 sha256sum -c SHA256SUMS
 ```
+
+When verifying only downloaded release assets, use:
+
+```sh
+sha256sum -c --ignore-missing SHA256SUMS
+```
+
+The `--ignore-missing` flag verifies only the files present in the directory;
+it skips any `SHA256SUMS` entry whose file is absent without reporting it as a
+failure.
 
 On AIX, `csum -h SHA256 <file>` produces the same digest for a single file.
 
