@@ -1,9 +1,8 @@
-
 # aixray-public
 
 The **public, open-source** face of AIXray and the site content behind
-`powertruesystems.com/aixray`. Everything here is customer- and search-visible. The general
-rules are in the core above.
+`powertruesystems.com/aixray`. Everything here is customer- and search-visible. This file
+carries the working rules for this repository.
 
 ## This repo is public
 
