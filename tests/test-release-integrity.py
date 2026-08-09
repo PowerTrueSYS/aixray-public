@@ -104,7 +104,8 @@ class ReleaseIntegrityTests(unittest.TestCase):
     def write_sha256sums(
         self,
         *,
-        artifacts: tuple[str, ...] = PAYLOAD_ARTIFACTS,
+        artifacts: tuple[str, ...] = PAYLOAD_ARTIFACTS
+        + ("checks/ck-example/ck-example.ksh",),
         digest_overrides: dict[str, str] | None = None,
     ) -> None:
         digest_overrides = digest_overrides or {}
@@ -278,15 +279,20 @@ class ReleaseIntegrityTests(unittest.TestCase):
         self.assert_failed_with("unexpected release asset: notes.txt")
 
     def test_sha256sums_requires_exact_payload_set(self) -> None:
-        self.write_sha256sums(artifacts=PAYLOAD_ARTIFACTS[:-1])
+        payloads = PAYLOAD_ARTIFACTS + (
+            "checks/ck-example/ck-example.ksh",
+        )
+        self.write_sha256sums(artifacts=payloads[:-1])
         self.assert_failed_with(
             "SHA256SUMS payload set mismatch: missing "
-            "aixray-review-validate.awk"
+            "checks/ck-example/ck-example.ksh"
         )
 
     def test_sha256sums_digest_must_match_tagged_payload(self) -> None:
         self.write_sha256sums(
-            digest_overrides={"aixray-review-validate.awk": "0" * 64}
+            artifacts=PAYLOAD_ARTIFACTS
+            + ("checks/ck-example/ck-example.ksh",),
+            digest_overrides={"aixray-review-validate.awk": "0" * 64},
         )
         self.assert_failed_with(
             "SHA256SUMS digest mismatch for aixray-review-validate.awk"

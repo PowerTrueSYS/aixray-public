@@ -157,7 +157,7 @@ class Validator:
                 ),
             )
 
-    def validate_sha256sums(self) -> None:
+    def validate_sha256sums(self, catalog: dict[str, Any] | None = None) -> None:
         if CHECKSUM_MANIFEST_PATH not in self.release_artifacts:
             return
         content = self.read_tree_file(CHECKSUM_MANIFEST_PATH)
@@ -184,7 +184,38 @@ class Validator:
                 continue
             entries[relative] = digest.lower()
 
-        expected_names = set(CURRENT_PAYLOAD_ARTIFACTS)
+        if self.version == "0.1.0":
+            expected_payloads = CURRENT_PAYLOAD_ARTIFACTS
+        else:
+            if catalog is None:
+                self.fail(
+                    "cannot validate SHA256SUMS payload set: catalog.json "
+                    "could not be loaded"
+                )
+                return
+            checks = catalog.get("checks")
+            if not isinstance(checks, list):
+                self.fail("catalog.json checks must be a list")
+                return
+            check_artifacts: list[str] = []
+            for index, entry in enumerate(checks):
+                if not isinstance(entry, dict):
+                    self.fail(f"catalog checks[{index}] must be an object")
+                    continue
+                artifact_path = entry.get("artifact")
+                if not isinstance(artifact_path, str) or not artifact_path:
+                    check_id = entry.get("id", f"index {index}")
+                    self.fail(
+                        f"catalog check {check_id!r} has missing or "
+                        "empty artifact path"
+                    )
+                    continue
+                check_artifacts.append(artifact_path)
+            expected_payloads = CURRENT_PAYLOAD_ARTIFACTS + tuple(
+                check_artifacts
+            )
+
+        expected_names = set(expected_payloads)
         actual_names = set(entries)
         missing = sorted(expected_names - actual_names)
         unexpected = sorted(actual_names - expected_names)
@@ -198,7 +229,7 @@ class Validator:
                 + ", ".join(unexpected)
             )
 
-        for relative in CURRENT_PAYLOAD_ARTIFACTS:
+        for relative in expected_payloads:
             expected = entries.get(relative)
             if expected is None:
                 continue
@@ -400,8 +431,8 @@ class Validator:
 
     def run(self) -> bool:
         self.validate_required_release_files()
-        self.validate_sha256sums()
         catalog = self.load_catalog()
+        self.validate_sha256sums(catalog)
         if catalog is not None:
             self.validate_catalog(catalog)
         self.validate_scanner_copies()
