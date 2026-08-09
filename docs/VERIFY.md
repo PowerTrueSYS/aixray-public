@@ -34,7 +34,7 @@ candidate revision. Replace `v0.1.0` with the tag being prepared:
 python3 tools/verify-release-integrity.py --tag v0.1.0
 ```
 
-For `v0.2.0` and later, place exactly `aixray-aix.sh`,
+For `v1.0.0` and later, place exactly `aixray-aix.sh`,
 `aixray-review-pack.sh`, `aixray-review-validate.awk`, and `SHA256SUMS` in a
 separate directory and compare them with the same candidate tree. The immutable
 `v0.1.0` release retains its historical two-asset contract (`aixray-aix.sh` and
@@ -47,7 +47,7 @@ python3 tools/verify-release-integrity.py --tag v0.1.0 \
 
 The gate checks the required tree paths, all catalog digests, root/site scanner
 identity, artifact version declarations, the exact versioned release asset set,
-the v0.2.0-and-later checksum manifest, and asset bytes. Any `FAIL` line blocks
+the v1.0.0-and-later checksum manifest, and asset bytes. Any `FAIL` line blocks
 the release.
 
 ## Verify byte identity and catalog hashes
