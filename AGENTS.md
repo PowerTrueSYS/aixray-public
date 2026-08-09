@@ -1,4 +1,3 @@
-@~/.claude/AGENTS-CORE.md
 
 # aixray-public
 
