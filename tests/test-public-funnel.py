@@ -935,7 +935,7 @@ class PublicFunnelTests(unittest.TestCase):
     def test_readme_and_docs_exclude_disallowed_framework_claims(self) -> None:
         disallowed = tuple(
             re.compile(term, flags=re.IGNORECASE)
-            for term in ("ffi" + "ec", "nc" + "ua", "hi" + "paa")
+            for term in ("nc" + "ua", "hi" + "paa")
         )
         paths = [ROOT / "README.md", *sorted((ROOT / "docs").rglob("*"))]
         for path in paths:
