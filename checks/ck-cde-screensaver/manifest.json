@@ -1,0 +1,20 @@
+{
+  "id": "ck-cde-screensaver",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "cde_screensaver"
+  ],
+  "captures": [],
+  "requires_root": true,
+  "read_only": true,
+  "commands": [
+    "lslpp -qcL 'X11.Dt*'",
+    "grep -E '^[ \t]*dtsession[*](saverTimeout|lockTimeout)[ \t]*:' /etc/dt/config/*/sys.resources /usr/dt/config/*/sys.resources"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-cde-screensaver/ck-cde-screensaver.ksh"
+}

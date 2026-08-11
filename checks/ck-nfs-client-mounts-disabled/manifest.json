@@ -1,0 +1,22 @@
+{
+  "id": "ck-nfs-client-mounts-disabled",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "nfs_client_mounts_disabled"
+  ],
+  "captures": [
+    "cap-etc-filesystems"
+  ],
+  "requires_root": true,
+  "read_only": true,
+  "commands": [
+    "ls -ld /etc/filesystems",
+    "cat /etc/filesystems"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-nfs-client-mounts-disabled/ck-nfs-client-mounts-disabled.ksh"
+}

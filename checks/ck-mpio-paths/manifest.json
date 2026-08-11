@@ -9,7 +9,8 @@
   "requires_root": false,
   "read_only": true,
   "commands": [
-    "lspath"
+    "lspath",
+    "lsdev -Cc disk -F name:status:description"
   ],
   "tags": [],
   "license": "Apache-2.0",

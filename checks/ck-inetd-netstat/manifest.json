@@ -1,0 +1,19 @@
+{
+  "id": "ck-inetd-netstat",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "inetd_netstat"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "grep -E '^[\t ]*netstat[\t ]' /etc/inetd.conf"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-inetd-netstat/ck-inetd-netstat.ksh"
+}

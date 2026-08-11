@@ -1,0 +1,19 @@
+{
+  "id": "ck-cde-dtspc",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "cde_dtspc"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "grep -E '^[\t ]*dtspc[\t ]' /etc/inetd.conf"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-cde-dtspc/ck-cde-dtspc.ksh"
+}

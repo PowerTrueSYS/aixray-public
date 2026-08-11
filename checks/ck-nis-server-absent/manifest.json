@@ -1,0 +1,19 @@
+{
+  "id": "ck-nis-server-absent",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "nis_server_installed"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "lslpp -L bos.net.nis.server"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-nis-server-absent/ck-nis-server-absent.ksh"
+}

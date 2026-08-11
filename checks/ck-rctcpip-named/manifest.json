@@ -1,0 +1,23 @@
+{
+  "id": "ck-rctcpip-named",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "rctcpip_named"
+  ],
+  "captures": [
+    "cap-cis-rctcpip",
+    "cap-cis-services-lssrc-a"
+  ],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "cat /etc/rc.tcpip",
+    "lssrc -a"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-rctcpip-named/ck-rctcpip-named.ksh"
+}

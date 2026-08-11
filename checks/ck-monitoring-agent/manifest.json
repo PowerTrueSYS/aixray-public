@@ -11,9 +11,7 @@
   "commands": [
     "ps -e -o comm"
   ],
-  "tags": [
-    "ffiec:III.B"
-  ],
+  "tags": [],
   "license": "Apache-2.0",
   "artifact": "checks/ck-monitoring-agent/ck-monitoring-agent.ksh"
 }

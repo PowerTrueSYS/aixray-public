@@ -1,0 +1,19 @@
+{
+  "id": "ck-unowned-files",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "unowned_files"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "/usr/bin/find / \\( -fstype jfs -o -fstype jfs2 \\) \\( -type d -o -type f \\) \\( -nouser -o -nogroup \\) -ls"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-unowned-files/ck-unowned-files.ksh"
+}

@@ -1,0 +1,20 @@
+{
+  "id": "ck-account-home-exists",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "account_home_exists"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "lsuser -R files -a id home account_locked ALL",
+    "ls -ldn <home>"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-account-home-exists/ck-account-home-exists.ksh"
+}

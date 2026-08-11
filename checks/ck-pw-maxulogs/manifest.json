@@ -1,0 +1,17 @@
+{
+  "id": "ck-pw-maxulogs",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "pw_maxulogs"
+  ],
+  "captures": [],
+  "requires_root": true,
+  "read_only": true,
+  "commands": [
+    "lssec -f /etc/security/user -s default -a maxulogs"
+  ],
+  "tags": [],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-pw-maxulogs/ck-pw-maxulogs.ksh"
+}

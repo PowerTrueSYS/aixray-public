@@ -1,0 +1,19 @@
+{
+  "id": "ck-syslog-remote-host",
+  "pillar": "operational-readiness",
+  "category": "monitoring",
+  "finding_ids": [
+    "syslog_remote_host"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "cat /etc/syslog.conf"
+  ],
+  "tags": [
+    "cis-l2"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-syslog-remote-host/ck-syslog-remote-host.ksh"
+}

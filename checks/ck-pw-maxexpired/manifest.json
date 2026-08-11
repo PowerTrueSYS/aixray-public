@@ -1,0 +1,20 @@
+{
+  "id": "ck-pw-maxexpired",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "pw_maxexpired"
+  ],
+  "captures": [],
+  "requires_root": true,
+  "read_only": true,
+  "commands": [
+    "lssec -f /etc/security/user -s default -a maxexpired -a maxage"
+  ],
+  "tags": [
+    "cis-l1",
+    "ffiec:II.C.15"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-pw-maxexpired/ck-pw-maxexpired.ksh"
+}

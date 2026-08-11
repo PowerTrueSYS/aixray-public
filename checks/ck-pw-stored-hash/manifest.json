@@ -1,0 +1,19 @@
+{
+  "id": "ck-pw-stored-hash",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "pw_stored_hash"
+  ],
+  "captures": [],
+  "requires_root": true,
+  "read_only": true,
+  "commands": [
+    "awk '/^[^ \\t:][^:]*:[ \\t]*$/ { u=$1; sub(/:[ \\t]*$/,\"\",u); n++ } $1==\"password\" && $2==\"=\" && NF==3 && length($3)==13 && u!=\"\" && u !~ /^(adm|bin|daemon|invscout|ipsec|lp|lpd|nobody|nuucp|sshd|sys|uucp|esa|srvproxy|imnadm|anonymou|ftp)$/ { k++; if (k<=6) users=(users==\"\")?u:users\",\"u } END { printf \"scanned=%d crypt=%d users=%s\\n\", n, k, users }' /etc/security/passwd"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-pw-stored-hash/ck-pw-stored-hash.ksh"
+}

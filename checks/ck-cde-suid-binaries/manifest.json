@@ -1,0 +1,19 @@
+{
+  "id": "ck-cde-suid-binaries",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "cde_dt_binaries"
+  ],
+  "captures": [],
+  "requires_root": true,
+  "read_only": true,
+  "commands": [
+    "ls -ld /usr/dt/bin/dtaction /usr/dt/bin/dtappgather /usr/dt/bin/dtprintinfo /usr/dt/bin/dtsession"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-cde-suid-binaries/ck-cde-suid-binaries.ksh"
+}

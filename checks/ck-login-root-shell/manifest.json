@@ -1,0 +1,19 @@
+{
+  "id": "ck-login-root-shell",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "login_root_shell"
+  ],
+  "captures": [],
+  "requires_root": true,
+  "read_only": true,
+  "commands": [
+    "lsuser -a shell root"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-login-root-shell/ck-login-root-shell.ksh"
+}

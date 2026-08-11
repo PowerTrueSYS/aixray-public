@@ -1,0 +1,19 @@
+{
+  "id": "ck-nis-client-absent",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "nis_client_installed"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "lslpp -L bos.net.nis.client"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-nis-client-absent/ck-nis-client-absent.ksh"
+}

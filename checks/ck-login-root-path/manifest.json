@@ -1,0 +1,20 @@
+{
+  "id": "ck-login-root-path",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "login_root_path"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "ls -l /etc/environment /etc/profile /.profile",
+    "grep -E '^[ \t]*(export[ \t]+)?PATH=' /etc/environment /etc/profile /.profile"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-login-root-path/ck-login-root-path.ksh"
+}

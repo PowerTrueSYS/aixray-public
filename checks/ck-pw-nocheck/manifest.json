@@ -1,0 +1,19 @@
+{
+  "id": "ck-pw-nocheck",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "pw_nocheck"
+  ],
+  "captures": [],
+  "requires_root": true,
+  "read_only": true,
+  "commands": [
+    "awk '/^[^ \\t:][^:]*:[ \\t]*$/ { u=$1; sub(/:[ \\t]*$/,\"\",u); n++ } $1==\"flags\" && $2==\"=\" && $0 ~ /NOCHECK/ && u!=\"\" { k++; if (k<=6) users=(users==\"\")?u:users\",\"u } END { printf \"scanned=%d nocheck=%d users=%s\\n\", n, k, users }' /etc/security/passwd"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-pw-nocheck/ck-pw-nocheck.ksh"
+}

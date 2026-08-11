@@ -1,0 +1,19 @@
+{
+  "id": "ck-fileperm-crontabs-group",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "fileperm_crontabs_group"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "ls -ldn /var/spool/cron/crontabs"
+  ],
+  "tags": [
+    "stig:V-245569"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-fileperm-crontabs-group/ck-fileperm-crontabs-group.ksh"
+}

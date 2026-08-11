@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="0.1.0"
+AIXRAY_STANDALONE_VERSION="1.0.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -26,6 +26,49 @@ function aix {
     return 127
   fi
   "$@" 2>/dev/null
+}
+
+# aixv preserves stderr as evidence, for read-only commands that write their
+# version banner or diagnostics there rather than to stdout. (Deliberately no
+# example command name here: this comment is copied into all 324 standalone
+# tools, and tools/ci/egress-lint.sh reads a banned network command name in a
+# comment as a violation just as it would in a command position.)
+function aixv {
+  typeset key rc
+  key=$1
+  shift
+  if [ -n "${AIXRAY_FIXTURES:-}" ]; then
+    if [ -r "$AIXRAY_FIXTURES/$key.out" ] || [ -r "$AIXRAY_FIXTURES/$key.err" ]; then
+      [ -r "$AIXRAY_FIXTURES/$key.out" ] && cat "$AIXRAY_FIXTURES/$key.out"
+      [ -r "$AIXRAY_FIXTURES/$key.err" ] && cat "$AIXRAY_FIXTURES/$key.err"
+      rc=0
+      [ -r "$AIXRAY_FIXTURES/$key.rc" ] && read rc < "$AIXRAY_FIXTURES/$key.rc"
+      return $rc
+    fi
+    return 127
+  fi
+  "$@" 2>&1
+}
+
+# aix_capture_missing <key> — fixture-replay helper: true (rc=0) iff no capture
+# exists for <key> at all, i.e. the rc a probe just received was the "no
+# capture" default and not a genuine command status. aix()/aixv() return 127 for
+# BOTH a missing capture and a genuinely absent command, so a module that wants
+# to claim "the command is not installed" must first rule out "nobody captured
+# it". Live mode returns false (rc=1): a real box has no concept of a missing
+# fixture, and rc=127 there genuinely means the command was not found. Must be
+# called in the PARENT shell after the probe, not inside the $(aix ...)
+# substitution. Byte-for-byte the monolith's semantics (src/aixray-aix.sh.in);
+# without it here, an undefined-command rc of 127 makes the guard read false and
+# the caller launders a missing capture into NOT_APPLICABLE.
+function aix_capture_missing {
+  if [ -n "${AIXRAY_FIXTURES:-}" ]; then
+    if [ -r "$AIXRAY_FIXTURES/$1.out" ] || [ -r "$AIXRAY_FIXTURES/$1.err" ]; then
+      return 1
+    fi
+    return 0
+  fi
+  return 1
 }
 
 function jesc {
@@ -61,7 +104,13 @@ function add {
     *) echo "$AIXRAY_TOOL: internal error: unknown category '$1'" >&2; exit 1;;
   esac
   case "$4" in
-    PASS|WARN|FAIL|NOT_ASSESSED) ;;
+    # NOT_APPLICABLE is a verdict, not a refusal: the control constrains a
+    # property of a thing that need not exist. It is already a first-class
+    # status in the monolith (vios_level on a plain AIX LPAR) and in the
+    # contract schema (STATUSES, pipeline/contract_v2/schema.py), but was
+    # missing here, so any standalone tool reaching that branch aborted with
+    # an internal error instead of emitting its envelope.
+    PASS|WARN|FAIL|NOT_ASSESSED|NOT_APPLICABLE) ;;
     *) echo "$AIXRAY_TOOL: internal error: unknown status '$4'" >&2; exit 1;;
   esac
   F_CAT[$NFIND]=$1
@@ -297,17 +346,136 @@ function standalone_main {
 
 AIXRAY_TOOL=ck-software-inventory
 
-# Shared software-inventory capture for the facts-only standalone slice.
+# Shared software-inventory capture for its standalone fact and finding slices.
 function capture_cap_lslpp_qcl {
+  typeset CIS_PACKAGE_PROFILE
   LSLPPQ=$(aix lslpp_qcL lslpp -qcL); LSLPPQ_RC=$?
+
+  CIS_PACKAGE_PREPARED=1
+  CIS_PACKAGE_READY=0
+  CIS_PACKAGE_CLEAN=0
+  CIS_PACKAGE_ROWS=""
+  CIS_PACKAGE_REASON=""
+  case "${LSLPPQ_RC:-}" in
+    0)
+      if [ -z "${LSLPPQ:-}" ]; then
+        CIS_PACKAGE_REASON="capture returned empty output"
+      else
+        CIS_PACKAGE_PROFILE=$(printf '%s\n' "$LSLPPQ" | awk -F: '
+          function usable(value) { return value != "" && value !~ /[[:cntrl:]]/ }
+          /^[ \t\r]*$/ { next }
+          {
+            nonblank++
+            if ($0 !~ /^[ \t]*#/ && NF >= 6 && usable($1) && usable($2) &&
+                usable($3) && $6 ~ /^(A|B|C|E|O|[?])$/) {
+              valid_count++
+              if ($2 ~ /^bos[.]rte([.]|$)/ && !bos[$2]++) bos_family_count++
+            } else invalid_count++
+          }
+          END {
+            printf "%d:%d:%d:%d\n", nonblank+0, valid_count+0,
+              bos_family_count+0, invalid_count+0
+          }
+        ')
+        CIS_PACKAGE_NONBLANK=$(printf '%s\n' "$CIS_PACKAGE_PROFILE" | awk -F: '{print $1+0}')
+        CIS_PACKAGE_VALID=$(printf '%s\n' "$CIS_PACKAGE_PROFILE" | awk -F: '{print $2+0}')
+        CIS_PACKAGE_BOS=$(printf '%s\n' "$CIS_PACKAGE_PROFILE" | awk -F: '{print $3+0}')
+        CIS_PACKAGE_INVALID=$(printf '%s\n' "$CIS_PACKAGE_PROFILE" | awk -F: '{print $4+0}')
+        if [ "$CIS_PACKAGE_VALID" -eq 0 ]; then
+          CIS_PACKAGE_REASON="capture had no structurally valid rows"
+        elif [ "$CIS_PACKAGE_VALID" -lt 50 ] || [ "$CIS_PACKAGE_BOS" -lt 3 ]; then
+          CIS_PACKAGE_REASON="capture was implausibly small ($CIS_PACKAGE_VALID structurally valid rows; minimum 50, $CIS_PACKAGE_BOS distinct bos.rte filesets)"
+        else
+          CIS_PACKAGE_ROWS=$(printf '%s\n' "$LSLPPQ" | awk -F: '
+            function usable(value) { return value != "" && value !~ /[[:cntrl:]]/ }
+            $0 !~ /^[ \t]*#/ && NF >= 6 && usable($1) && usable($2) &&
+              usable($3) && $6 ~ /^(A|B|C|E|O|[?])$/ { print $2 }
+          ')
+          CIS_PACKAGE_READY=1
+          if [ "$CIS_PACKAGE_INVALID" -eq 0 ]; then
+            CIS_PACKAGE_CLEAN=1
+          else
+            CIS_PACKAGE_REASON="capture contained $CIS_PACKAGE_INVALID malformed row(s)"
+          fi
+        fi
+      fi
+      ;;
+    '') CIS_PACKAGE_REASON="return code was not confirmed" ;;
+    *) CIS_PACKAGE_REASON="capture failed (rc=${LSLPPQ_RC})" ;;
+  esac
 }
 
+_AIXRAY_SESSION_KEYS=""
 # Emit one JSON member named "software" from the lslpp -qcL capture already
-# held by the patch checks. This module defines the emitter only; the separate
-# integration build owns the spine include and facts-emitter call.
+# held by the patch checks. This module also contributes the corresponding
+# assessment finding; the integration build owns both spine calls.
+function software_inventory_emit_gap {
+  typeset SI_FATAL_REASON
+  SI_FATAL_REASON=$1
+
+  printf '%s\n' "$SI_FATAL_REASON" | awk '
+    BEGIN {
+      classification_gap = "ISV/workload classification uses explicit IBM Java, Python, and Perl lpp_source/name-pair heuristics; every other fileset remains UNCLASSIFIED."
+      unmanaged_gap = "Software not registered with lslpp -Lc is not assessed."
+      business_gap = "Business criticality, active use, and workload coupling are not established by lslpp -Lc and remain NOT_ASSESSED."
+      workload_gap = "Only package-managed IBM Java, Python, and Perl runtimes matched by explicit lpp_source/name-pair heuristics are normalized; package publisher/provenance remains NOT_ASSESSED, and absence does not prove that no other ISV or workload software exists."
+    }
+
+    function json_escape(value, result, character) {
+      result = ""
+      while (value != "") {
+        character = substr(value, 1, 1)
+        value = substr(value, 2)
+        if (character == "\\") {
+          result = result "\\\\"
+        } else if (character == "\"") {
+          result = result "\\\""
+        } else if (character == "\t") {
+          result = result "\\t"
+        } else if (character == "\r") {
+          result = result "\\r"
+        } else {
+          result = result character
+        }
+      }
+      return result
+    }
+
+    {
+      if (NR > 1) reason = reason "\\n"
+      reason = reason $0
+    }
+
+    END {
+      printf "\"software\":{"
+      printf "\"status\":\"NOT_ASSESSED\",\"platform\":\"AIX\","
+      printf "\"reason\":\"%s\",", json_escape(reason)
+      printf "\"source\":{\"capture\":\"lslpp_qcL\",\"command\":\"lslpp -qcL\","
+      printf "\"format\":\"lslpp -Lc colon-delimited (headings suppressed)\",\"rc\":null},"
+
+      printf "\"filesets\":{"
+      printf "\"status\":\"NOT_ASSESSED\",\"reason\":\"%s\",", json_escape(reason)
+      printf "\"captured_count\":null,\"emitted_count\":null,"
+      printf "\"invalid_row_count\":null,\"invalid_row_marker\":null,"
+      printf "\"omitted_count\":null,\"truncated\":null,"
+      printf "\"truncation_marker\":null,\"items\":null},"
+
+      printf "\"isv_workloads\":{"
+      printf "\"status\":\"NOT_ASSESSED\",\"reason\":\"%s\",", json_escape(reason)
+      printf "\"basis\":null,\"detected_count\":null,"
+      printf "\"emitted_count\":null,\"omitted_count\":null,"
+      printf "\"truncated\":null,\"truncation_marker\":null,\"items\":null,"
+      printf "\"gap\":\"%s\"},", json_escape(workload_gap)
+      printf "\"gaps\":[\"%s\",\"%s\",\"%s\"]}", \
+        json_escape(classification_gap), json_escape(unmanaged_gap), \
+        json_escape(business_gap)
+    }
+  '
+}
+
 function emit_fact_software {
   typeset SI_FILESET_LIMIT SI_WORKLOAD_LIMIT SI_EVIDENCE_LIMIT
-  typeset SI_RC SI_CONFIRMED SI_AWK_RC
+  typeset SI_RC SI_CONFIRMED SI_AWK_RC SI_JSON SI_AWK_STATUS SI_JSON_OK
 
   SI_FILESET_LIMIT=${1:-1000}
   case "$SI_FILESET_LIMIT" in
@@ -339,7 +507,7 @@ function emit_fact_software {
       ;;
   esac
 
-  printf '%s\n' "${LSLPPQ:-}" | awk -F: \
+  SI_JSON=$(printf '%s\n' "${LSLPPQ:-}" | awk -F: \
     -v confirmed="$SI_CONFIRMED" -v capture_rc="$SI_AWK_RC" \
     -v max_rows="$SI_FILESET_LIMIT" \
     -v max_workloads="$SI_WORKLOAD_LIMIT" \
@@ -612,12 +780,87 @@ function emit_fact_software {
       emit_gaps()
       printf "}"
     }
-  '
+  '); SI_AWK_STATUS=$?
+  SI_JSON_OK=0
+  case "$SI_JSON" in
+    '"software":{'*'}') SI_JSON_OK=1 ;;
+  esac
+  if [ "$SI_AWK_STATUS" -ne 0 ] || [ -z "$SI_JSON" ] ||
+     [ "$SI_JSON_OK" -ne 1 ]; then
+    software_inventory_emit_gap \
+      "lslpp -qcL software fact emitter failed (rc=$SI_AWK_STATUS)"
+  else
+    printf '%s' "$SI_JSON"
+  fi
+}
+
+# The fact emitter deliberately preserves partial inventory. This finding
+# separately discloses that inventory is not a currency/use/support assessment.
+function check_software_inventory {
+  typeset SI_CHECK_RC SI_CHECK_CONFIRMED SI_CHECK_PROFILE
+  typeset SI_CHECK_VALID SI_CHECK_BOS SI_CHECK_OBS
+  typeset SI_CHECK_MEAN SI_CHECK_FIX
+
+  SI_CHECK_RC=${LSLPPQ_RC:-}
+  case "$SI_CHECK_RC" in
+    [0-9]|[0-9][0-9]|[0-9][0-9][0-9]) SI_CHECK_CONFIRMED=1 ;;
+    *) SI_CHECK_CONFIRMED=0 ;;
+  esac
+
+  if [ "$SI_CHECK_CONFIRMED" -ne 1 ]; then
+    SI_CHECK_OBS="not assessed — lslpp -qcL capture return code was not confirmed"
+    SI_CHECK_MEAN="Without a confirmed inventory-source result, installed software cannot be assessed for completeness, support, active use, or business criticality."
+    SI_CHECK_FIX="capture 'lslpp -qcL' with its return code and rerun AIXray."
+  elif [ "$SI_CHECK_RC" -ne 0 ]; then
+    SI_CHECK_OBS="not assessed — lslpp -qcL capture failed (rc=$SI_CHECK_RC)"
+    SI_CHECK_MEAN="The installed-fileset inventory source failed, so software currency and workload coverage could not be assessed."
+    SI_CHECK_FIX="restore access to 'lslpp -qcL' and rerun AIXray."
+  else
+    SI_CHECK_PROFILE=$(printf '%s\n' "${LSLPPQ:-}" | awk -F: '
+      function usable(value) {
+        return value != "" && value !~ /[[:cntrl:]]/
+      }
+      /^[ \t\r]*$/ { next }
+      {
+        nonblank++
+        if ($0 !~ /^[ \t]*#/ && NF >= 6 && usable($1) && usable($2) &&
+            usable($3) && $6 ~ /^(A|B|C|E|O|[?])$/) {
+          valid++
+          if ($2 ~ /^bos[.]rte([.]|$)/ && !bos[$2]++) bos_count++
+        }
+      }
+      END { printf "%d:%d:%d\n", nonblank+0, valid+0, bos_count+0 }
+    ')
+    SI_CHECK_VALID=$(printf '%s\n' "$SI_CHECK_PROFILE" |
+      awk -F: '{print $2+0}')
+    SI_CHECK_BOS=$(printf '%s\n' "$SI_CHECK_PROFILE" |
+      awk -F: '{print $3+0}')
+    if [ "$SI_CHECK_VALID" -eq 0 ]; then
+      if [ "${SI_CHECK_PROFILE%%:*}" -eq 0 ]; then
+        SI_CHECK_OBS="not assessed — lslpp -qcL capture was empty"
+      else
+        SI_CHECK_OBS="not assessed — lslpp -qcL capture had no structurally valid rows"
+      fi
+      SI_CHECK_MEAN="No trustworthy installed-fileset inventory was available, so software currency and workload coverage could not be assessed."
+      SI_CHECK_FIX="capture the complete colon-delimited output of 'lslpp -qcL' and rerun AIXray."
+    elif [ "$SI_CHECK_VALID" -lt 50 ] || [ "$SI_CHECK_BOS" -lt 3 ]; then
+      SI_CHECK_OBS="not assessed — lslpp -qcL capture was implausibly small ($SI_CHECK_VALID structurally valid rows; minimum 50, $SI_CHECK_BOS distinct bos.rte filesets)"
+      SI_CHECK_MEAN="The capture is too small to represent a normal AIX installed-fileset inventory, so absence of software or workload components cannot be trusted."
+      SI_CHECK_FIX="supply a complete 'lslpp -qcL' capture and rerun AIXray."
+    else
+      SI_CHECK_OBS="not assessed — $SI_CHECK_VALID installed filesets were inventoried, but unmanaged software, active use, support entitlement, and business criticality were not established"
+      SI_CHECK_MEAN="A package inventory does not identify software installed outside lslpp, prove which workloads are active, or establish their support and business requirements."
+      SI_CHECK_FIX="supplement lslpp inventory with the approved software catalog, runtime/process evidence, support data, and workload ownership records."
+    fi
+  fi
+
+  add patch software_inventory "Software inventory coverage" \
+    NOT_ASSESSED high "$SI_CHECK_OBS" "$SI_CHECK_MEAN" "$SI_CHECK_FIX"
 }
 
 function standalone_run {
-  capture_cap_lslpp_qcl || return 1
-  :
+  capture_cap_lslpp_qcl || :
+  check_software_inventory
 }
 
 standalone_main "$@"

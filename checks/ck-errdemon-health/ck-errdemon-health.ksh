@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="0.1.0"
+AIXRAY_STANDALONE_VERSION="1.0.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -26,6 +26,49 @@ function aix {
     return 127
   fi
   "$@" 2>/dev/null
+}
+
+# aixv preserves stderr as evidence, for read-only commands that write their
+# version banner or diagnostics there rather than to stdout. (Deliberately no
+# example command name here: this comment is copied into all 324 standalone
+# tools, and tools/ci/egress-lint.sh reads a banned network command name in a
+# comment as a violation just as it would in a command position.)
+function aixv {
+  typeset key rc
+  key=$1
+  shift
+  if [ -n "${AIXRAY_FIXTURES:-}" ]; then
+    if [ -r "$AIXRAY_FIXTURES/$key.out" ] || [ -r "$AIXRAY_FIXTURES/$key.err" ]; then
+      [ -r "$AIXRAY_FIXTURES/$key.out" ] && cat "$AIXRAY_FIXTURES/$key.out"
+      [ -r "$AIXRAY_FIXTURES/$key.err" ] && cat "$AIXRAY_FIXTURES/$key.err"
+      rc=0
+      [ -r "$AIXRAY_FIXTURES/$key.rc" ] && read rc < "$AIXRAY_FIXTURES/$key.rc"
+      return $rc
+    fi
+    return 127
+  fi
+  "$@" 2>&1
+}
+
+# aix_capture_missing <key> — fixture-replay helper: true (rc=0) iff no capture
+# exists for <key> at all, i.e. the rc a probe just received was the "no
+# capture" default and not a genuine command status. aix()/aixv() return 127 for
+# BOTH a missing capture and a genuinely absent command, so a module that wants
+# to claim "the command is not installed" must first rule out "nobody captured
+# it". Live mode returns false (rc=1): a real box has no concept of a missing
+# fixture, and rc=127 there genuinely means the command was not found. Must be
+# called in the PARENT shell after the probe, not inside the $(aix ...)
+# substitution. Byte-for-byte the monolith's semantics (src/aixray-aix.sh.in);
+# without it here, an undefined-command rc of 127 makes the guard read false and
+# the caller launders a missing capture into NOT_APPLICABLE.
+function aix_capture_missing {
+  if [ -n "${AIXRAY_FIXTURES:-}" ]; then
+    if [ -r "$AIXRAY_FIXTURES/$1.out" ] || [ -r "$AIXRAY_FIXTURES/$1.err" ]; then
+      return 1
+    fi
+    return 0
+  fi
+  return 1
 }
 
 function jesc {
@@ -61,7 +104,13 @@ function add {
     *) echo "$AIXRAY_TOOL: internal error: unknown category '$1'" >&2; exit 1;;
   esac
   case "$4" in
-    PASS|WARN|FAIL|NOT_ASSESSED) ;;
+    # NOT_APPLICABLE is a verdict, not a refusal: the control constrains a
+    # property of a thing that need not exist. It is already a first-class
+    # status in the monolith (vios_level on a plain AIX LPAR) and in the
+    # contract schema (STATUSES, pipeline/contract_v2/schema.py), but was
+    # missing here, so any standalone tool reaching that branch aborted with
+    # an internal error instead of emitting its envelope.
+    PASS|WARN|FAIL|NOT_ASSESSED|NOT_APPLICABLE) ;;
     *) echo "$AIXRAY_TOOL: internal error: unknown status '$4'" >&2; exit 1;;
   esac
   F_CAT[$NFIND]=$1
@@ -299,6 +348,7 @@ AIXRAY_TOOL=ck-errdemon-health
 
 
 function standalone_check {
+_AIXRAY_SESSION_KEYS=""
 
   # ==================== LEVEL 2/3 ERRORS DEPTH (grouped findings) =======================
   # Each check states its veteran signal in the comment. Tuning/informational findings default
@@ -311,7 +361,36 @@ function standalone_check {
   # signatures) is blind. That is why this gates the category. The errlog is a fixed-size
   # circular file (errdemon -l "Log Size", default 1 MB); once full it overwrites the oldest
   # entries, it does not stop logging — but a cap set BELOW the default shortens history.
-  ERDRUN=$(printf '%s\n' "$(aix ps_e ps -e -o comm)" | awk '/errdemon/{n++} END{print n+0}')
+  typeset PSE PSERC PSE_OK PSEWHY
+  PSE=$(aix ps_e ps -e -o comm); PSERC=$?
+  PSE_OK=0; PSEWHY=""
+  if [ "$PSERC" -ne 0 ]; then
+    PSEWHY="not assessed — ps -e -o comm capture failed (rc=$PSERC)"
+  elif [ -z "$PSE" ]; then
+    PSEWHY="not assessed — ps -e -o comm capture empty (rc=0)"
+  elif printf '%s\n' "$PSE" | awk '
+      NR == 1 {
+        if (NF != 1 || $1 != "COMMAND") bad=1
+        next
+      }
+      NF {
+        rows++
+        if (NF != 1) bad=1
+      }
+      END { if (rows == 0 || bad) exit 1 }
+    '
+  then
+    PSE_OK=1
+  else
+    PSEWHY="not assessed — ps -e -o comm capture unparseable (rc=0)"
+  fi
+
+  if [ "$PSE_OK" -ne 1 ]; then
+    add errors errdemon_health "Error-logging daemon" NOT_ASSESSED high "$PSEWHY" \
+        "AIXray could not validate the process list, so it cannot determine whether errdemon is running or whether the AIX error log is recording new events." \
+        "make 'ps -e -o comm' return a complete process list, then re-run AIXray before relying on error-log findings."
+  else
+  ERDRUN=$(printf '%s\n' "$PSE" | awk 'NR>1 && $1=="errdemon"{n++} END{print n+0}')
   if [ "${ERDRUN:-0}" -eq 0 ]; then
     add errors errdemon_health "Error-logging daemon" FAIL high "errdemon not running" \
         "The error-logging daemon (errdemon) is not running, so the AIX error log is frozen: no new hardware or software error is being recorded, and every other check in this category — recent errors, permanent hardware errors, pre-failure signatures — is blind." \
@@ -319,7 +398,7 @@ function standalone_check {
   else
     ERDL=$(aix errdemon_l /usr/lib/errdemon -l); RC=$?
     if [ "$RC" -ne 0 ] || [ -z "$ERDL" ]; then
-      # Believability review 2026-07-13 (review-queue #62, finding #9): this used to PASS
+      # Believability review 2026-07-13 (finding #9): this used to PASS
       # here — but whether the errlog is capped below the 1 MB default (the actual
       # question this check asks) was never observed; only "the daemon is running" was.
       # A PASS that only proves part of what it claims is exactly the no-false-clean
@@ -331,8 +410,11 @@ function standalone_check {
     else
       ERDSZ=$(printf '%s\n' "$ERDL" | awk '/Log Size/{for(i=1;i<=NF;i++) if($i ~ /^[0-9]+$/){print $i; exit}}')
       ERDDUP=$(printf '%s\n' "$ERDL" | awk '/Duplicate Removal/{print $NF}')
-      : ${ERDSZ:=0}
-      if [ "$ERDSZ" -gt 0 ] && [ "$ERDSZ" -lt "$ERRDEMON_LOG_MIN" ]; then
+      if [ -z "$ERDSZ" ]; then
+        add errors errdemon_health "Error-logging daemon" NOT_ASSESSED low "errdemon running; Log Size row missing or unreadable" \
+            "The error-logging daemon is up, but the Log Size row in 'errdemon -l' output was missing or unreadable, so whether the errlog is capped below the 1 MB default is unknown." \
+            "inspect '/usr/lib/errdemon -l' manually; if Log Size is missing or non-numeric, repair the errdemon configuration before re-running aixray."
+      elif [ "$ERDSZ" -lt "$ERRDEMON_LOG_MIN" ]; then
         add errors errdemon_health "Error-logging daemon" WARN low "errdemon running; errlog capped at ${ERDSZ} bytes (below the ${ERRDEMON_LOG_MIN}-byte default)" \
             "The error daemon is up, but the circular error log is capped below the 1 MB default — on a chatty box the oldest entries roll off sooner, so a fault that logged a few days ago may already be gone when you look." \
             "raise the errlog size as root: '/usr/lib/errdemon -s ${ERRDEMON_LOG_MIN}' (or larger); it takes effect immediately."
@@ -341,6 +423,7 @@ function standalone_check {
             "The error-logging daemon is up and the errlog is at or above the 1 MB default, so errors are captured with a reasonable history window. (The errlog is a fixed-size circular file — once full it overwrites the oldest entries, it never stops logging.)" "n/a"
       fi
     fi
+  fi
   fi
 }
 

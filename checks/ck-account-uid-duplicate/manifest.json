@@ -1,0 +1,19 @@
+{
+  "id": "ck-account-uid-duplicate",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "account_uid_duplicate"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "cat /etc/passwd"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-account-uid-duplicate/ck-account-uid-duplicate.ksh"
+}

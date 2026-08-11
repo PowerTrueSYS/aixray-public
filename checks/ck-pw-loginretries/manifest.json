@@ -1,0 +1,19 @@
+{
+  "id": "ck-pw-loginretries",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "pw_loginretries"
+  ],
+  "captures": [],
+  "requires_root": true,
+  "read_only": true,
+  "commands": [
+    "lssec -f /etc/security/user -s default -a loginretries"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-pw-loginretries/ck-pw-loginretries.ksh"
+}

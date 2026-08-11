@@ -1,0 +1,19 @@
+{
+  "id": "ck-net-ipsrcrouterecv",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "net_ipsrcrouterecv"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "no -o ipsrcrouterecv"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-net-ipsrcrouterecv/ck-net-ipsrcrouterecv.ksh"
+}

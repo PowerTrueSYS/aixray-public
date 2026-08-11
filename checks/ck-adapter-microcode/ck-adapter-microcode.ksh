@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="0.1.0"
+AIXRAY_STANDALONE_VERSION="1.0.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -26,6 +26,49 @@ function aix {
     return 127
   fi
   "$@" 2>/dev/null
+}
+
+# aixv preserves stderr as evidence, for read-only commands that write their
+# version banner or diagnostics there rather than to stdout. (Deliberately no
+# example command name here: this comment is copied into all 324 standalone
+# tools, and tools/ci/egress-lint.sh reads a banned network command name in a
+# comment as a violation just as it would in a command position.)
+function aixv {
+  typeset key rc
+  key=$1
+  shift
+  if [ -n "${AIXRAY_FIXTURES:-}" ]; then
+    if [ -r "$AIXRAY_FIXTURES/$key.out" ] || [ -r "$AIXRAY_FIXTURES/$key.err" ]; then
+      [ -r "$AIXRAY_FIXTURES/$key.out" ] && cat "$AIXRAY_FIXTURES/$key.out"
+      [ -r "$AIXRAY_FIXTURES/$key.err" ] && cat "$AIXRAY_FIXTURES/$key.err"
+      rc=0
+      [ -r "$AIXRAY_FIXTURES/$key.rc" ] && read rc < "$AIXRAY_FIXTURES/$key.rc"
+      return $rc
+    fi
+    return 127
+  fi
+  "$@" 2>&1
+}
+
+# aix_capture_missing <key> — fixture-replay helper: true (rc=0) iff no capture
+# exists for <key> at all, i.e. the rc a probe just received was the "no
+# capture" default and not a genuine command status. aix()/aixv() return 127 for
+# BOTH a missing capture and a genuinely absent command, so a module that wants
+# to claim "the command is not installed" must first rule out "nobody captured
+# it". Live mode returns false (rc=1): a real box has no concept of a missing
+# fixture, and rc=127 there genuinely means the command was not found. Must be
+# called in the PARENT shell after the probe, not inside the $(aix ...)
+# substitution. Byte-for-byte the monolith's semantics (src/aixray-aix.sh.in);
+# without it here, an undefined-command rc of 127 makes the guard read false and
+# the caller launders a missing capture into NOT_APPLICABLE.
+function aix_capture_missing {
+  if [ -n "${AIXRAY_FIXTURES:-}" ]; then
+    if [ -r "$AIXRAY_FIXTURES/$1.out" ] || [ -r "$AIXRAY_FIXTURES/$1.err" ]; then
+      return 1
+    fi
+    return 0
+  fi
+  return 1
 }
 
 function jesc {
@@ -61,7 +104,13 @@ function add {
     *) echo "$AIXRAY_TOOL: internal error: unknown category '$1'" >&2; exit 1;;
   esac
   case "$4" in
-    PASS|WARN|FAIL|NOT_ASSESSED) ;;
+    # NOT_APPLICABLE is a verdict, not a refusal: the control constrains a
+    # property of a thing that need not exist. It is already a first-class
+    # status in the monolith (vios_level on a plain AIX LPAR) and in the
+    # contract schema (STATUSES, pipeline/contract_v2/schema.py), but was
+    # missing here, so any standalone tool reaching that branch aborted with
+    # an internal error instead of emitting its envelope.
+    PASS|WARN|FAIL|NOT_ASSESSED|NOT_APPLICABLE) ;;
     *) echo "$AIXRAY_TOOL: internal error: unknown status '$4'" >&2; exit 1;;
   esac
   F_CAT[$NFIND]=$1
@@ -297,8 +346,10 @@ function standalone_main {
 
 AIXRAY_TOOL=ck-adapter-microcode
 
-# Standalone facts emitter for AIX adapter firmware and microcode inventory.
-# Include-safe: integration calls emit_fact_adapter_microcode from the facts renderer.
+_AIXRAY_SESSION_KEYS=""
+# Standalone fact and finding producer for AIX adapter firmware and microcode
+# inventory. Include-safe: integration calls the fact emitter from the facts
+# renderer and the check from the assessment spine.
 
 function adapter_microcode_json_escape {
   awk '
@@ -749,8 +800,49 @@ EOF
   printf '"adapters": [%s] }' "$ITEMS"
 }
 
+# A finding is the assessment surface for this tool. Inventory facts remain
+# available separately, but they must never be the only evidence that the
+# adapter-microcode topic ran.
+function check_adapter_microcode {
+  typeset AM_OUT AM_RC AM_PHYSICAL AM_NOUN AM_VERB AM_OBS AM_MEAN AM_FIX
+
+  AM_OUT=$(aix lsdev_adapter lsdev -Cc adapter); AM_RC=$?
+  if [ "$AM_RC" -ne 0 ]; then
+    AM_OBS="not assessed — lsdev -Cc adapter inventory failed (rc=$AM_RC)"
+    AM_MEAN="Adapter inventory was unavailable, so this LPAR's physical-adapter microcode ownership and currency could not be assessed."
+    AM_FIX="restore access to 'lsdev -Cc adapter', then rerun AIXray; review any physical adapter levels against the current hardware-specific reference."
+  elif [ -z "$AM_OUT" ]; then
+    AM_OBS="not assessed — lsdev -Cc adapter reported no adapters (rc=0)"
+    AM_MEAN="An empty adapter inventory cannot establish whether this LPAR owns physical adapter microcode."
+    AM_FIX="verify the complete output of 'lsdev -Cc adapter' and rerun AIXray."
+  elif ! printf '%s\n' "$AM_OUT" | adapter_microcode_lsdev_shape; then
+    AM_OBS="not assessed — lsdev -Cc adapter inventory was unparseable (rc=0)"
+    AM_MEAN="The adapter inventory did not match the expected AIX lsdev structure, so physical-adapter ownership and microcode currency could not be assessed."
+    AM_FIX="capture the complete output of 'lsdev -Cc adapter', correct the replay source if needed, and rerun AIXray."
+  else
+    AM_PHYSICAL=$(printf '%s\n' "$AM_OUT" |
+      awk 'NF && /PCI/{n++} END{print n+0}')
+    if [ "$AM_PHYSICAL" -eq 0 ]; then
+      AM_OBS="not assessed — no physical adapters were reported by lsdev -Cc adapter; virtual and pseudo-device inventory alone has no LPAR-owned adapter microcode to assess"
+      AM_MEAN="This LPAR reported only virtual or pseudo adapters; their physical firmware is owned by the VIOS, hypervisor, or cloud provider rather than by this LPAR."
+      AM_FIX="review adapter firmware and microcode on the owning VIOS, hypervisor, or provider control plane."
+    else
+      AM_NOUN=adapters; AM_VERB=were
+      if [ "$AM_PHYSICAL" -eq 1 ]; then
+        AM_NOUN=adapter; AM_VERB=was
+      fi
+      AM_OBS="not assessed — $AM_PHYSICAL physical $AM_NOUN $AM_VERB inventoried, but installed levels were not compared with current hardware-specific reference data"
+      AM_MEAN="Physical adapters are present, but inventory alone cannot establish whether their installed microcode is current."
+      AM_FIX="collect each physical adapter's installed level and compare it with the current IBM hardware-specific microcode guidance."
+    fi
+  fi
+
+  add lifecycle adapter_microcode "Adapter microcode currency" \
+    NOT_ASSESSED high "$AM_OBS" "$AM_MEAN" "$AM_FIX"
+}
+
 function standalone_run {
-  :
+  check_adapter_microcode
 }
 
 standalone_main "$@"

@@ -2,7 +2,9 @@
   "id": "ck-network-inventory",
   "pillar": "operational-readiness",
   "category": "config",
-  "finding_ids": [],
+  "finding_ids": [
+    "network_inventory"
+  ],
   "captures": [],
   "requires_root": false,
   "read_only": true,

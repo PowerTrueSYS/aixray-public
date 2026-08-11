@@ -1,0 +1,20 @@
+{
+  "id": "ck-rhost-hosts-equiv",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "hosts_equiv_entries"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "ls -ld /etc/hosts.equiv",
+    "grep -v \"^\\s*#\" /etc/hosts.equiv"
+  ],
+  "tags": [
+    "cis-l2"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-rhost-hosts-equiv/ck-rhost-hosts-equiv.ksh"
+}

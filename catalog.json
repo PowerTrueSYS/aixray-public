@@ -1,15 +1,142 @@
 {
   "schema_version": 1,
-  "tool_version": "0.1.0",
+  "tool_version": "1.0.0",
   "license": "Apache-2.0",
   "generated_from": "checks/*/manifest.json",
-  "check_count": 35,
+  "check_count": 324,
   "checks": [
+    {
+      "id": "ck-account-home-exists",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "account_home_exists"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "lsuser -R files -a id home account_locked ALL",
+        "ls -ldn <home>"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-account-home-exists/ck-account-home-exists.ksh",
+      "sha256": "2ebeea271e3c79517fc8465fe06135c5d2445ce732e9b7ebce7cdf007cce3d89"
+    },
+    {
+      "id": "ck-account-home-mode",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "account_home",
+        "account_home_missing",
+        "account_home_mode",
+        "account_home_acl"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "lsuser -R files -a id home ALL",
+        "ls -ld <home>"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-account-home-mode/ck-account-home-mode.ksh",
+      "sha256": "eff631a06d6113e5c0fe20b46c17abc15166a49900ed743988cfd04d9709262c"
+    },
+    {
+      "id": "ck-account-home-owner",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "account_home_owner"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "lsuser -R files -a id home account_locked ALL",
+        "ls -ldn <home>"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-account-home-owner/ck-account-home-owner.ksh",
+      "sha256": "5fe166786cf38ff665c31b160e6d2ae5219a30adf54b7ebe2c9c14a5eb3131a5"
+    },
+    {
+      "id": "ck-account-inventory-delta",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "account_inventory_delta"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "awk -F: '$3==0 {print $1}' /etc/passwd",
+        "lsuser -a admin maxage account_locked time_last_login ALL"
+      ],
+      "tags": [],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-account-inventory-delta/ck-account-inventory-delta.ksh",
+      "sha256": "9acd8ea59beeaabf85ba723d3aaec7d2898db4c358d3518ff4580420ea80a3cc"
+    },
+    {
+      "id": "ck-account-pwdck-valid",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "account_pwdck_valid"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "pwdck -n ALL"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-account-pwdck-valid/ck-account-pwdck-valid.ksh",
+      "sha256": "fec4002edf8ef6f7faeeeea587ccb10f6b0949ec56ef2faacfeb014f84f278fc"
+    },
+    {
+      "id": "ck-account-uid-duplicate",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "account_uid_duplicate"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "cat /etc/passwd"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-account-uid-duplicate/ck-account-uid-duplicate.ksh",
+      "sha256": "2a8adb35b3c566b2d684d43a5738e6d77fe1da83e89d7e6b95be781b3902cc37"
+    },
     {
       "id": "ck-adapter-microcode",
       "pillar": "currency",
       "category": "lifecycle",
-      "finding_ids": [],
+      "finding_ids": [
+        "adapter_microcode"
+      ],
       "captures": [],
       "requires_root": false,
       "read_only": true,
@@ -21,7 +148,7 @@
       "tags": [],
       "license": "Apache-2.0",
       "artifact": "checks/ck-adapter-microcode/ck-adapter-microcode.ksh",
-      "sha256": "f4670bc2e718fde8fd9ab9f895c2aebb3a51ff4a9443df39e26a08c9bb2ecc14"
+      "sha256": "76b99a1f71fd0098b14ca63ae848fba8ecf29abce50e777884ee4291c47a91e7"
     },
     {
       "id": "ck-alt-disk-recoverability",
@@ -48,7 +175,71 @@
       "tags": [],
       "license": "Apache-2.0",
       "artifact": "checks/ck-alt-disk-recoverability/ck-alt-disk-recoverability.ksh",
-      "sha256": "97926beaa39daad77be3d13ceea81a045d7a1d161a487b914f6fe65aae5b893c"
+      "sha256": "06d10e11f6e0812868bdf203ed8894dfabb7c2a6f6cf2b366666f060b348282a"
+    },
+    {
+      "id": "ck-audit-classes-default",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "audit_classes_default"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "cat /etc/security/audit/config"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-audit-classes-default/ck-audit-classes-default.ksh",
+      "sha256": "4fdc3586099cc7e68b4d29aa9702d5857c0068817758e1c2a987cf7e4f56f102"
+    },
+    {
+      "id": "ck-audit-config-valid",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "audit_config_valid"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "cat /etc/security/audit/config"
+      ],
+      "tags": [
+        "cis-l2"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-audit-config-valid/ck-audit-config-valid.ksh",
+      "sha256": "50d05c4eb2137bc405c37af742046fcd135e6fd9455440ffbc3a5d5e04b5993c"
+    },
+    {
+      "id": "ck-audit-filesystem-present",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "audit_filesystem_present"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "lsfs /audit",
+        "cat /etc/security/audit/config",
+        "lssec -f /usr/lib/security/mkuser.default -s user -a auditclasses",
+        "crontab -l",
+        "lsitab audit"
+      ],
+      "tags": [
+        "cis-l2"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-audit-filesystem-present/ck-audit-filesystem-present.ksh",
+      "sha256": "153ddc6e2c4cd716a1781f5c4dfe20f1a66380b14825624fc40ec5183084196f"
     },
     {
       "id": "ck-backup-job",
@@ -66,7 +257,272 @@
       "tags": [],
       "license": "Apache-2.0",
       "artifact": "checks/ck-backup-job/ck-backup-job.ksh",
-      "sha256": "c5497c7d6401029c0355be183646b24fc39f008273e47bf0d056d326a92992ad"
+      "sha256": "573c3fac8c43f6d68671384d8ad6faa2f5529195f8bb257380fef51c24300807"
+    },
+    {
+      "id": "ck-cde-cmsd",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "cde_cmsd"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "grep -E '^[\t ]*cmsd[\t ]' /etc/inetd.conf"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-cde-cmsd/ck-cde-cmsd.ksh",
+      "sha256": "68980025e9fd398207cba12885e573d78563bdc56646f3dae5ac4572c02c5665"
+    },
+    {
+      "id": "ck-cde-dtlogin",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "cde_dtlogin"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "grep -E '^dt:' /etc/inittab"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-cde-dtlogin/ck-cde-dtlogin.ksh",
+      "sha256": "1b1793804e8e99da5f90e77a306ae3b9086e41616753b3ca3d4eda740e5298c4"
+    },
+    {
+      "id": "ck-cde-dtspc",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "cde_dtspc"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "grep -E '^[\t ]*dtspc[\t ]' /etc/inetd.conf"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-cde-dtspc/ck-cde-dtspc.ksh",
+      "sha256": "60d939dc6ad3c11276337e531f95ffbee326407204d408577505bd7176043cf1"
+    },
+    {
+      "id": "ck-cde-greeting",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "cde_greeting"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "lslpp -qcL 'X11.Dt*'",
+        "grep -E '^[ \t]*Dtlogin[*]greeting[.](labelString|persLabelString)[ \t]*:' /etc/dt/config/*/Xresources /usr/dt/config/*/Xresources"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-cde-greeting/ck-cde-greeting.ksh",
+      "sha256": "82933a83fc19d8366630d3619d0e1a003240327ab6444e8b6678bb04dde65e58"
+    },
+    {
+      "id": "ck-cde-installed",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "cde_filesets"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "lslpp -qcL 'X11.Dt*'"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-cde-installed/ck-cde-installed.ksh",
+      "sha256": "4857a4d3addacc51e7d3ac35e39cf5cf3df87cff847f2cd4bb6378a7ea94165d"
+    },
+    {
+      "id": "ck-cde-screensaver",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "cde_screensaver"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "lslpp -qcL 'X11.Dt*'",
+        "grep -E '^[ \t]*dtsession[*](saverTimeout|lockTimeout)[ \t]*:' /etc/dt/config/*/sys.resources /usr/dt/config/*/sys.resources"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-cde-screensaver/ck-cde-screensaver.ksh",
+      "sha256": "1a220c2980c23fe402478be546b0fd0571fb303c06eb40a5522075dc01ad6016"
+    },
+    {
+      "id": "ck-cde-suid-binaries",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "cde_dt_binaries"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "ls -ld /usr/dt/bin/dtaction /usr/dt/bin/dtappgather /usr/dt/bin/dtprintinfo /usr/dt/bin/dtsession"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-cde-suid-binaries/ck-cde-suid-binaries.ksh",
+      "sha256": "4403433a7e03a728340ad144d1b5c9ecbd96e18db25b2132bb68c7ab1f05d3de"
+    },
+    {
+      "id": "ck-cde-xconfig-access",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "cde_xconfig_access"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "lslpp -qcL 'X11.Dt*'",
+        "ls -ld /etc/dt/config/Xconfig /usr/dt/config/Xconfig"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-cde-xconfig-access/ck-cde-xconfig-access.ksh",
+      "sha256": "90aa7cc30dc49898c2197b56d58764422222ba1f24d6d317995c8b00e9262337"
+    },
+    {
+      "id": "ck-cde-xdmcp",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "cde_remote_login"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "lslpp -qcL 'X11.Dt*'",
+        "grep -E '^[ \t]*Dtlogin[.*]requestPort[ \t]*:' /etc/dt/config/Xconfig /usr/dt/config/Xconfig"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-cde-xdmcp/ck-cde-xdmcp.ksh",
+      "sha256": "1943b6abf51a9c1b9b6be4f5e215d78e804fff60e4b90b1c3f6911fb19963afb"
+    },
+    {
+      "id": "ck-cde-xresources-access",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "cde_xresources_access"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "lslpp -qcL 'X11.Dt*'",
+        "ls -ld /etc/dt/config/*/Xresources /usr/dt/config/*/Xresources"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-cde-xresources-access/ck-cde-xresources-access.ksh",
+      "sha256": "ea57ed64e4033f7677703418045b3071ff9e669bf4fe723c8ca3e907c181d236"
+    },
+    {
+      "id": "ck-cde-xservers-access",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "cde_xservers_access"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "lslpp -qcL 'X11.Dt*'",
+        "ls -ld /etc/dt/config/Xservers /usr/dt/config/Xservers"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-cde-xservers-access/ck-cde-xservers-access.ksh",
+      "sha256": "ac09215ba48e860e11a9bc097fddf41cf337b485e7dcd8c0a35812de322d8a70"
+    },
+    {
+      "id": "ck-clic-installed",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "clic_installed"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "lslpp -L",
+        "genkex"
+      ],
+      "tags": [
+        "cis-l2"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-clic-installed/ck-clic-installed.ksh",
+      "sha256": "3459b6374acd051ebb7e87b486cc846d37f2df3f4eacf7e051af79428a04bb67"
+    },
+    {
+      "id": "ck-core-pathconf",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "core_pathconf"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "lscore -d"
+      ],
+      "tags": [],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-core-pathconf/ck-core-pathconf.ksh",
+      "sha256": "a239b2d4a5b9a6f70af0fcd3873b16c074770febea0463fe3c86432f966f1be5"
     },
     {
       "id": "ck-crash-evidence",
@@ -84,7 +540,473 @@
       "tags": [],
       "license": "Apache-2.0",
       "artifact": "checks/ck-crash-evidence/ck-crash-evidence.ksh",
-      "sha256": "a7e2096b9aa168431eb93b05d6494207690f2e87c23b4159ad194d4e5aa2c35b"
+      "sha256": "ceaef1e7785e2d4880a0537510474b52cf585b192d6d4a4014d1b47c4866d5bb"
+    },
+    {
+      "id": "ck-cron-at-deny-absent",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "cron_at_deny_absent"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ld /var/adm/cron/at.deny",
+        "cat /var/adm/cron/at.allow"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-cron-at-deny-absent/ck-cron-at-deny-absent.ksh",
+      "sha256": "ad8c803f79b7f50bc0ca06b85cff644cb66512aeb9b95b91b56b8f808988b92a"
+    },
+    {
+      "id": "ck-cron-command-paths",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "cron_command_paths"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "crontab -l",
+        "ls -ldn <absolute cron command path>"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-cron-command-paths/ck-cron-command-paths.ksh",
+      "sha256": "508be6cf69fef26a5fed8ab5aa1b40ceec4a3d12142adafe874314d18da466ba"
+    },
+    {
+      "id": "ck-cron-cron-deny-absent",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "cron_cron_deny_absent"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ld /var/adm/cron/cron.deny",
+        "cat /var/adm/cron/cron.allow"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-cron-cron-deny-absent/ck-cron-cron-deny-absent.ksh",
+      "sha256": "5d717b410f1f38e1e8882ec4fc6ff413451d1e3260aea166e870e164e5330387"
+    },
+    {
+      "id": "ck-diracc-atjobs-group",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "diracc_atjobs_group"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ldn /var/spool/cron/atjobs"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-diracc-atjobs-group/ck-diracc-atjobs-group.ksh",
+      "sha256": "4546ad607e21656ed281ba72344034229f5db79444a0cbebaaa69e5ccd1efb5b"
+    },
+    {
+      "id": "ck-diracc-atjobs-mode",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "diracc_atjobs_mode"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ldn /var/spool/cron/atjobs"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-diracc-atjobs-mode/ck-diracc-atjobs-mode.ksh",
+      "sha256": "23f74324b5da263533ce6727a86a946d6c88168426541514405fc9067a20a39c"
+    },
+    {
+      "id": "ck-diracc-atjobs-owner",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "diracc_atjobs_owner"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ldn /var/spool/cron/atjobs"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-diracc-atjobs-owner/ck-diracc-atjobs-owner.ksh",
+      "sha256": "4e6d92cf6d17b0fdc7c40665a070554c1f426745eb3e6c494260581df1fb3d85"
+    },
+    {
+      "id": "ck-diracc-audit-group",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "diracc_audit_group"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ldn /audit"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-diracc-audit-group/ck-diracc-audit-group.ksh",
+      "sha256": "17b4463a9b53975b244f85096c90dc837afccf3a542fd950ef2c6823eb524b9e"
+    },
+    {
+      "id": "ck-diracc-audit-mode",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "diracc_audit_mode"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ldn /audit"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-diracc-audit-mode/ck-diracc-audit-mode.ksh",
+      "sha256": "af0c63d49e56d3d65b1609647c2187688537c1a79b26539a6865ab5b7044b9c8"
+    },
+    {
+      "id": "ck-diracc-audit-owner",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "diracc_audit_owner"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ldn /audit"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-diracc-audit-owner/ck-diracc-audit-owner.ksh",
+      "sha256": "5a60348774dda26592fa1bb85d4f51d54c0f024332c41306ec62ade32fc8a36b"
+    },
+    {
+      "id": "ck-diracc-clientmqueue",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "diracc_clientmqueue"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ld /var/spool/clientmqueue"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-diracc-clientmqueue/ck-diracc-clientmqueue.ksh",
+      "sha256": "34965144f1a06561d1bb62e4eab6bbcac81dbdba0331529b0c161b6cf8398e02"
+    },
+    {
+      "id": "ck-diracc-crontabs-group",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "diracc_crontabs_group"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ldn /var/spool/cron/crontabs"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-diracc-crontabs-group/ck-diracc-crontabs-group.ksh",
+      "sha256": "449e13c6d2bcc5102b578f3d96f48ff61f5a89f783626d4e6511eb575cec98e0"
+    },
+    {
+      "id": "ck-diracc-crontabs-mode",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "diracc_crontabs_mode"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ldn /var/spool/cron/crontabs"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-diracc-crontabs-mode/ck-diracc-crontabs-mode.ksh",
+      "sha256": "922c9374628fa0abf74abfc77bc875c58c3f11855b27cbc07874f99a11e02bea"
+    },
+    {
+      "id": "ck-diracc-crontabs-owner",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "diracc_crontabs_owner"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ldn /var/spool/cron/crontabs"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-diracc-crontabs-owner/ck-diracc-crontabs-owner.ksh",
+      "sha256": "7fdc49d3c9d24c4e8070babbd2849e3e7b46b63aa704f339f239257f0f8afb40"
+    },
+    {
+      "id": "ck-diracc-mqueue",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "diracc_mqueue"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ld /var/spool/mqueue"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-diracc-mqueue/ck-diracc-mqueue.ksh",
+      "sha256": "1b4ed35539a5553958617ab71a6628588fbf6573ed55bee123b4eef94dccc922"
+    },
+    {
+      "id": "ck-diracc-roothome",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "diracc_roothome"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "lsuser -a home root",
+        "ls -ldn /root"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-diracc-roothome/ck-diracc-roothome.ksh",
+      "sha256": "490598565552229f51cec4898a9c018f5ffbb2f24c6efcca29cafb01b1a96ca4"
+    },
+    {
+      "id": "ck-diracc-secaudit-group",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "diracc_secaudit_group"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "ls -ldn /etc/security/audit"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-diracc-secaudit-group/ck-diracc-secaudit-group.ksh",
+      "sha256": "2179b378b49cdd6dc5a052ffb56464da282adabe993fda7b2666ac5e77ce3188"
+    },
+    {
+      "id": "ck-diracc-secaudit-mode",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "diracc_secaudit_mode"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "ls -ldn /etc/security/audit"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-diracc-secaudit-mode/ck-diracc-secaudit-mode.ksh",
+      "sha256": "d8af1dc7c8c9a5bbaf0254a19519780c980f3a7d80742a6887545d6487962e33"
+    },
+    {
+      "id": "ck-diracc-secaudit-owner",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "diracc_secaudit_owner"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "ls -ldn /etc/security/audit"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-diracc-secaudit-owner/ck-diracc-secaudit-owner.ksh",
+      "sha256": "46b3a9d01987fda6840d4ea7a181f81fc9e54d0a5df95460844f5e2bdfb16444"
+    },
+    {
+      "id": "ck-diracc-varadmras-world",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "diracc_varadmras_world"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ln /var/adm/ras"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-diracc-varadmras-world/ck-diracc-varadmras-world.ksh",
+      "sha256": "efdc4a67e2671ea9801a550d3a73bfdfd18f5d01f7f9096adc26623868875358"
+    },
+    {
+      "id": "ck-diracc-varadmsa-group",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "diracc_varadmsa_group"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ldn /var/adm/sa"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-diracc-varadmsa-group/ck-diracc-varadmsa-group.ksh",
+      "sha256": "62e28203966723374f41c972b1e9ed9d1c7cc2e37846699af472ba920bcce2ec"
+    },
+    {
+      "id": "ck-diracc-varadmsa-mode",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "diracc_varadmsa_mode"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ldn /var/adm/sa"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-diracc-varadmsa-mode/ck-diracc-varadmsa-mode.ksh",
+      "sha256": "4b30b8e4da300c289c11b33c79ade68da4220b2f0e2ab184eb14df3382a155bc"
+    },
+    {
+      "id": "ck-diracc-varadmsa-owner",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "diracc_varadmsa_owner"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ldn /var/adm/sa"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-diracc-varadmsa-owner/ck-diracc-varadmsa-owner.ksh",
+      "sha256": "5aa18dbe6f443bf0c53a901e23cf0350c8c9735d2036651dba4f7b31cb7bc63d"
+    },
+    {
+      "id": "ck-dt",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "dt"
+      ],
+      "captures": [
+        "cap-cis-services-lssrc-a"
+      ],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "lssrc -a"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-dt/ck-dt.ksh",
+      "sha256": "3377370c7979c0c767d948a83634443e72bb40bb8f3f195d55680c9af65fe1d4"
     },
     {
       "id": "ck-dump-history",
@@ -102,7 +1024,7 @@
       "tags": [],
       "license": "Apache-2.0",
       "artifact": "checks/ck-dump-history/ck-dump-history.ksh",
-      "sha256": "f71f8e0886c034539043fa268aa27cafd906611d959d806708f38b11ab6b344e"
+      "sha256": "c273051b2af2a03f5a3a2b57185f1a2486a7e088a8a229a24cb9dafa20c003bf"
     },
     {
       "id": "ck-errdemon-health",
@@ -121,7 +1043,7 @@
       "tags": [],
       "license": "Apache-2.0",
       "artifact": "checks/ck-errdemon-health/ck-errdemon-health.ksh",
-      "sha256": "4a6a867a7479af8ff5a1f8b90f2568308b45e1583bd05a64829ade8d8023b9d8"
+      "sha256": "8786ccac820bae2c210c2ac181f6a5af5507ed7e8f0d53839cfe19a8e4fc8766"
     },
     {
       "id": "ck-errnotify-methods",
@@ -141,7 +1063,7 @@
       "tags": [],
       "license": "Apache-2.0",
       "artifact": "checks/ck-errnotify-methods/ck-errnotify-methods.ksh",
-      "sha256": "cb7a1a4e4524676a66aed5954c0f15e28fe0de0bf53b2512f173dcc188e94964"
+      "sha256": "781ec16a2dee8dda3b5a5da209946b476941b6c7bd954461c9f8b171d07d011c"
     },
     {
       "id": "ck-errpt-decode",
@@ -159,7 +1081,7 @@
       "tags": [],
       "license": "Apache-2.0",
       "artifact": "checks/ck-errpt-decode/ck-errpt-decode.ksh",
-      "sha256": "9966f896de277af37d034424673b52a97e706eae06d187e73048d0b59a06d228"
+      "sha256": "70ac82538520d48bbf1cc982b7b74ad750fd160e506579683913bbff5c8ce760"
     },
     {
       "id": "ck-errpt-hw",
@@ -177,7 +1099,7 @@
       "tags": [],
       "license": "Apache-2.0",
       "artifact": "checks/ck-errpt-hw/ck-errpt-hw.ksh",
-      "sha256": "4a69c7eeeb50ba0c2efaedbcb58116363af8bbd06399ef424606e9e8df34ae07"
+      "sha256": "663cfa7908b42686d864a7d053b8c12143233c55906c7261de778be73e5dac85"
     },
     {
       "id": "ck-errpt-notify",
@@ -197,7 +1119,7 @@
       "tags": [],
       "license": "Apache-2.0",
       "artifact": "checks/ck-errpt-notify/ck-errpt-notify.ksh",
-      "sha256": "7951136ee69a005417ef04fd40e7b9b3d664a2328ed6c30aa4c0eb07e9e346a8"
+      "sha256": "318eae6158598cdb38eba4912a197c2a05acb9ea043a3a3a2dc997f189f77b06"
     },
     {
       "id": "ck-errpt-recent",
@@ -216,7 +1138,7 @@
       "tags": [],
       "license": "Apache-2.0",
       "artifact": "checks/ck-errpt-recent/ck-errpt-recent.ksh",
-      "sha256": "1e450072d0cf6a60ddac1beaef76ca5784f696fd0174b78006046f38ef98f40c"
+      "sha256": "ab10819ebce5c405b3175441b59313cc6cf622d038100ef4363f74f310cb60b9"
     },
     {
       "id": "ck-errpt-signatures",
@@ -236,7 +1158,7 @@
       "tags": [],
       "license": "Apache-2.0",
       "artifact": "checks/ck-errpt-signatures/ck-errpt-signatures.ksh",
-      "sha256": "b360656d5b41f624446c461407c9816f349a370aa760a34f1d3022ba143c0a1c"
+      "sha256": "85c8bdef6def44734666186e29aa38094291500a427dc54de9cd65666db9e7af"
     },
     {
       "id": "ck-fc-errors",
@@ -255,7 +1177,1364 @@
       "tags": [],
       "license": "Apache-2.0",
       "artifact": "checks/ck-fc-errors/ck-fc-errors.ksh",
-      "sha256": "35e234410156e32202aa1c408448298fb1eca6023096198b9ab51b21fdae091f"
+      "sha256": "9c1cd7a9d51558d4fe9dc42c959fc0cf7c9ed249c4ad6c7f27ed130ea24a4026"
+    },
+    {
+      "id": "ck-fileperm-atallow-group",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "fileperm_atallow_group"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ln /var/adm/cron/at.allow"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-fileperm-atallow-group/ck-fileperm-atallow-group.ksh",
+      "sha256": "c95b3e3bc1aa75b37207f54019933a07555cbef635c57ed5e4d42d47fecb1e62"
+    },
+    {
+      "id": "ck-fileperm-atallow-mode",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "fileperm_atallow_mode"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ln /var/adm/cron/at.allow"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-fileperm-atallow-mode/ck-fileperm-atallow-mode.ksh",
+      "sha256": "8ed0e5529117f1a43abda8d5e3d7038105bc7fbab13db352a2c425e6e2323435"
+    },
+    {
+      "id": "ck-fileperm-atallow-owner",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "fileperm_atallow_owner"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ln /var/adm/cron/at.allow"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-fileperm-atallow-owner/ck-fileperm-atallow-owner.ksh",
+      "sha256": "3c3b79e8c2983591198debf8d433a37f8833f15e7fe751c035d7f3c51eda33ad"
+    },
+    {
+      "id": "ck-fileperm-atjobs-group",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "fileperm_atjobs_group"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ldn /var/spool/cron/atjobs"
+      ],
+      "tags": [
+        "stig:V-245567"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-fileperm-atjobs-group/ck-fileperm-atjobs-group.ksh",
+      "sha256": "0073a800ea4e29b7163a97ceceec93e622202fb85dea13936b085456b075dc73"
+    },
+    {
+      "id": "ck-fileperm-atjobs-mode",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "fileperm_atjobs_mode"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ldn /var/spool/cron/atjobs"
+      ],
+      "tags": [
+        "stig:V-245568"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-fileperm-atjobs-mode/ck-fileperm-atjobs-mode.ksh",
+      "sha256": "d7f84e5fe4afc7307e2797eac1ddb825f0d25cc85e782fae714ff19f49f4932f"
+    },
+    {
+      "id": "ck-fileperm-atjobs-owner",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "fileperm_atjobs_owner"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ldn /var/spool/cron/atjobs"
+      ],
+      "tags": [
+        "stig:V-245566"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-fileperm-atjobs-owner/ck-fileperm-atjobs-owner.ksh",
+      "sha256": "af7bafc05a71f2568cf63821bfcf069063f6c5b0e8264fbd083510e7352633ff"
+    },
+    {
+      "id": "ck-fileperm-cronallow-group",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "fileperm_cronallow_group"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ln /var/adm/cron/cron.allow"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-fileperm-cronallow-group/ck-fileperm-cronallow-group.ksh",
+      "sha256": "c71621996183ad2f4aeff10e82c1d6d946bbd4d90b32bcef4cb8401ca1ecdc5f"
+    },
+    {
+      "id": "ck-fileperm-cronallow-mode",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "fileperm_cronallow_mode"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ln /var/adm/cron/cron.allow"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-fileperm-cronallow-mode/ck-fileperm-cronallow-mode.ksh",
+      "sha256": "f663f725fa58b2d7e9e0b109b7a56e25d5bbf3e11099b7ee9f23c88385e57d05"
+    },
+    {
+      "id": "ck-fileperm-cronallow-owner",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "fileperm_cronallow_owner"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ln /var/adm/cron/cron.allow"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-fileperm-cronallow-owner/ck-fileperm-cronallow-owner.ksh",
+      "sha256": "06a0ee03d3b1a08fec628d24a5b62eb81cf8a91d5d442628e7a4526a8d39a76e"
+    },
+    {
+      "id": "ck-fileperm-cronlog-group",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "fileperm_cronlog_group"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ln /var/adm/cron/log"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-fileperm-cronlog-group/ck-fileperm-cronlog-group.ksh",
+      "sha256": "6284f339289ed986366e002625cb51f31ef6dacb26dbc7667e5c9211a8b79816"
+    },
+    {
+      "id": "ck-fileperm-cronlog-mode",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "fileperm_cronlog_mode"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ln /var/adm/cron/log"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-fileperm-cronlog-mode/ck-fileperm-cronlog-mode.ksh",
+      "sha256": "44770fedbd6ee4b4ac23c0df5c58b403a692cf7f41e6c531f02ea0404f5d65ad"
+    },
+    {
+      "id": "ck-fileperm-cronlog-owner",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "fileperm_cronlog_owner"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ln /var/adm/cron/log"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-fileperm-cronlog-owner/ck-fileperm-cronlog-owner.ksh",
+      "sha256": "781f3bae5e9c118735ed992323dfc7fc2936c5880979c8c863fabd88862a3d12"
+    },
+    {
+      "id": "ck-fileperm-crontabs-group",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "fileperm_crontabs_group"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ldn /var/spool/cron/crontabs"
+      ],
+      "tags": [
+        "stig:V-245569"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-fileperm-crontabs-group/ck-fileperm-crontabs-group.ksh",
+      "sha256": "7387de866cf04f7fc242be155d9f4c85129b0c5081a03264e89516c9bbacf0c1"
+    },
+    {
+      "id": "ck-fileperm-crontabs-mode",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "fileperm_crontabs_mode"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ldn /var/spool/cron/crontabs"
+      ],
+      "tags": [
+        "stig:V-245560"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-fileperm-crontabs-mode/ck-fileperm-crontabs-mode.ksh",
+      "sha256": "2bedee9e4da490fb055642b9fc3bfe31a1392d977ae08937fcc5d70109e60219"
+    },
+    {
+      "id": "ck-fileperm-dpid2log-group",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "fileperm_dpid2log_group"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ln /var/tmp/dpid2.log"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-fileperm-dpid2log-group/ck-fileperm-dpid2log-group.ksh",
+      "sha256": "dca3af7b45a37e928e5dc722ea3998ffe0e39c04f88fe222d0a7ab7e38446ca2"
+    },
+    {
+      "id": "ck-fileperm-dpid2log-mode",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "fileperm_dpid2log_mode"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ln /var/tmp/dpid2.log"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-fileperm-dpid2log-mode/ck-fileperm-dpid2log-mode.ksh",
+      "sha256": "b1be51a4b74bed89a2241c5ced3f22f655dab54f1e05e646542c73510389993d"
+    },
+    {
+      "id": "ck-fileperm-dpid2log-owner",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "fileperm_dpid2log_owner"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ln /var/tmp/dpid2.log"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-fileperm-dpid2log-owner/ck-fileperm-dpid2log-owner.ksh",
+      "sha256": "ad69f2da3c1c0fb32ccdffbff335970495219b2797773838f3d40b20c2db360c"
+    },
+    {
+      "id": "ck-fileperm-etcsecurity-group",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "fileperm_etcsecurity_group"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "ls -ldn /etc/security"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-fileperm-etcsecurity-group/ck-fileperm-etcsecurity-group.ksh",
+      "sha256": "c9379416debfd21eb1b0e5a9bec83f9f16f51129a79ab66917977451fe33a4fa"
+    },
+    {
+      "id": "ck-fileperm-etcsecurity-mode",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "fileperm_etcsecurity_mode"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "ls -ldn /etc/security"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-fileperm-etcsecurity-mode/ck-fileperm-etcsecurity-mode.ksh",
+      "sha256": "8b3409887c4ece74e430702dc743cb43a052a7f88004ed097b17ec45bc5c239e"
+    },
+    {
+      "id": "ck-fileperm-etcsecurity-owner",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "fileperm_etcsecurity_owner"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "ls -ldn /etc/security"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-fileperm-etcsecurity-owner/ck-fileperm-etcsecurity-owner.ksh",
+      "sha256": "38b9984aaa6dbd1ffb055bce3d0860125865d8130fef9404ea0be712306d0b51"
+    },
+    {
+      "id": "ck-fileperm-group-group",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "fileperm_group_group"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ln /etc/group"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-fileperm-group-group/ck-fileperm-group-group.ksh",
+      "sha256": "cac93bbdc86555ce868e2cf319ab5b68004d5f7abe13ff965afe7ce844d85168"
+    },
+    {
+      "id": "ck-fileperm-group-mode",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "fileperm_group_mode"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ln /etc/group"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-fileperm-group-mode/ck-fileperm-group-mode.ksh",
+      "sha256": "a4a2ff951af9003d324b138c13f6fac5ea89e5240ab9ad3c23387196deac689d"
+    },
+    {
+      "id": "ck-fileperm-group-owner",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "fileperm_group_owner"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ln /etc/group"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-fileperm-group-owner/ck-fileperm-group-owner.ksh",
+      "sha256": "a21e702529e06161c5289ed224bab02782d69e890434f7a9e2775f45b855fb0a"
+    },
+    {
+      "id": "ck-fileperm-hostmibdlog-group",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "fileperm_hostmibdlog_group"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ln /var/tmp/hostmibd.log"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-fileperm-hostmibdlog-group/ck-fileperm-hostmibdlog-group.ksh",
+      "sha256": "a1edd9e4477264174a5924912c80f19aa2dbdf02c1a0477d7128a7ed8aef2723"
+    },
+    {
+      "id": "ck-fileperm-hostmibdlog-mode",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "fileperm_hostmibdlog_mode"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ln /var/tmp/hostmibd.log"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-fileperm-hostmibdlog-mode/ck-fileperm-hostmibdlog-mode.ksh",
+      "sha256": "f176f3c998c6f922b429e70cfa268caf2eca4e710d79a7b7ff043b0c2404c52d"
+    },
+    {
+      "id": "ck-fileperm-hostmibdlog-owner",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "fileperm_hostmibdlog_owner"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ln /var/tmp/hostmibd.log"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-fileperm-hostmibdlog-owner/ck-fileperm-hostmibdlog-owner.ksh",
+      "sha256": "a22cbfe75047ceed56f213e8f1e8c2124c4090a33b3ff7cf4c0dff2e90dad0b7"
+    },
+    {
+      "id": "ck-fileperm-hosts",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "fileperm_hosts_owner"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ldn /etc/hosts"
+      ],
+      "tags": [
+        "stig:V-245557"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-fileperm-hosts/ck-fileperm-hosts.ksh",
+      "sha256": "f33f47da8605fc3fde808a6ba4e2d014e7b878a3de91ce9ecebb3a8f5d487abd"
+    },
+    {
+      "id": "ck-fileperm-hosts-group",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "fileperm_hosts_group"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ln /etc/hosts"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-fileperm-hosts-group/ck-fileperm-hosts-group.ksh",
+      "sha256": "89590dfe4c3488ed0e205f381c3f03e0707e1dbc515740b4d1fd81b25b2b811d"
+    },
+    {
+      "id": "ck-fileperm-hosts-mode",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "fileperm_hosts_mode"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ln /etc/hosts"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-fileperm-hosts-mode/ck-fileperm-hosts-mode.ksh",
+      "sha256": "d11b685863083b88d4d58d6828c762f7115fccdd526ecfe646396be560deead7"
+    },
+    {
+      "id": "ck-fileperm-inetd-group",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "fileperm_inetd_group"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ln /etc/inetd.conf"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-fileperm-inetd-group/ck-fileperm-inetd-group.ksh",
+      "sha256": "0074e8f7376f8c1d8b433fa4319c9b082bb0d84515cc67d652680999250ed66e"
+    },
+    {
+      "id": "ck-fileperm-inetd-mode",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "fileperm_inetd_mode"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ln /etc/inetd.conf"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-fileperm-inetd-mode/ck-fileperm-inetd-mode.ksh",
+      "sha256": "c9e41b539ada1bc311aa5da091f3c15154a542e4eef745795907d7a6454c1c44"
+    },
+    {
+      "id": "ck-fileperm-inetd-owner",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "fileperm_inetd_owner"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ln /etc/inetd.conf"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-fileperm-inetd-owner/ck-fileperm-inetd-owner.ksh",
+      "sha256": "a6b5f90d92355ab698532e5e7d7e48a0c5d064eaa4630ecb72cb4d6c0f9d7955"
+    },
+    {
+      "id": "ck-fileperm-motd-group",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "fileperm_motd_group"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ln /etc/motd"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-fileperm-motd-group/ck-fileperm-motd-group.ksh",
+      "sha256": "3d472be7edd3b119e8ffff1ab3c8e5ef50f03c3253c2e69ed02bb44d7740a153"
+    },
+    {
+      "id": "ck-fileperm-motd-mode",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "fileperm_motd_mode"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ln /etc/motd"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-fileperm-motd-mode/ck-fileperm-motd-mode.ksh",
+      "sha256": "15775d5309a08809aa4448ae21949431e2b781e0e46b1aa00002c02df6ccc4f0"
+    },
+    {
+      "id": "ck-fileperm-motd-owner",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "fileperm_motd_owner"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ln /etc/motd"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-fileperm-motd-owner/ck-fileperm-motd-owner.ksh",
+      "sha256": "8f14d6a038975615c1f0bf23f902b4287953b4942b7dab2d4e7f227fe1116dee"
+    },
+    {
+      "id": "ck-fileperm-motd-write",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "fileperm_motd_write"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ld /etc/motd"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-fileperm-motd-write/ck-fileperm-motd-write.ksh",
+      "sha256": "ed4675d6b3ddb3b64f53604b0408840b45de0679f19e2f346f841b4d886664cd"
+    },
+    {
+      "id": "ck-fileperm-ntp-group",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "fileperm_ntp_group"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ln /etc/ntp.conf"
+      ],
+      "tags": [],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-fileperm-ntp-group/ck-fileperm-ntp-group.ksh",
+      "sha256": "8c3c16e30b1661580845cb965ae0cd3c8f063fdde3c0994b8458c78e7a3e02aa"
+    },
+    {
+      "id": "ck-fileperm-ntp-mode",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "fileperm_ntp_mode"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ln /etc/ntp.conf"
+      ],
+      "tags": [],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-fileperm-ntp-mode/ck-fileperm-ntp-mode.ksh",
+      "sha256": "248f11c4ff1d3d3a8953ad91fce349c2b8896c50ef5d4a4506a26fedcb022451"
+    },
+    {
+      "id": "ck-fileperm-ntp-owner",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "fileperm_ntp_owner"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ln /etc/ntp.conf"
+      ],
+      "tags": [],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-fileperm-ntp-owner/ck-fileperm-ntp-owner.ksh",
+      "sha256": "0eb49c5906986e7e97e312c30e99cc2988669b6c26f32aea302c67ff2fa2a543"
+    },
+    {
+      "id": "ck-fileperm-passwd-group",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "fileperm_passwd_group"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ln /etc/passwd"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-fileperm-passwd-group/ck-fileperm-passwd-group.ksh",
+      "sha256": "f4161bbbdaddefa2558ed316c5572b954deff212825c1ec8684465cf6040eaeb"
+    },
+    {
+      "id": "ck-fileperm-passwd-mode",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "fileperm_passwd_mode"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ln /etc/passwd"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-fileperm-passwd-mode/ck-fileperm-passwd-mode.ksh",
+      "sha256": "bd89080b267b4b0fbd3996f849ee1d23c29f353cd49029c447c4b2054789c654"
+    },
+    {
+      "id": "ck-fileperm-passwd-owner",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "fileperm_passwd_owner"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ln /etc/passwd"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-fileperm-passwd-owner/ck-fileperm-passwd-owner.ksh",
+      "sha256": "130a0f0e6cef66166b9e5e334a420e446b19264d3af9b86f354d0d82cdcb0d3c"
+    },
+    {
+      "id": "ck-fileperm-rmstartlog-group",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "fileperm_rmstartlog_group"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ln /var/ct/RMstart.log"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-fileperm-rmstartlog-group/ck-fileperm-rmstartlog-group.ksh",
+      "sha256": "b3b8c3c1a6ebf23d676a817b29105f77ac0def16a6c60645b2e2b3dce104dc8b"
+    },
+    {
+      "id": "ck-fileperm-rmstartlog-mode",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "fileperm_rmstartlog_mode"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ln /var/ct/RMstart.log"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-fileperm-rmstartlog-mode/ck-fileperm-rmstartlog-mode.ksh",
+      "sha256": "0681cfa616c3a431e2788f19037cc45d7f3678edebc3e5a745b51a2ecca23859"
+    },
+    {
+      "id": "ck-fileperm-rmstartlog-owner",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "fileperm_rmstartlog_owner"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ln /var/ct/RMstart.log"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-fileperm-rmstartlog-owner/ck-fileperm-rmstartlog-owner.ksh",
+      "sha256": "8317b368ef85013ab42e43f187a9c24aede4ad1878975efa789dda01d335fc3e"
+    },
+    {
+      "id": "ck-fileperm-sendmailcf",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "fileperm_sendmailcf"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -l /etc/mail/sendmail.cf"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-fileperm-sendmailcf/ck-fileperm-sendmailcf.ksh",
+      "sha256": "3b34b99954c0b87b9c708c44579be28244d97c5832d05cde35351e9e9511d7c8"
+    },
+    {
+      "id": "ck-fileperm-smitlog-group",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "fileperm_smitlog_group"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "lsuser -a home root",
+        "ls -ln /smit.log"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-fileperm-smitlog-group/ck-fileperm-smitlog-group.ksh",
+      "sha256": "9cc81c0ccc1e094a0b97774c331583cf1a27e6677b878ae5cbec45ae0526e61a"
+    },
+    {
+      "id": "ck-fileperm-smitlog-mode",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "fileperm_smitlog_mode"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "lsuser -a home root",
+        "ls -ln /smit.log"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-fileperm-smitlog-mode/ck-fileperm-smitlog-mode.ksh",
+      "sha256": "72a244ec0108e44491820a1e6a24555fd1f34346f5e618340d409480835f7e0b"
+    },
+    {
+      "id": "ck-fileperm-smitlog-owner",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "fileperm_smitlog_owner"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "lsuser -a home root",
+        "ls -ln /smit.log"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-fileperm-smitlog-owner/ck-fileperm-smitlog-owner.ksh",
+      "sha256": "dde41ebc24fe8e4ec4dc58123732aafa28a84d8fe62448c3fd8127d9e17de64c"
+    },
+    {
+      "id": "ck-fileperm-snmpdlog-group",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "fileperm_snmpdlog_group"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ln /var/tmp/snmpd.log"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-fileperm-snmpdlog-group/ck-fileperm-snmpdlog-group.ksh",
+      "sha256": "1009f3211f8c87e369c660cbd629f3b5134c758aff0f962c9ba0d580a23d4096"
+    },
+    {
+      "id": "ck-fileperm-snmpdlog-mode",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "fileperm_snmpdlog_mode"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ln /var/tmp/snmpd.log"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-fileperm-snmpdlog-mode/ck-fileperm-snmpdlog-mode.ksh",
+      "sha256": "c662cdee2b51ee7c5ab16fcc9509dcf726aeb7065c1a52d48feb9c2393a0d0c2"
+    },
+    {
+      "id": "ck-fileperm-snmpdlog-owner",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "fileperm_snmpdlog_owner"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ln /var/tmp/snmpd.log"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-fileperm-snmpdlog-owner/ck-fileperm-snmpdlog-owner.ksh",
+      "sha256": "d4b87c01901d9475694524c4c2c71494cbf72dc9d6f98bfb3bdd4287421501c5"
+    },
+    {
+      "id": "ck-fileperm-snmpdv3log-group",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "fileperm_snmpdv3log_group"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ln /var/tmp/snmpdv3.log"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-fileperm-snmpdv3log-group/ck-fileperm-snmpdv3log-group.ksh",
+      "sha256": "ca9201c6e04f7b808b76dae3c22e3356f4d2be28d3d52166ef015c844b3ddb7d"
+    },
+    {
+      "id": "ck-fileperm-snmpdv3log-mode",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "fileperm_snmpdv3log_mode"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ln /var/tmp/snmpdv3.log"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-fileperm-snmpdv3log-mode/ck-fileperm-snmpdv3log-mode.ksh",
+      "sha256": "361b54230b568fa792a745d3a9c9c041a3758f357f01368fafca71fc1afefcff"
+    },
+    {
+      "id": "ck-fileperm-snmpdv3log-owner",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "fileperm_snmpdv3log_owner"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ln /var/tmp/snmpdv3.log"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-fileperm-snmpdv3log-owner/ck-fileperm-snmpdv3log-owner.ksh",
+      "sha256": "088dfa3f2069824747e510465b33992fe01ec2b8eab5ad89d26bed4ce26a12ca"
+    },
+    {
+      "id": "ck-fileperm-sshbanner-group",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "fileperm_sshbanner_group"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ln /etc/ssh/ssh_banner"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-fileperm-sshbanner-group/ck-fileperm-sshbanner-group.ksh",
+      "sha256": "05b44a60d62289bf87b094038bdd7d39d0340b20b336030fa816d26d89a2cf42"
+    },
+    {
+      "id": "ck-fileperm-sshbanner-mode",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "fileperm_sshbanner_mode"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ln /etc/ssh/ssh_banner"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-fileperm-sshbanner-mode/ck-fileperm-sshbanner-mode.ksh",
+      "sha256": "4429524dc9f766c54852d14a7def5501809a883b62380317bab787775a4b804e"
+    },
+    {
+      "id": "ck-fileperm-sshbanner-owner",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "fileperm_sshbanner_owner"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ln /etc/ssh/ssh_banner"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-fileperm-sshbanner-owner/ck-fileperm-sshbanner-owner.ksh",
+      "sha256": "39c1989bf59249ce51289b8e7d8ea2fd8a37cf777a07ac2c5f9f25ddbbc46a03"
+    },
+    {
+      "id": "ck-fileperm-sshconfig-group",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "fileperm_sshconfig_group"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ln /etc/ssh/ssh_config"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-fileperm-sshconfig-group/ck-fileperm-sshconfig-group.ksh",
+      "sha256": "a7b324a06b23641d46d7c390c4f6b0bb14d807251e4fe98a2d2bf84248b58b93"
+    },
+    {
+      "id": "ck-fileperm-sshconfig-mode",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "fileperm_sshconfig_mode"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ln /etc/ssh/ssh_config"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-fileperm-sshconfig-mode/ck-fileperm-sshconfig-mode.ksh",
+      "sha256": "64bf19d6a4b9c7f41271220a4c2a3da474b3dd47975a26bd56ed463c53316bd9"
+    },
+    {
+      "id": "ck-fileperm-sshconfig-owner",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "fileperm_sshconfig_owner"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ln /etc/ssh/ssh_config"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-fileperm-sshconfig-owner/ck-fileperm-sshconfig-owner.ksh",
+      "sha256": "a9ae1fa08e44f84875b066679d7f513b933d365b3bb5b4766e94f3efad5411e9"
+    },
+    {
+      "id": "ck-fileperm-sshdconfig-group",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "fileperm_sshdconfig_group"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ln /etc/ssh/sshd_config"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-fileperm-sshdconfig-group/ck-fileperm-sshdconfig-group.ksh",
+      "sha256": "f9fe7a04b8b197441bde258e2087a21bbec69e2d2179805f9ef7dc9446ca9d73"
+    },
+    {
+      "id": "ck-fileperm-sshdconfig-mode",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "fileperm_sshdconfig_mode"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ln /etc/ssh/sshd_config"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-fileperm-sshdconfig-mode/ck-fileperm-sshdconfig-mode.ksh",
+      "sha256": "c1c6f11aa5ba4c43b953cb3cd4bce87fb7de255dc6b91e6ffaf55d061a7bab2d"
+    },
+    {
+      "id": "ck-fileperm-sshdconfig-owner",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "fileperm_sshdconfig_owner"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ln /etc/ssh/sshd_config"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-fileperm-sshdconfig-owner/ck-fileperm-sshdconfig-owner.ksh",
+      "sha256": "fa6e628a7a227a1730271350db9ab065962ea9a0995ec7491a19388a1145e5be"
+    },
+    {
+      "id": "ck-fileperm-submitcf-mode",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "fileperm_submitcf_mode"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ln /etc/mail/submit.cf"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-fileperm-submitcf-mode/ck-fileperm-submitcf-mode.ksh",
+      "sha256": "b5176543b0e8be26bc38f27c89de4ecac89a8722b4a3daf72c274cc8e4ba3ba2"
+    },
+    {
+      "id": "ck-fileperm-syslog",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "fileperm_syslog_owner"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ldn /etc/syslog.conf"
+      ],
+      "tags": [
+        "stig:V-245561"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-fileperm-syslog/ck-fileperm-syslog.ksh",
+      "sha256": "579cd9aa94a0ec25de28f8d60f480905d038ed07e95bbabedec9a080906d7acd"
+    },
+    {
+      "id": "ck-fileperm-syslog-group",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "fileperm_syslog_group"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ln /etc/syslog.conf"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-fileperm-syslog-group/ck-fileperm-syslog-group.ksh",
+      "sha256": "4594e1ed6ee1591036d85aad46e8b76014182c3e69c6b0ed6a23ecde61b207d8"
+    },
+    {
+      "id": "ck-fileperm-syslog-mode",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "fileperm_syslog_mode"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ln /etc/syslog.conf"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-fileperm-syslog-mode/ck-fileperm-syslog-mode.ksh",
+      "sha256": "574995b163e0d6b2a130ddac31f8a41a429f49dcc47d550bce62e54c5a8d03b0"
     },
     {
       "id": "ck-fs-full",
@@ -277,7 +2556,28 @@
       "tags": [],
       "license": "Apache-2.0",
       "artifact": "checks/ck-fs-full/ck-fs-full.ksh",
-      "sha256": "31eb934f1dbda2da5d3d8663654f4161aa8843978cc75f85b6d985a7d8805aa1"
+      "sha256": "0e8f3547e7f586b8a68ee20599ee595696d8934437df128d7410546fc822be35"
+    },
+    {
+      "id": "ck-fs-jfs-nodev",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "fs_jfs_nodev"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "lsfs",
+        "mount"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-fs-jfs-nodev/ck-fs-jfs-nodev.ksh",
+      "sha256": "5a66392f5c42ba8aa89479a7f40c49908758e26f525f22a337a3300bdcc6c2c7"
     },
     {
       "id": "ck-fs-lv-slack",
@@ -297,7 +2597,107 @@
       ],
       "license": "Apache-2.0",
       "artifact": "checks/ck-fs-lv-slack/ck-fs-lv-slack.ksh",
-      "sha256": "ef98eb7863d1bbea429a93cd41ee027605c258e3829eef677d82f920ba752a7a"
+      "sha256": "842df5c20a938490dcf670390d90daf1335f27229c14893bc094c9a64b9386b0"
+    },
+    {
+      "id": "ck-ftpd-login-banner",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "ftpd_login_banner"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "grep '^ftp[[:blank:]]' /etc/inetd.conf",
+        "lslpp -L \"bos.msg.en_US.net.tcp.client\"",
+        "dspcat /usr/lib/nls/msg/en_US/ftpd.cat 1 9"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-ftpd-login-banner/ck-ftpd-login-banner.ksh",
+      "sha256": "27a92af8f08affc74d5e2f21b97289c8d11ce9c4abcc033de08d0d7a69ced7c8"
+    },
+    {
+      "id": "ck-ftpd-root-denied",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "ftpd_root_denied"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "grep '^root$' /etc/ftpusers"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-ftpd-root-denied/ck-ftpd-root-denied.ksh",
+      "sha256": "d5a1bf800b38df446ad18225f8716fc2060fc50eb643e919d21cc6da1edf3618"
+    },
+    {
+      "id": "ck-ftpd-umask",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "inetd_ftpd_umask"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "grep '^ftp[[:blank:]]' /etc/inetd.conf"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-ftpd-umask/ck-ftpd-umask.ksh",
+      "sha256": "10c32f8764828e7d11fb1f8297fb0e7604925f356b25b6080b1905bf4e4c84ff"
+    },
+    {
+      "id": "ck-group-gid-duplicate",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "group_gid_duplicate"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "cat /etc/group"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-group-gid-duplicate/ck-group-gid-duplicate.ksh",
+      "sha256": "33077b6a45cbf75a1489ae9d9d2e7e89e98637960c2cfa5cf7126a837cc1dc28"
+    },
+    {
+      "id": "ck-groupwrite-staff-files",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "groupwrite_staff_files"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "find / \\( -fstype jfs -o -fstype jfs2 \\) -type f -perm -g+w -group staff -ls"
+      ],
+      "tags": [],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-groupwrite-staff-files/ck-groupwrite-staff-files.ksh",
+      "sha256": "e76a5d28b665e50c76b2c18ef086149cc9bf662d308b2cc9ed11ec4dd6d22aca"
     },
     {
       "id": "ck-hd5-sizing",
@@ -325,7 +2725,668 @@
       "tags": [],
       "license": "Apache-2.0",
       "artifact": "checks/ck-hd5-sizing/ck-hd5-sizing.ksh",
-      "sha256": "730cf725add98aea71260d65d46e8572f4f7e23edb89914a1234d6dd21c3c5ed"
+      "sha256": "757ecb7b32f3d86c10c6108e6d24cb77b6596ffa934ff792823ebc7e6ae80d38"
+    },
+    {
+      "id": "ck-home-config-file-perms",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "home_config_file_perms"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "lsuser -a home ALL",
+        "ls -lan <qualifying home directory>"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-home-config-file-perms/ck-home-config-file-perms.ksh",
+      "sha256": "8d4c0626436df2402a144eb590054bb9cd9c8c75369b48977ef72a53716609ea"
+    },
+    {
+      "id": "ck-inetd-bootps",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "inetd_bootps"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "grep -E '^[\t ]*bootps[\t ]' /etc/inetd.conf"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-inetd-bootps/ck-inetd-bootps.ksh",
+      "sha256": "0a16395e26fa98024c1dd281b9039f3dbf6860bc0a865c5a5aeb337970f8b946"
+    },
+    {
+      "id": "ck-inetd-chargen",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "inetd_chargen"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "grep -E '^[\t ]*chargen[\t ]' /etc/inetd.conf"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-inetd-chargen/ck-inetd-chargen.ksh",
+      "sha256": "2a6f51079ebd638e8a05ed0782b408db30e4b3728516ec84e41bd193c730d073"
+    },
+    {
+      "id": "ck-inetd-comsat",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "inetd_comsat"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "grep -E '^[\t ]*comsat[\t ]' /etc/inetd.conf"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-inetd-comsat/ck-inetd-comsat.ksh",
+      "sha256": "2d338e3026825de6b3c77cfe0b58b3c761c6460a224038e7ea14384440bd32d3"
+    },
+    {
+      "id": "ck-inetd-daytime",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "inetd_daytime"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "grep -E '^[\t ]*daytime[\t ]' /etc/inetd.conf"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-inetd-daytime/ck-inetd-daytime.ksh",
+      "sha256": "81edc327cd30e4931596e5a691c2b44f3f0bf70e2e0feeb17b9565794059c9e9"
+    },
+    {
+      "id": "ck-inetd-discard",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "inetd_discard"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "grep -E '^[[:space:]]*discard[[:space:]]' /etc/inetd.conf"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-inetd-discard/ck-inetd-discard.ksh",
+      "sha256": "be46a1353d9bf8d3a4d8b6389505dabd39f86656a711ac9f2dca8b7db1659239"
+    },
+    {
+      "id": "ck-inetd-echo",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "inetd_echo"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "grep -E '^[\t ]*echo[\t ]' /etc/inetd.conf"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-inetd-echo/ck-inetd-echo.ksh",
+      "sha256": "927f4a8b01fd2812c35bf64062b18389eff134fb23abd1982ff44910b2eb0fc5"
+    },
+    {
+      "id": "ck-inetd-exec",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "inetd_exec"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "grep -E '^[\t ]*exec[\t ]' /etc/inetd.conf"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-inetd-exec/ck-inetd-exec.ksh",
+      "sha256": "402f862112c1e1f6d26d52e2538cab61a0daef805036d9a46704a30f04ab764e"
+    },
+    {
+      "id": "ck-inetd-finger",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "inetd_finger"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "grep -E '^[\t ]*finger[\t ]' /etc/inetd.conf"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-inetd-finger/ck-inetd-finger.ksh",
+      "sha256": "0600b7279c373cfecdd89386969aee0f724b8ca478b79031dd39f9029d4c684e"
+    },
+    {
+      "id": "ck-inetd-ftpd",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "inetd_ftpd"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "grep -E '^[[:space:]]*(telnet|telnetd|ftp|ftpd|shell|login|exec|rsh|rlogin)[[:space:]]' /etc/inetd.conf"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-inetd-ftpd/ck-inetd-ftpd.ksh",
+      "sha256": "2c192449806aa07efb07f0dee2a380773dbf61e7a321630f51321866d96bce4b"
+    },
+    {
+      "id": "ck-inetd-imap2",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "inetd_imap2"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "grep -E '^[\t ]*imap2[\t ]' /etc/inetd.conf"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-inetd-imap2/ck-inetd-imap2.ksh",
+      "sha256": "28cd5999bb938f29ff745ecda3ed257679c41ad9df655abc9e50ac9e8432cd0f"
+    },
+    {
+      "id": "ck-inetd-instsrv",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "inetd_instsrv"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "grep -E '^[\t ]*instsrv[\t ]' /etc/inetd.conf"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-inetd-instsrv/ck-inetd-instsrv.ksh",
+      "sha256": "44b3ab5debc1fb607782b02449bd3a345ed73ca7645dd0dd19f20919eb526561"
+    },
+    {
+      "id": "ck-inetd-klogin",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "inetd_klogin"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "grep -E '^[\t ]*klogin[\t ]' /etc/inetd.conf"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-inetd-klogin/ck-inetd-klogin.ksh",
+      "sha256": "076964c1f098c90a88cc2d632b4b78f56dde1e8fe8b811dc226c882b1c37ac6b"
+    },
+    {
+      "id": "ck-inetd-kshell",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "inetd_kshell"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "grep -E '^[\t ]*kshell[\t ]' /etc/inetd.conf"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-inetd-kshell/ck-inetd-kshell.ksh",
+      "sha256": "fb32e6389de36b967211c2c305a939e94f2dd1c9eaad66a7e24dab62b410ec6f"
+    },
+    {
+      "id": "ck-inetd-netstat",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "inetd_netstat"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "grep -E '^[\t ]*netstat[\t ]' /etc/inetd.conf"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-inetd-netstat/ck-inetd-netstat.ksh",
+      "sha256": "e4f9a6f8f70c24d0ec6f2974037f8e0c740aaf19c8a78d51bda1ee8fee4876e1"
+    },
+    {
+      "id": "ck-inetd-ntalk",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "inetd_ntalk"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "grep -E '^[\t ]*ntalk[\t ]' /etc/inetd.conf"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-inetd-ntalk/ck-inetd-ntalk.ksh",
+      "sha256": "2ad2087c08be1546eb8c4db917eaca115e4570c9910228d7907f6dcc7be1bec1"
+    },
+    {
+      "id": "ck-inetd-pcnfsd",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "inetd_pcnfsd"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "grep -E '^[\t ]*pcnfsd[\t ]' /etc/inetd.conf"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-inetd-pcnfsd/ck-inetd-pcnfsd.ksh",
+      "sha256": "92c95de1ec211371ab3763d3ef9c5b4e2ade1d54efa9fd6bb79b8ecdc78ed385"
+    },
+    {
+      "id": "ck-inetd-pop3",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "inetd_pop3"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "grep -E '^[\t ]*pop3[\t ]' /etc/inetd.conf"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-inetd-pop3/ck-inetd-pop3.ksh",
+      "sha256": "95af972dabc2caf2a03a405fc833f514cffccb34a76e24c5b22939a0dfe1e917"
+    },
+    {
+      "id": "ck-inetd-rexd",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "inetd_rexd"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "grep -E '^[\t ]*rexd[\t ]' /etc/inetd.conf"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-inetd-rexd/ck-inetd-rexd.ksh",
+      "sha256": "f9faab463c7cd626888fab94e7ba4a2187c9fee618f258345ed01cda8224634f"
+    },
+    {
+      "id": "ck-inetd-rlogin",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "inetd_rlogin"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "grep -E '^[\t ]*login[\t ]' /etc/inetd.conf"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-inetd-rlogin/ck-inetd-rlogin.ksh",
+      "sha256": "8df33e8902dc867a1e0095b3792344e71d353e7ea79d5117c298160bf9f123e2"
+    },
+    {
+      "id": "ck-inetd-rquotad",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "inetd_rquotad"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "grep -E '^[\t ]*rquotad[\t ]' /etc/inetd.conf"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-inetd-rquotad/ck-inetd-rquotad.ksh",
+      "sha256": "b7309e747645ac4e8da26b87bbc6a10a1bbf1d92fccb2742eb19588e08737f9b"
+    },
+    {
+      "id": "ck-inetd-rstatd",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "inetd_rstatd"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "grep -E '^[\t ]*rstatd[\t ]' /etc/inetd.conf"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-inetd-rstatd/ck-inetd-rstatd.ksh",
+      "sha256": "27ec1ad39316cf871e2675854bb83b6f43426b27c6d24d5476ce76b1e5463de3"
+    },
+    {
+      "id": "ck-inetd-rsync",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "inetd_rsync"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "grep -E '^[\t ]*rsync[\t ]' /etc/inetd.conf"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-inetd-rsync/ck-inetd-rsync.ksh",
+      "sha256": "05b0ca199da15d6da3fdd9f1890d6b6a466dc6a1b6efac38e0612af54fefc52d"
+    },
+    {
+      "id": "ck-inetd-rusersd",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "inetd_rusersd"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "grep -E '^[\t ]*rusersd[\t ]' /etc/inetd.conf"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-inetd-rusersd/ck-inetd-rusersd.ksh",
+      "sha256": "9555f7717522ad25ef1ff1f18221fd72c003d5ebbbb994e270a1e441a670060a"
+    },
+    {
+      "id": "ck-inetd-rwalld",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "inetd_rwalld"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "grep -E '^[\t ]*rwalld[\t ]' /etc/inetd.conf"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-inetd-rwalld/ck-inetd-rwalld.ksh",
+      "sha256": "e0a50eeda21ce7dd30a89d660a3120c30d98bdd73a7131fcc8c8df59083c7772"
+    },
+    {
+      "id": "ck-inetd-shell",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "inetd_shell"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "grep -E '^[\t ]*shell[\t ]' /etc/inetd.conf"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-inetd-shell/ck-inetd-shell.ksh",
+      "sha256": "1cd70fcfee223e6592139d7057d9cbb6e2bef98d6e97193e712fef54bd69b5fe"
+    },
+    {
+      "id": "ck-inetd-sprayd",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "inetd_sprayd"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "grep -E '^[\t ]*sprayd[\t ]' /etc/inetd.conf"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-inetd-sprayd/ck-inetd-sprayd.ksh",
+      "sha256": "7799f8818c1f66e45996d25e3991a7fd41c359ab7ae88aae99a127a46ab9aec7"
+    },
+    {
+      "id": "ck-inetd-talk",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "inetd_talk"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "grep -E '^[\t ]*talk[\t ]' /etc/inetd.conf"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-inetd-talk/ck-inetd-talk.ksh",
+      "sha256": "477be074d5082c18c5d3743fb401700e57e357a37d40d00e396d27f7bd64328f"
+    },
+    {
+      "id": "ck-inetd-telnetd",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "inetd_telnetd"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "grep -E '^[[:space:]]*(telnet|telnetd|ftp|ftpd|shell|login|exec|rsh|rlogin)[[:space:]]' /etc/inetd.conf"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-inetd-telnetd/ck-inetd-telnetd.ksh",
+      "sha256": "9bf766326834303d6e1fb42d1c2e332c2c835d6a5289fc4fd1a0de3c236c23d0"
+    },
+    {
+      "id": "ck-inetd-tftpd",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "inetd_tftpd"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "grep -E '^[\t ]*tftpd[\t ]' /etc/inetd.conf"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-inetd-tftpd/ck-inetd-tftpd.ksh",
+      "sha256": "ed0a83b0ca900ef5ae0bbefe1905e36d37e45ca5dc9a3822f41f381b7498823f"
+    },
+    {
+      "id": "ck-inetd-time",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "inetd_time"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "grep -E '^[\t ]*time[\t ]' /etc/inetd.conf"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-inetd-time/ck-inetd-time.ksh",
+      "sha256": "12a3f3edd5e2f6db2de4a8b2e72ca29d5821b7a4706c90f547f507f7e1db4f77"
+    },
+    {
+      "id": "ck-inetd-uucp",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "inetd_uucp"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "grep -E '^[\t ]*uucp[\t ]' /etc/inetd.conf"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-inetd-uucp/ck-inetd-uucp.ksh",
+      "sha256": "7977ba9f6bcff793149fd43e8d65509d5ddf8bdecdcf71bae8fbeb3ac12c8a1b"
+    },
+    {
+      "id": "ck-inetd-xmquery",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "inetd_xmquery"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "grep -E '^[\t ]*xmquery[\t ]' /etc/inetd.conf"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-inetd-xmquery/ck-inetd-xmquery.ksh",
+      "sha256": "b2557a69dc826247c889b5a051f7c0a4de984177340f08cc42f0792ff6bc2d68"
     },
     {
       "id": "ck-jfs-legacy",
@@ -347,7 +3408,265 @@
       ],
       "license": "Apache-2.0",
       "artifact": "checks/ck-jfs-legacy/ck-jfs-legacy.ksh",
-      "sha256": "37be016dc43c1cde17bb63c7ee1a5e19529a7c6dca28147fe45d29e5ee2058db"
+      "sha256": "d35ac8da132f68ff2a238eb528b58a9512181e4dba5a128c53e7210a94243b08"
+    },
+    {
+      "id": "ck-login-core-limit",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "login_core_limit"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "lssec -f /etc/security/limits -s default -a core -a core_hard",
+        "lsattr -El sys0 -a fullcore"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-login-core-limit/ck-login-core-limit.ksh",
+      "sha256": "400a7d73fb0d11459c3a85859c2dbbad8d35efebf9db35cee512434455a84f89"
+    },
+    {
+      "id": "ck-login-herald",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "login_herald"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "lssec -f /etc/security/login.cfg -s default -a herald"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-login-herald/ck-login-herald.ksh",
+      "sha256": "500a72c895fecc4f0731f7cb2ca99d67e83b027d393700e18eb54a6562aeb727"
+    },
+    {
+      "id": "ck-login-logindelay",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "login_logindelay"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "lssec -f /etc/security/login.cfg -s default -a logindelay"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-login-logindelay/ck-login-logindelay.ksh",
+      "sha256": "cf7e4f92d6ebcf6d4fe7667d4fc8b92350542e5e3f57aa66e6b3668f137a3419"
+    },
+    {
+      "id": "ck-login-logindisable",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "login_logindisable"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "lssec -f /etc/security/login.cfg -s default -a logindisable"
+      ],
+      "tags": [],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-login-logindisable/ck-login-logindisable.ksh",
+      "sha256": "8eeef29426eeaf3bbd36773f6080f28c7c3ae4bfc40721c2927726cbb06d94e1"
+    },
+    {
+      "id": "ck-login-logininterval",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "login_logininterval"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "lssec -f /etc/security/login.cfg -s default -a logininterval"
+      ],
+      "tags": [],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-login-logininterval/ck-login-logininterval.ksh",
+      "sha256": "1e5452a04d1e22950eb52f7549488fee3a6e26067517b47b1975ec10eb2055f2"
+    },
+    {
+      "id": "ck-login-loginreenable",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "login_loginreenable"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "lssec -f /etc/security/login.cfg -s default -a loginreenable"
+      ],
+      "tags": [],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-login-loginreenable/ck-login-loginreenable.ksh",
+      "sha256": "e2916b5a847b82a17e8424db5850820dcc9d9ce511b93924b7b6045c35161861"
+    },
+    {
+      "id": "ck-login-loginretries",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "login_retries"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "lssec -f /etc/security/user -s default -a loginretries"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-login-loginretries/ck-login-loginretries.ksh",
+      "sha256": "451a266b92a5f73270b5cd859d0837914edb26aa67c36282c37f7f9182a31b09"
+    },
+    {
+      "id": "ck-login-logintimeout",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "login_timeout"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "lssec -f /etc/security/login.cfg -s usw -a logintimeout"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-login-logintimeout/ck-login-logintimeout.ksh",
+      "sha256": "93c50cefc3318773e0932fe9c2fad905835466b46f9b4ddf0c4d45311ad04fd8"
+    },
+    {
+      "id": "ck-login-path-empty-entry",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "login_path_empty_entry"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "echo \"${PATH}\"",
+        "ls -ld"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-login-path-empty-entry/ck-login-path-empty-entry.ksh",
+      "sha256": "088763c3d7e5795211fc5661e80edc75d30b5a4e124d230b94b9e08c29e5c297"
+    },
+    {
+      "id": "ck-login-path-integrity",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "login_path_integrity"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ld /etc/environment",
+        "grep \"^PATH=\" /etc/environment"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-login-path-integrity/ck-login-path-integrity.ksh",
+      "sha256": "ecb64ad238350c92fcc19cb0817a7186067a468d4ae327ea73f5d0aa8770812b"
+    },
+    {
+      "id": "ck-login-root-path",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "login_root_path"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -l /etc/environment /etc/profile /.profile",
+        "grep -E '^[ \t]*(export[ \t]+)?PATH=' /etc/environment /etc/profile /.profile"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-login-root-path/ck-login-root-path.ksh",
+      "sha256": "caa010f628475c660db4d84acd1e8c0a8b4ec2ae8a79b757189cf332ab3a774a"
+    },
+    {
+      "id": "ck-login-root-shell",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "login_root_shell"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "lsuser -a shell root"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-login-root-shell/ck-login-root-shell.ksh",
+      "sha256": "54f0bccbb57e5a03087d5cbd65d66400ea2b33268ff853709a985802ca477b2f"
+    },
+    {
+      "id": "ck-login-root-su-restrict",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "root_su_restrict"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "lsuser -a login rlogin su sugroups root"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-login-root-su-restrict/ck-login-root-su-restrict.ksh",
+      "sha256": "cdac3899d7eb16034ea21db6fe708a9506d11c551806af531a9df38d0bdbca47"
     },
     {
       "id": "ck-lv-mirror-placement",
@@ -375,7 +3694,7 @@
       ],
       "license": "Apache-2.0",
       "artifact": "checks/ck-lv-mirror-placement/ck-lv-mirror-placement.ksh",
-      "sha256": "29b2e10e0b73e8491ba4276d87e3ced60f6011c8969fe33d19970a37e5e40018"
+      "sha256": "1c0c699305159bb1772502a083d467a1f0afd6d96f7759cfae0bad24e7bd9907"
     },
     {
       "id": "ck-monitoring-agent",
@@ -390,12 +3709,10 @@
       "commands": [
         "ps -e -o comm"
       ],
-      "tags": [
-        "ffiec:III.B"
-      ],
+      "tags": [],
       "license": "Apache-2.0",
       "artifact": "checks/ck-monitoring-agent/ck-monitoring-agent.ksh",
-      "sha256": "d886bdc47a6cb1646c3e9f0bcca733a4a1a5308d772099ce7b23e13afcfa27e3"
+      "sha256": "97fc75ae8058eb2cebb556f6a5d18ef1b373d6cb1fbe07c8d5ee50f1317eb3c0"
     },
     {
       "id": "ck-mount-options",
@@ -415,7 +3732,7 @@
       ],
       "license": "Apache-2.0",
       "artifact": "checks/ck-mount-options/ck-mount-options.ksh",
-      "sha256": "9e4e113a58040b3fa304c715e2da629116e2e3934362a20ea42705d3f93401d4"
+      "sha256": "113d8af9b009591bab2b0d09bd5754faf4f704a854157339584a6261d606175a"
     },
     {
       "id": "ck-mpio-hcheck",
@@ -434,7 +3751,7 @@
       "tags": [],
       "license": "Apache-2.0",
       "artifact": "checks/ck-mpio-hcheck/ck-mpio-hcheck.ksh",
-      "sha256": "72da9fb198ea198bb52a32e5a5694a76b9dac06de45eab9b391666916ccada5d"
+      "sha256": "9ad05bbd44d7e4fca6accd1bab8dae252cadb189c9ecd02279dd9d1382c6a6dc"
     },
     {
       "id": "ck-mpio-paths",
@@ -447,12 +3764,13 @@
       "requires_root": false,
       "read_only": true,
       "commands": [
-        "lspath"
+        "lspath",
+        "lsdev -Cc disk -F name:status:description"
       ],
       "tags": [],
       "license": "Apache-2.0",
       "artifact": "checks/ck-mpio-paths/ck-mpio-paths.ksh",
-      "sha256": "88691f3ef0b2223717e016746568fc932e06a73b8c0a39f706fe02396e4d3009"
+      "sha256": "6e08577e753d967d6e2cc2716595fdf1b738eac78c33c218e636a302b24ea07d"
     },
     {
       "id": "ck-multibos-residue",
@@ -473,13 +3791,315 @@
       "tags": [],
       "license": "Apache-2.0",
       "artifact": "checks/ck-multibos-residue/ck-multibos-residue.ksh",
-      "sha256": "0ec4777bfd7d66daca98fd3280dc487edc219c0cdfe8695704513e077bd8267b"
+      "sha256": "5cb3e15c83477775f4a2b2685fa2883a5f9a02ac71a3a0276c2a33d5426f9a0c"
+    },
+    {
+      "id": "ck-net-directed-broadcast",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "net_directed_broadcast"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "no -o directed_broadcast"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-net-directed-broadcast/ck-net-directed-broadcast.ksh",
+      "sha256": "a4ec107e7d085ce7e6fec6ce80f6c75c8bd5cd72e90b71a3f3205c1db904ba32"
+    },
+    {
+      "id": "ck-net-icmpaddressmask",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "net_icmpaddressmask"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "no -o icmpaddressmask"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-net-icmpaddressmask/ck-net-icmpaddressmask.ksh",
+      "sha256": "74f4252aa3aac060b1ecdbe2d65acddb39671807b5d79b29fdb9832216310376"
+    },
+    {
+      "id": "ck-net-icmptimestamp",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "net_icmptimestamp"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "no -o icmptimestamp"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-net-icmptimestamp/ck-net-icmptimestamp.ksh",
+      "sha256": "ea886d7834efb9c98c798b40c436247b7dbfd9ef11ec7a1702cbe0f28974147a"
+    },
+    {
+      "id": "ck-net-ip6srcrouteforward",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "net_ip6srcrouteforward"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "no -o ip6srcrouteforward"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-net-ip6srcrouteforward/ck-net-ip6srcrouteforward.ksh",
+      "sha256": "c50cdd6aba87cfc184450e42f1361aa2c43476496fb389ebf06b472427d75527"
+    },
+    {
+      "id": "ck-net-ipignoreredirects",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "net_ipignoreredirects"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "no -o ipignoreredirects"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-net-ipignoreredirects/ck-net-ipignoreredirects.ksh",
+      "sha256": "44ff59257c01f2fbf78d533bff47f9aebd7a9df4c0fbe2dc37b4566dbffb795e"
+    },
+    {
+      "id": "ck-net-ipsendredirects",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "net_ipsendredirects"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "no -o ipsendredirects"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-net-ipsendredirects/ck-net-ipsendredirects.ksh",
+      "sha256": "d4ad42ebe4fe69639146ae4c8fcbacb79f2911845dbbcad8a04932eaa6dce1d9"
+    },
+    {
+      "id": "ck-net-ipsrcroute-forward",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "net_ipsrcrouteforward"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "no -o ipsrcrouteforward"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-net-ipsrcroute-forward/ck-net-ipsrcroute-forward.ksh",
+      "sha256": "5b22f8b93e034e136cbafd0b6e4265165fe2989c81d7ba3771f7bd0bbef8a327"
+    },
+    {
+      "id": "ck-net-ipsrcrouterecv",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "net_ipsrcrouterecv"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "no -o ipsrcrouterecv"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-net-ipsrcrouterecv/ck-net-ipsrcrouterecv.ksh",
+      "sha256": "4bb06a6b26ca31aaf8e92aa13be57cd4dfb684807c7f1c8ef39774158620a25c"
+    },
+    {
+      "id": "ck-net-ipsrcroutesend",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "net_ipsrcroutesend"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "no -o ipsrcroutesend"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-net-ipsrcroutesend/ck-net-ipsrcroutesend.ksh",
+      "sha256": "f58deefde7b67f19955a4d8bccd111c0394e11f9f2ab52c0b66634cdeea61b5e"
+    },
+    {
+      "id": "ck-net-nfs-use-reserved-ports",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "net_nfs_use_reserved_ports"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "nfso -o nfs_use_reserved_ports"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-net-nfs-use-reserved-ports/ck-net-nfs-use-reserved-ports.ksh",
+      "sha256": "907c8bb2904dad0e9bf840544102805f275c507a2fa230ffa4c81f65a71c0128"
+    },
+    {
+      "id": "ck-net-nonlocsrcroute",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "net_nonlocsrcroute"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "no -o nonlocsrcroute"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-net-nonlocsrcroute/ck-net-nonlocsrcroute.ksh",
+      "sha256": "fbcf6c0cc6d95986a282eac26248fe456dfff9644a9afc016d58e2062ab3ca19"
+    },
+    {
+      "id": "ck-net-sockthresh",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "net_sockthresh"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "no -o sockthresh"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-net-sockthresh/ck-net-sockthresh.ksh",
+      "sha256": "20f6b20a5b6a12b1d822962954c03538c6bf1db7a501c60a5345579bb1298a17"
+    },
+    {
+      "id": "ck-net-tcp-pmtu-discover",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "net_tcp_pmtu_discover"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "no -o tcp_pmtu_discover"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-net-tcp-pmtu-discover/ck-net-tcp-pmtu-discover.ksh",
+      "sha256": "9ce768b1bd2eda32e1b6910dca31c67d6dffcdb34298228989d96f349e406762"
+    },
+    {
+      "id": "ck-net-tcp-tcpsecure",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "net_tcp_tcpsecure"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "no -o tcp_tcpsecure"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-net-tcp-tcpsecure/ck-net-tcp-tcpsecure.ksh",
+      "sha256": "b5d684b8c4b63b38a1a70714ef5870d076f9babc0db0cd8bac0a106e2d2ba9ce"
+    },
+    {
+      "id": "ck-net-udp-pmtu-discover",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "net_udp_pmtu_discover"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "no -o udp_pmtu_discover"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-net-udp-pmtu-discover/ck-net-udp-pmtu-discover.ksh",
+      "sha256": "f17e852d756ddf070824a0194ef65f81e36d8ef92633435cd8bed21cedc8d915"
     },
     {
       "id": "ck-network-inventory",
       "pillar": "operational-readiness",
       "category": "config",
-      "finding_ids": [],
+      "finding_ids": [
+        "network_inventory"
+      ],
       "captures": [],
       "requires_root": false,
       "read_only": true,
@@ -493,7 +4113,100 @@
       "tags": [],
       "license": "Apache-2.0",
       "artifact": "checks/ck-network-inventory/ck-network-inventory.ksh",
-      "sha256": "1d190b1156f58afcfa153c4d6115cb340d70ca413b8c70eeb841570360938fe5"
+      "sha256": "16bd9e07c1e550703605a06727cf838f1fe8d2e277268d54ccdf935c371758d4"
+    },
+    {
+      "id": "ck-nfs-client-mount-options",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "nfs_client_mount_options"
+      ],
+      "captures": [
+        "cap-etc-filesystems"
+      ],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "ls -ld /etc/filesystems",
+        "cat /etc/filesystems"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-nfs-client-mount-options/ck-nfs-client-mount-options.ksh",
+      "sha256": "c0c51b47704eafa987f066541d68d41ce5c2a1d5fe825d37ade649cc2a0bb52e"
+    },
+    {
+      "id": "ck-nfs-client-mounts-disabled",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "nfs_client_mounts_disabled"
+      ],
+      "captures": [
+        "cap-etc-filesystems"
+      ],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "ls -ld /etc/filesystems",
+        "cat /etc/filesystems"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-nfs-client-mounts-disabled/ck-nfs-client-mounts-disabled.ksh",
+      "sha256": "c4f738e0b8940ff5d6a743def71404fe472200d5fee7b5ecd55367405dc0ad69"
+    },
+    {
+      "id": "ck-nfs-export-everyone",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "nfs_export_everyone"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "showmount -e",
+        "exportfs",
+        "test -e /etc/exports",
+        "cat /etc/exports"
+      ],
+      "tags": [
+        "cis-l2"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-nfs-export-everyone/ck-nfs-export-everyone.ksh",
+      "sha256": "22c75587d8abd71a3d9490ef58bd4303c853136501a722b21884614ca492775f"
+    },
+    {
+      "id": "ck-nfs-export-sec",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "nfs_export_sec"
+      ],
+      "control_id": "4.4.1.7",
+      "level": "L2",
+      "severity": "medium",
+      "blast_radius": "moderate",
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "lsnfsexp"
+      ],
+      "tags": [
+        "cis-l2"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-nfs-export-sec/ck-nfs-export-sec.ksh",
+      "sha256": "5447e32c5acafe9fee5a313be965140ae78627d71b6f7ca1355af10858e35232"
     },
     {
       "id": "ck-nfs-exports",
@@ -506,6 +4219,7 @@
       "requires_root": false,
       "read_only": true,
       "commands": [
+        "test -e /etc/exports",
         "cat /etc/exports",
         "exportfs"
       ],
@@ -514,7 +4228,150 @@
       ],
       "license": "Apache-2.0",
       "artifact": "checks/ck-nfs-exports/ck-nfs-exports.ksh",
-      "sha256": "c25c0c42b16d7d987c64f738b6562016987cf889d69b34bd58517068327b9239"
+      "sha256": "c266cd4517a86482b25b532403ed08ab5ae5627d8472cf87ae71679b870aa0a4"
+    },
+    {
+      "id": "ck-nfs-localhost-aliases",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "nfs_localhost_aliases"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "test -e /etc/exports",
+        "cat /etc/exports"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-nfs-localhost-aliases/ck-nfs-localhost-aliases.ksh",
+      "sha256": "3419f9a089e0d2574c877b3cb9faeeae67410a9acb424cfa06dd58e09806336c"
+    },
+    {
+      "id": "ck-nfs-rcnfs-disabled",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "rcnfs_lsitab"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "lsitab rcnfs"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-nfs-rcnfs-disabled/ck-nfs-rcnfs-disabled.ksh",
+      "sha256": "d39d7155ec3b560098d2b7315eda4eec26c7c173577f41b421ab979356b6654a"
+    },
+    {
+      "id": "ck-nfs-server-absent",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "nfs_server_absent"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "lslpp -L"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-nfs-server-absent/ck-nfs-server-absent.ksh",
+      "sha256": "024a99eb355056f4cde2a330bd64c73ef2a174420a6240a0e050777be9e63c2c"
+    },
+    {
+      "id": "ck-nim-master",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "nim_master_installed"
+      ],
+      "captures": [
+        "cap-lslpp-qcl"
+      ],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "lslpp -qcL"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-nim-master/ck-nim-master.ksh",
+      "sha256": "ead422fc21fdd807c50c712310d444dace9d25d28290f64a9c4431077696543d"
+    },
+    {
+      "id": "ck-nis-client-absent",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "nis_client_installed"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "lslpp -L bos.net.nis.client"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-nis-client-absent/ck-nis-client-absent.ksh",
+      "sha256": "ac5efbb9a0bfa8c4b7062ec61b0fe103b6c94a9f890c97f27d7522fc4540c7bd"
+    },
+    {
+      "id": "ck-nis-passwd-group-plus",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "nis_plus_entries"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "grep \"^+\" /etc/passwd /etc/group"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-nis-passwd-group-plus/ck-nis-passwd-group-plus.ksh",
+      "sha256": "ae1108072561ef3fd342f76524a23459be804568f13842ed17d597021cbad61b"
+    },
+    {
+      "id": "ck-nis-server-absent",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "nis_server_installed"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "lslpp -L bos.net.nis.server"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-nis-server-absent/ck-nis-server-absent.ksh",
+      "sha256": "3d37bd1cfaecfac5c4b7d945f0fbe797c7eeba221262e31a2118d3a904c9b6b1"
     },
     {
       "id": "ck-paging",
@@ -533,7 +4390,7 @@
       "tags": [],
       "license": "Apache-2.0",
       "artifact": "checks/ck-paging/ck-paging.ksh",
-      "sha256": "3d1d8ec452973ec3b514743d3c3dfea41ecff6ebc92de11558def7d9903f8262"
+      "sha256": "bff8812e7d70e1b198ed9c8319a259bee2da43a5e59b99bac7b94d3763e29827"
     },
     {
       "id": "ck-paging-layout",
@@ -559,7 +4416,7 @@
       ],
       "license": "Apache-2.0",
       "artifact": "checks/ck-paging-layout/ck-paging-layout.ksh",
-      "sha256": "45ecf52f93958a383d9d406b0eb20ac17d8cba7ce82240a9b9e7b8b735b47256"
+      "sha256": "b678f34be649f37d71a22a7fe89bfc012362fff4838efde4b269097301006252"
     },
     {
       "id": "ck-paging-parity",
@@ -579,7 +4436,7 @@
       "tags": [],
       "license": "Apache-2.0",
       "artifact": "checks/ck-paging-parity/ck-paging-parity.ksh",
-      "sha256": "6a6fb6a056ad5196c339a8b5e128acd751b2b63dda195bdbc68bbce2fd2388c2"
+      "sha256": "b7ffec6df5f32ec118c47b6b6367c90ef88b71dc35342fe2a04a0c679497f76e"
     },
     {
       "id": "ck-perf-history",
@@ -599,7 +4456,71 @@
       "tags": [],
       "license": "Apache-2.0",
       "artifact": "checks/ck-perf-history/ck-perf-history.ksh",
-      "sha256": "a03a247f9ef9b702193004cbdcead21b5c87681956f2f913515304269a504c46"
+      "sha256": "87dee607069ecc11f1f17729f516bdb023540ba67081fec3ee26c8e45740a036"
+    },
+    {
+      "id": "ck-piobe",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "piobe"
+      ],
+      "captures": [
+        "cap-cis-services-lssrc-a"
+      ],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "lssrc -a"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-piobe/ck-piobe.ksh",
+      "sha256": "5102ac9ef8664b0c764bc95a10b4117d790abae9cd6f7671d86555b099f1a5b0"
+    },
+    {
+      "id": "ck-pw-blank-absent",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "pw_blank_absent"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "test -r /etc/security/passwd",
+        "/usr/bin/egrep -p \"password = +$\" /etc/security/passwd"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-pw-blank-absent/ck-pw-blank-absent.ksh",
+      "sha256": "6fbecf487604f2df96e4e41b5434afb789f0ddd4aaae92729c1ea4f81c55409c"
+    },
+    {
+      "id": "ck-pw-dictionlist",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "pw_dictionlist"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "lssec -f /etc/security/user -s default -a dictionlist"
+      ],
+      "tags": [
+        "cis-l1",
+        "ffiec:II.C.15"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-pw-dictionlist/ck-pw-dictionlist.ksh",
+      "sha256": "3620bd70654b376a43c11c10d718a555d1116c4698955e269f8673dae830480f"
     },
     {
       "id": "ck-pw-hashing",
@@ -619,7 +4540,808 @@
       ],
       "license": "Apache-2.0",
       "artifact": "checks/ck-pw-hashing/ck-pw-hashing.ksh",
-      "sha256": "c664fba328ecb9e656f8aad69c45d3a74727684922c05b4b7284c12e163512af"
+      "sha256": "8d9600c05348ea60b9136ab53800b59b7b3b89acf8c82d9981ac7b2118e498e3"
+    },
+    {
+      "id": "ck-pw-histexpire",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "pw_histexpire"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "lssec -f /etc/security/user -s default -a histexpire",
+        "oslevel -s"
+      ],
+      "tags": [
+        "cis-l1",
+        "ffiec:II.C.15"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-pw-histexpire/ck-pw-histexpire.ksh",
+      "sha256": "670f106db656e75ec0609ab2a0bbd2e6c937bbdbeda9040807bfa23a7494de27"
+    },
+    {
+      "id": "ck-pw-histsize",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "pw_histsize"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "lssec -f /etc/security/user -s default -a histsize",
+        "oslevel -s"
+      ],
+      "tags": [
+        "cis-l1",
+        "ffiec:II.C.15"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-pw-histsize/ck-pw-histsize.ksh",
+      "sha256": "3d9fa568f293dc7656070bc2d9e69f244ed4ef49333fbef9931007a7d93e0bd3"
+    },
+    {
+      "id": "ck-pw-loginretries",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "pw_loginretries"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "lssec -f /etc/security/user -s default -a loginretries"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-pw-loginretries/ck-pw-loginretries.ksh",
+      "sha256": "faafeb22c0bf640cfa4eed56eb35365f5846b8bdb3f3b311c110d2f7e35c6069"
+    },
+    {
+      "id": "ck-pw-maxage",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "pw_maxage"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "lssec -f /etc/security/user -s default -a maxage"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-pw-maxage/ck-pw-maxage.ksh",
+      "sha256": "fbf12be7b1fdb3c29b73cc9ce3db0594ae2b822ac78fffa2c9b9889a58823db8"
+    },
+    {
+      "id": "ck-pw-maxage-cis",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "pw_maxage_cis"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "lssec -f /etc/security/user -s default -a maxage"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-pw-maxage-cis/ck-pw-maxage-cis.ksh",
+      "sha256": "c6796b8ca42eb65203081403e6f466aaab18febb0e05358e202a3d215824f027"
+    },
+    {
+      "id": "ck-pw-maxexpired",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "pw_maxexpired"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "lssec -f /etc/security/user -s default -a maxexpired -a maxage"
+      ],
+      "tags": [
+        "cis-l1",
+        "ffiec:II.C.15"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-pw-maxexpired/ck-pw-maxexpired.ksh",
+      "sha256": "fca4eea1e7622a292358fa81870d60f4a2fec201e04384bfcf349eaa9fb50fd9"
+    },
+    {
+      "id": "ck-pw-maxrepeats",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "pw_maxrepeats"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "lssec -f /etc/security/user -s default -a maxrepeats"
+      ],
+      "tags": [
+        "cis-l1",
+        "ffiec:II.C.15"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-pw-maxrepeats/ck-pw-maxrepeats.ksh",
+      "sha256": "26da15e5eca2d55cf52006a762af4e7d6e52e10cbb908c5c6906b1e8510da682"
+    },
+    {
+      "id": "ck-pw-maxulogs",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "pw_maxulogs"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "lssec -f /etc/security/user -s default -a maxulogs"
+      ],
+      "tags": [],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-pw-maxulogs/ck-pw-maxulogs.ksh",
+      "sha256": "e6eaf9d900c46d9810440aca6423e956b5f8fa22fbee32a8690e62a7ef228f44"
+    },
+    {
+      "id": "ck-pw-minage",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "pw_minage"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "lssec -f /etc/security/user -s default -a minage"
+      ],
+      "tags": [
+        "cis-l2"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-pw-minage/ck-pw-minage.ksh",
+      "sha256": "62b95b5db8264bf8be116b351f310f723dfe6b9578afb20cffd36fb929b71333"
+    },
+    {
+      "id": "ck-pw-minalpha",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "pw_minalpha"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "lssec -f /etc/security/user -s default -a minalpha"
+      ],
+      "tags": [
+        "cis-l1",
+        "ffiec:II.C.15"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-pw-minalpha/ck-pw-minalpha.ksh",
+      "sha256": "9b1256addb6dad367d5d174578438979a4eed7e0fe0f9067bf85b814063cc837"
+    },
+    {
+      "id": "ck-pw-mindiff",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "pw_mindiff"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "lssec -f /etc/security/user -s default -a mindiff"
+      ],
+      "tags": [
+        "cis-l1",
+        "ffiec:II.C.15"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-pw-mindiff/ck-pw-mindiff.ksh",
+      "sha256": "15cfee5888c9e50c9777856824488617809059e311d54e59588f3f7af360f88d"
+    },
+    {
+      "id": "ck-pw-mindigit",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "pw_mindigit"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "lssec -f /etc/security/user -s default -a mindigit"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-pw-mindigit/ck-pw-mindigit.ksh",
+      "sha256": "b1869091bdd11948619d5383016089be990d7d5725dbe8384dd9dad39bf95c59"
+    },
+    {
+      "id": "ck-pw-minlen",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "pw_minlen"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "lssec -f /etc/security/user -s default -a minlen"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-pw-minlen/ck-pw-minlen.ksh",
+      "sha256": "5a4a30f4c45b6982854e89508cfd90746cc65ee4ea8fccbb0327344298ee7df4"
+    },
+    {
+      "id": "ck-pw-minloweralpha",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "pw_minloweralpha"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "lssec -f /etc/security/user -s default -a minloweralpha"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-pw-minloweralpha/ck-pw-minloweralpha.ksh",
+      "sha256": "ffde301eddc0f455dca4ea4397bf98990f35aa6ad6a90f7af1f2bfa4645fdc08"
+    },
+    {
+      "id": "ck-pw-minother",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "pw_minother"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "lssec -f /etc/security/user -s default -a minother"
+      ],
+      "tags": [
+        "cis-l1",
+        "ffiec:II.C.15"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-pw-minother/ck-pw-minother.ksh",
+      "sha256": "99c8aa0c9b1f1049e93cec2438296028295ee44b5f04c2a2e2ddd0be999c9004"
+    },
+    {
+      "id": "ck-pw-minspecialchar",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "pw_minspecialchar"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "lssec -f /etc/security/user -s default -a minspecialchar"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-pw-minspecialchar/ck-pw-minspecialchar.ksh",
+      "sha256": "eea3f626b0847a310e8b2604683217b5275c256e97159146f2afea813bf1eb7f"
+    },
+    {
+      "id": "ck-pw-minupperalpha",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "pw_minupperalpha"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "lssec -f /etc/security/user -s default -a minupperalpha"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-pw-minupperalpha/ck-pw-minupperalpha.ksh",
+      "sha256": "56ffe3e01b9919bfa65d788cb4a0da59e19788f60cca49aa0d679d0c39f983d9"
+    },
+    {
+      "id": "ck-pw-nocheck",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "pw_nocheck"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "awk '/^[^ \\t:][^:]*:[ \\t]*$/ { u=$1; sub(/:[ \\t]*$/,\"\",u); n++ } $1==\"flags\" && $2==\"=\" && $0 ~ /NOCHECK/ && u!=\"\" { k++; if (k<=6) users=(users==\"\")?u:users\",\"u } END { printf \"scanned=%d nocheck=%d users=%s\\n\", n, k, users }' /etc/security/passwd"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-pw-nocheck/ck-pw-nocheck.ksh",
+      "sha256": "41d9401c3f0005b84854530a044829867235d2a75250e89707475d123879c728"
+    },
+    {
+      "id": "ck-pw-stored-hash",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "pw_stored_hash"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "awk '/^[^ \\t:][^:]*:[ \\t]*$/ { u=$1; sub(/:[ \\t]*$/,\"\",u); n++ } $1==\"password\" && $2==\"=\" && NF==3 && length($3)==13 && u!=\"\" && u !~ /^(adm|bin|daemon|invscout|ipsec|lp|lpd|nobody|nuucp|sshd|sys|uucp|esa|srvproxy|imnadm|anonymou|ftp)$/ { k++; if (k<=6) users=(users==\"\")?u:users\",\"u } END { printf \"scanned=%d crypt=%d users=%s\\n\", n, k, users }' /etc/security/passwd"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-pw-stored-hash/ck-pw-stored-hash.ksh",
+      "sha256": "d6811cf029cb0f572c053682030fa05ba6b2665798b5cdbc634cda50d06f4248"
+    },
+    {
+      "id": "ck-qdaemon",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "qdaemon"
+      ],
+      "captures": [
+        "cap-cis-services-lssrc-a"
+      ],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "lssrc -a"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-qdaemon/ck-qdaemon.ksh",
+      "sha256": "0cad91af7756b581ff8f9bc217f0b17982f9d14c707a768330ce3c81debf0a8e"
+    },
+    {
+      "id": "ck-rctcpip-autoconf6",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "rctcpip_autoconf6"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "grep \"^#start[[:blank:]]/usr/sbin/autoconf6\" /etc/rc.tcpip"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-rctcpip-autoconf6/ck-rctcpip-autoconf6.ksh",
+      "sha256": "02c50a11c4df1e9da48a324f48f48f3b02c69130d18848faf8341c242f06b0e6"
+    },
+    {
+      "id": "ck-rctcpip-dhcpcd",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "rctcpip_dhcpcd"
+      ],
+      "captures": [
+        "cap-cis-services-lssrc-a"
+      ],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "cat /etc/rc.tcpip",
+        "lssrc -a"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-rctcpip-dhcpcd/ck-rctcpip-dhcpcd.ksh",
+      "sha256": "ebe51b4ce4137f43c13dd0c54ce932834aad9e83109496e00cc6fb53916b5cab"
+    },
+    {
+      "id": "ck-rctcpip-dhcprd",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "rctcpip_dhcprd"
+      ],
+      "captures": [
+        "cap-cis-rctcpip",
+        "cap-cis-services-lssrc-a"
+      ],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "cat /etc/rc.tcpip",
+        "lssrc -a"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-rctcpip-dhcprd/ck-rctcpip-dhcprd.ksh",
+      "sha256": "4f7025ccc8e74460332f2100aa8ce85383b8326f03158f8ea50866660c68c5a3"
+    },
+    {
+      "id": "ck-rctcpip-dhcpsd",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "rctcpip_dhcpsd"
+      ],
+      "captures": [
+        "cap-cis-rctcpip",
+        "cap-cis-services-lssrc-a"
+      ],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "cat /etc/rc.tcpip",
+        "lssrc -a"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-rctcpip-dhcpsd/ck-rctcpip-dhcpsd.ksh",
+      "sha256": "f0e7b0aa8820f7a3b9d5c5b7d69508a904e7e9cb7b5b5352c0baa7f024a29074"
+    },
+    {
+      "id": "ck-rctcpip-gated",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "rctcpip_gated"
+      ],
+      "captures": [
+        "cap-cis-rctcpip",
+        "cap-cis-services-lssrc-a"
+      ],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "cat /etc/rc.tcpip",
+        "lssrc -a"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-rctcpip-gated/ck-rctcpip-gated.ksh",
+      "sha256": "510a774297f4709b7cc3ca0a487939a81d4ae6484f44b809b5bab303b56a13e4"
+    },
+    {
+      "id": "ck-rctcpip-hostmibd",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "rctcpip_hostmibd"
+      ],
+      "captures": [
+        "cap-cis-rctcpip",
+        "cap-cis-services-lssrc-a"
+      ],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "cat /etc/rc.tcpip",
+        "lssrc -a"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-rctcpip-hostmibd/ck-rctcpip-hostmibd.ksh",
+      "sha256": "7728a0b297bce95e4c7f881d90af7a971a705e12c0ba81b50b3c87469e3f059b"
+    },
+    {
+      "id": "ck-rctcpip-inetd",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "rctcpip_inetd"
+      ],
+      "captures": [
+        "cap-cis-rctcpip",
+        "cap-cis-services-lssrc-a"
+      ],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "cat /etc/rc.tcpip",
+        "lssrc -a"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-rctcpip-inetd/ck-rctcpip-inetd.ksh",
+      "sha256": "307df9081ec7c7ee40e4c944fb9cf19208bc800aa9dc5f024f07f6dbfe3ac11d"
+    },
+    {
+      "id": "ck-rctcpip-mrouted",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "rctcpip_mrouted"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "/usr/bin/grep \"start[[:blank:]]/usr/sbin/mrouted\" /etc/rc.tcpip",
+        "/usr/bin/lssrc -s mrouted"
+      ],
+      "tags": [
+        "cis-l2"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-rctcpip-mrouted/ck-rctcpip-mrouted.ksh",
+      "sha256": "9ca9052183eeb49d8a728e8b40e67fde55d678f21ab8d574a43fb39b39bdea47"
+    },
+    {
+      "id": "ck-rctcpip-named",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "rctcpip_named"
+      ],
+      "captures": [
+        "cap-cis-rctcpip",
+        "cap-cis-services-lssrc-a"
+      ],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "cat /etc/rc.tcpip",
+        "lssrc -a"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-rctcpip-named/ck-rctcpip-named.ksh",
+      "sha256": "41b2ca04b6d2ed6596461dffd77f5595b34831a073fb7e4168a85cef7ec76473"
+    },
+    {
+      "id": "ck-rctcpip-ndpd-host",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "rc_tcpip_ndpd_host"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "grep '^#start[[:blank:]]/usr/sbin/ndpd-host' /etc/rc.tcpip"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-rctcpip-ndpd-host/ck-rctcpip-ndpd-host.ksh",
+      "sha256": "0e4c46ea4dbeb6099a2c21a7b928fe9d0d474efe6e02166e96c4cfbdf5022240"
+    },
+    {
+      "id": "ck-rctcpip-ndpd-router",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "rctcpip_ndpd_router"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "grep '^#start[[:blank:]]/usr/sbin/ndpd-router' /etc/rc.tcpip"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-rctcpip-ndpd-router/ck-rctcpip-ndpd-router.ksh",
+      "sha256": "1d09684985c3346492f525b3f1eba8034d146978a136c2da7169777297287a03"
+    },
+    {
+      "id": "ck-rctcpip-portmap",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "rctcpip_portmap"
+      ],
+      "captures": [
+        "cap-cis-rctcpip",
+        "cap-cis-services-lssrc-a"
+      ],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "cat /etc/rc.tcpip",
+        "lssrc -a"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-rctcpip-portmap/ck-rctcpip-portmap.ksh",
+      "sha256": "1b862219d5693755d421c9d5ce4679319abf4a235c76f5ba61570db430ed38e8"
+    },
+    {
+      "id": "ck-rctcpip-routed",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "rctcpip_routed"
+      ],
+      "captures": [
+        "cap-cis-rctcpip",
+        "cap-cis-services-lssrc-a"
+      ],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "cat /etc/rc.tcpip",
+        "lssrc -a"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-rctcpip-routed/ck-rctcpip-routed.ksh",
+      "sha256": "fbd64708a5c0010a173b0d2c092a5ee0c54fe788e9d2d90d6dc2560a33dc1db8"
+    },
+    {
+      "id": "ck-rctcpip-rwhod",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "rctcpip_rwhod"
+      ],
+      "captures": [
+        "cap-cis-rctcpip",
+        "cap-cis-services-lssrc-a"
+      ],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "cat /etc/rc.tcpip",
+        "lssrc -a"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-rctcpip-rwhod/ck-rctcpip-rwhod.ksh",
+      "sha256": "478425c1d31b5590b15fb6dc6d6ec73dc47f14dd28190f2af100040e5032db86"
+    },
+    {
+      "id": "ck-rctcpip-sendmail",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "rctcpip_sendmail"
+      ],
+      "captures": [
+        "cap-cis-rctcpip",
+        "cap-cis-services-lssrc-a"
+      ],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "cat /etc/rc.tcpip",
+        "lssrc -a"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-rctcpip-sendmail/ck-rctcpip-sendmail.ksh",
+      "sha256": "7b3752f1ef20ee40d0e880ea61cd175b1eece25bc0ca1d79de18010193304a2f"
+    },
+    {
+      "id": "ck-rctcpip-timed",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "rctcpip_timed"
+      ],
+      "captures": [
+        "cap-cis-rctcpip",
+        "cap-cis-services-lssrc-a"
+      ],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "cat /etc/rc.tcpip",
+        "lssrc -a"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-rctcpip-timed/ck-rctcpip-timed.ksh",
+      "sha256": "20b1274d308f26cf35b0387a7dc469cdeb950fad7a38ffca22700113ce3b56f2"
+    },
+    {
+      "id": "ck-remote-rcmd-filesets",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "remote_rcmd_filesets"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "lslpp -L bos.net.tcp.rcmd_server",
+        "lslpp -L bos.net.tcp.rcmd",
+        "lslpp -f bos.net.tcp.rcmd_server",
+        "lslpp -f bos.net.tcp.rcmd",
+        "ls -led <path>"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-remote-rcmd-filesets/ck-remote-rcmd-filesets.ksh",
+      "sha256": "d94c232931ffea0514e1cd1ca66bdf5b2b34c2f4f469c463b6ec8f08e72d3857"
     },
     {
       "id": "ck-remote-syslog",
@@ -639,13 +5361,207 @@
       ],
       "license": "Apache-2.0",
       "artifact": "checks/ck-remote-syslog/ck-remote-syslog.ksh",
-      "sha256": "9f3cc9e1c91db3b82a2e8170e3a7a279b5588c1345bbdf7382036ed120382c6b"
+      "sha256": "6c5050d14a143a1ac732bfbd7f048d6c23a274b4a0816b917878a70f02d11639"
+    },
+    {
+      "id": "ck-rhost-dotfiles-absent",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "rhost_dotfiles_absent"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "find / \\( -fstype jfs -o -fstype jfs2 \\) -name '.netrc' -print",
+        "find / \\( -fstype jfs -o -fstype jfs2 \\) -name '.rhosts' -print",
+        "find / \\( -fstype jfs -o -fstype jfs2 \\) -name '.shosts' -print"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-rhost-dotfiles-absent/ck-rhost-dotfiles-absent.ksh",
+      "sha256": "b582b7101da50d8b9ef7f5c7501554e785a81f3a87ed1caef893251c2a74e22e"
+    },
+    {
+      "id": "ck-rhost-hosts-equiv",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "hosts_equiv_entries"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ld /etc/hosts.equiv",
+        "grep -v \"^\\s*#\" /etc/hosts.equiv"
+      ],
+      "tags": [
+        "cis-l2"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-rhost-hosts-equiv/ck-rhost-hosts-equiv.ksh",
+      "sha256": "0e103f0924e43311c731b7d90025d53d31e3935ac4a24c92f80bd1ac0a5b6e13"
+    },
+    {
+      "id": "ck-secure-by-default",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "secure_by_default"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -l /etc/security/aixpert/log",
+        "grep -n aixpert /etc/firstboot",
+        "ls -l /usr/bin/telnet /usr/bin/ftp /usr/bin/rsh /usr/bin/rcp /usr/sbin/sendmail",
+        "lslpp -L"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-secure-by-default/ck-secure-by-default.ksh",
+      "sha256": "501667825127a2774086094b14be755ac8ed2fad0b06ef67b9e907b6efa53fdd"
+    },
+    {
+      "id": "ck-sendmail-greeting",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "sendmail_greeting"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ld /etc/mail/sendmail.cf",
+        "/usr/bin/egrep -i '^O SmtpGreetingMessage' /etc/mail/sendmail.cf",
+        "test -e /etc/mail/helpfile"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-sendmail-greeting/ck-sendmail-greeting.ksh",
+      "sha256": "e954e025708ff43013030c839ab8b1b35ef8fcc8c0276ecd6db528851db397f0"
+    },
+    {
+      "id": "ck-sendmail-privacyoptions",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "sendmail_privacyoptions"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ld /etc/mail/sendmail.cf",
+        "/usr/bin/egrep -i \"^O PrivacyOptions\" /etc/mail/sendmail.cf"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-sendmail-privacyoptions/ck-sendmail-privacyoptions.ksh",
+      "sha256": "e33029de5b6ddf55146f16283634b57f97131e03658ea330e6fad0d54b1a5f18"
+    },
+    {
+      "id": "ck-shell-timeout",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "shell_timeout"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "grep -E 'TMOUT|TIMEOUT' /etc/profile /etc/environment"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-shell-timeout/ck-shell-timeout.ksh",
+      "sha256": "cb39b1a9a79583fd01c677d431fb456e53f99422b1f6a06abd138b61d2b45fc7"
+    },
+    {
+      "id": "ck-shell-timeout-readonly",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "shell_timeout_readonly"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "grep -E 'TMOUT|TIMEOUT' /etc/profile"
+      ],
+      "tags": [
+        "cis-l2"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-shell-timeout-readonly/ck-shell-timeout-readonly.ksh",
+      "sha256": "41d5b46733859245f2b224c6817142e42848206f44d8ec1eaed2cbafee412699"
+    },
+    {
+      "id": "ck-snapp",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "snapp_installed"
+      ],
+      "captures": [
+        "cap-lslpp-qcl"
+      ],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "lslpp -qcL"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-snapp/ck-snapp.ksh",
+      "sha256": "7e4066a2474fe5bef39c99c2dc65def4568aeade41c6e3071514a89aa9695f9e"
+    },
+    {
+      "id": "ck-snmp-filesets-absent",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "snmp_filesets_absent"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "lslpp -Lcq bos.net.tcp.snmp",
+        "lslpp -Lcq bos.net.tcp.snmpd"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-snmp-filesets-absent/ck-snmp-filesets-absent.ksh",
+      "sha256": "c82eaaa355c791ee0e4666e139398554abac256cd248228a6af8ae70cb00612a"
     },
     {
       "id": "ck-software-inventory",
       "pillar": "currency",
       "category": "patch",
-      "finding_ids": [],
+      "finding_ids": [
+        "software_inventory"
+      ],
       "captures": [
         "cap-lslpp-qcl"
       ],
@@ -657,13 +5573,377 @@
       "tags": [],
       "license": "Apache-2.0",
       "artifact": "checks/ck-software-inventory/ck-software-inventory.ksh",
-      "sha256": "cd3be62f254cba6b8c1ff4bf48bcc1cab0103768b30135d017881efcb6728f66"
+      "sha256": "8a06c026a08bb62ad4170cd07a9822ca3baaebabfa1317752279d19c3473d8c2"
+    },
+    {
+      "id": "ck-ssh-access-lists",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "ssh_access_lists"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "blast_radius": "moderate",
+      "commands": [
+        "lslpp -L openssh.base.server",
+        "sshd -T"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-ssh-access-lists/ck-ssh-access-lists.ksh",
+      "sha256": "2162b4bb1dbbb2574f41221b070eceae56662a47c1d14208228df8f74c0fbd61"
+    },
+    {
+      "id": "ck-ssh-banner",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "ssh_banner"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "sshd -T",
+        "ls -ld <effective-banner-path>"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-ssh-banner/ck-ssh-banner.ksh",
+      "sha256": "87e59f263aab1cb8937d6557aa2967a5a3bf5d8cd91975fc9db4490ec1215f37"
+    },
+    {
+      "id": "ck-ssh-clientalive",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "ssh_clientalive"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "sshd -T"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-ssh-clientalive/ck-ssh-clientalive.ksh",
+      "sha256": "7e80fa627f794391d3d790b44daff1eca2e7cd98a0333cfff9c48e4715f8ee91"
+    },
+    {
+      "id": "ck-ssh-hosts-equiv-absent",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "hosts_equiv_absent"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -l /etc/[rs]hosts.equiv"
+      ],
+      "tags": [
+        "cis-l1",
+        "cis-l2"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-ssh-hosts-equiv-absent/ck-ssh-hosts-equiv-absent.ksh",
+      "sha256": "57c2e2d5aedb1bb9d3b31326670a7ea97fc9414ffe856982a8cb3a154bd28766"
+    },
+    {
+      "id": "ck-ssh-ignore-rhosts",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "ssh_ignore_rhosts"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "sshd -T"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-ssh-ignore-rhosts/ck-ssh-ignore-rhosts.ksh",
+      "sha256": "061a643dcaeee8099aea0d556c8533d77d3e8d58e463d02c8f91d0716e93955a"
+    },
+    {
+      "id": "ck-ssh-kexalgorithms",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "ssh_kexalgorithms"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "sshd -T"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-ssh-kexalgorithms/ck-ssh-kexalgorithms.ksh",
+      "sha256": "f57aea0e24d283d468f65430b34408721706f8352bcfa071f17f5b6e44c8ebe9"
+    },
+    {
+      "id": "ck-ssh-logingracetime",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "ssh_logingracetime"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "sshd -T"
+      ],
+      "tags": [],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-ssh-logingracetime/ck-ssh-logingracetime.ksh",
+      "sha256": "31ca32acad1248f60e3666b053cfc6b375bdd1fd4c6e50e07d02a28a53f4d0f2"
+    },
+    {
+      "id": "ck-ssh-loglevel",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "ssh_loglevel"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "sshd -T"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-ssh-loglevel/ck-ssh-loglevel.ksh",
+      "sha256": "37f8280e4015d93bd92885503509f0e6075b6a586422c81bb34ef5ed649c3d06"
+    },
+    {
+      "id": "ck-ssh-macs",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "ssh_macs"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "sshd -T"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-ssh-macs/ck-ssh-macs.ksh",
+      "sha256": "46ae08fb84d5593b96b8d36eed8895848251d1e27d82949d6d5933cad686a5bd"
+    },
+    {
+      "id": "ck-ssh-maxauthtries",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "ssh_maxauthtries"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "sshd -T"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-ssh-maxauthtries/ck-ssh-maxauthtries.ksh",
+      "sha256": "c9c13af234e27a51a85d462c43691a76a927070d2b3d8c935571f9b345941ff6"
+    },
+    {
+      "id": "ck-ssh-packages-installed",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "ssh_packages_installed"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "lslpp -L openssh.base.client",
+        "lslpp -L openssh.base.server"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-ssh-packages-installed/ck-ssh-packages-installed.ksh",
+      "sha256": "cde498949b88090945ec92b7426d2749511ab0a6d964ade28dd7c9bc5e50fa2f"
+    },
+    {
+      "id": "ck-ssh-permitemptypasswords",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "ssh_permitemptypasswords"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "sshd -T"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-ssh-permitemptypasswords/ck-ssh-permitemptypasswords.ksh",
+      "sha256": "20612deba2b776d1bb00f433aabdfcf6f64fe1779ddce9b29eae50c4a17ceab7"
+    },
+    {
+      "id": "ck-ssh-permitrootlogin",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "ssh_permitrootlogin"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "/usr/bin/egrep \"^PermitRootLogin\" /etc/ssh/sshd_config"
+      ],
+      "tags": [
+        "cis-l2"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-ssh-permitrootlogin/ck-ssh-permitrootlogin.ksh",
+      "sha256": "32a2060207b98e2436a7f1fea436787fe2a75e274f935cb3b379b6494753d606"
+    },
+    {
+      "id": "ck-ssh-permituserenv",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "ssh_permituserenv"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "sshd -T"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-ssh-permituserenv/ck-ssh-permituserenv.ksh",
+      "sha256": "3d1a3ef12a63a52542b4b0d2c604fe94e4f1a557b9062a23c1424bac72d3fd0e"
+    },
+    {
+      "id": "ck-ssh-rekeylimit",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "ssh_rekeylimit"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "sshd -T"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-ssh-rekeylimit/ck-ssh-rekeylimit.ksh",
+      "sha256": "33c5f86cc15085017cc95ea23fba497ef59feff205b2b7ad795814379a5bc0b5"
+    },
+    {
+      "id": "ck-ssh-sftp-args",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "ssh_sftp_args"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "test -x /usr/sbin/sshd",
+        "/usr/sbin/sshd -T 2>/dev/null"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-ssh-sftp-args/ck-ssh-sftp-args.ksh",
+      "sha256": "f89099a3d8489ea091097996a2e3a789e766c3836955818ae54859ff2ecf7684"
+    },
+    {
+      "id": "ck-ssh-strictmodes",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "ssh_strictmodes"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "sshd -T"
+      ],
+      "tags": [],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-ssh-strictmodes/ck-ssh-strictmodes.ksh",
+      "sha256": "b287b5932812d17e8ae1ee92937dccec5055d56445837f5a0f9fcd5fcf77fdc4"
+    },
+    {
+      "id": "ck-ssh-version-current",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "sshd_version"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "sshd -V"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-ssh-version-current/ck-ssh-version-current.ksh",
+      "sha256": "1a3b529b2438a84cfd448a5e3368ce50e562f308708e4e523674d7b3d9e1975d"
     },
     {
       "id": "ck-storage-layout",
       "pillar": "resiliency",
       "category": "storage",
-      "finding_ids": [],
+      "finding_ids": [
+        "storage_layout"
+      ],
       "captures": [],
       "requires_root": false,
       "read_only": true,
@@ -676,7 +5956,114 @@
       "tags": [],
       "license": "Apache-2.0",
       "artifact": "checks/ck-storage-layout/ck-storage-layout.ksh",
-      "sha256": "71126a307f8029a433670fc3675e8ef2ad4e16ee688ec400f3365f97183138fe"
+      "sha256": "2a6da289de983c34043e3f4cb09a4c0f0a9e41163c9d1d0b7ad2c48be999a0d1"
+    },
+    {
+      "id": "ck-sudo-syslog-priority",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "sudo_syslog_priority"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ld /etc/sudoers",
+        "ls -ld /etc/sudoers.d",
+        "grep -Ei '^\\s*Defaults\\s+syslog_badpri=none' <file-list>",
+        "grep -Ei '^\\s*Defaults\\s+syslog_goodpri=none' <file-list>",
+        "grep -Ei '^\\s*Defaults\\s+logfile=\\S+' <file-list>"
+      ],
+      "tags": [
+        "cis-l2"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-sudo-syslog-priority/ck-sudo-syslog-priority.ksh",
+      "sha256": "cd916592eda6e5f2f11ca54a9dd1ced340a0bf64fc998ddac299c97761acae50"
+    },
+    {
+      "id": "ck-sudo-use-pty",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "sudo_use_pty"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "grep -Eir '^\\s*Defaults\\s+([^#]+,\\s*)?use_pty(,\\s+\\S+\\s*)*(\\s+#.*)?$' /etc/sudoers*",
+        "grep -Eir '^\\s*Defaults\\s+([^#]+,\\s*)?!use_pty(,\\s+\\S+\\s*)*(\\s+#.*)?$' /etc/sudoers*"
+      ],
+      "tags": [
+        "cis-l2"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-sudo-use-pty/ck-sudo-use-pty.ksh",
+      "sha256": "a70ff2ce1dd056ed34747449b2cfd768510f71ba144a41decbb7484af41eb4f3"
+    },
+    {
+      "id": "ck-sudo-version",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "sudo_version"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ld /usr/bin/sudo",
+        "/usr/bin/sudo --version"
+      ],
+      "tags": [
+        "cis-l2"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-sudo-version/ck-sudo-version.ksh",
+      "sha256": "a25fb83029b622d4909a2209e7f84dc5a43a9aa37923969458877be0dc61ce65"
+    },
+    {
+      "id": "ck-suid-sgid-inventory",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "suid_sgid"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "mount",
+        "find / \\( -perm -04000 -o -perm -02000 \\) -type f -ls",
+        "find / \\( -fstype jfs -o -fstype jfs2 \\) \\( -perm -04000 -o -perm -02000 \\) -type f -ls",
+        "lslpp -w <path>"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-suid-sgid-inventory/ck-suid-sgid-inventory.ksh",
+      "sha256": "c5cdebc68c295b6eb5a053a860e49044f9321ebaa9a1a22ec69239af0b6f96d5"
+    },
+    {
+      "id": "ck-symlink-dangling",
+      "pillar": "filesystem",
+      "category": "security",
+      "finding_ids": [
+        "dangling_symlink"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "find -L / \\( -fstype jfs -o -fstype jfs2 \\) -type l -ls 2> /dev/null"
+      ],
+      "tags": [],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-symlink-dangling/ck-symlink-dangling.ksh",
+      "sha256": "67711359aff180853100c60468c0ec5f4b3c92b1ba7e8b502988c85011af8ca6"
     },
     {
       "id": "ck-sysdump",
@@ -694,7 +6081,470 @@
       "tags": [],
       "license": "Apache-2.0",
       "artifact": "checks/ck-sysdump/ck-sysdump.ksh",
-      "sha256": "586ca95f5b1832b01e09096215c1dc4c238d3948a4ebfb3be22d90f0cea56600"
+      "sha256": "d524075887ffb6ad82a3271d8317c0af71325e99148233e45494ea5a0c6ee141"
+    },
+    {
+      "id": "ck-syslog-daemon-remote",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "syslogd_inbound"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ps -ef"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-syslog-daemon-remote/ck-syslog-daemon-remote.ksh",
+      "sha256": "de20d3c75d7ca367acb90ec85abc487d8238db3b974a2eb77778f16163e5b825"
+    },
+    {
+      "id": "ck-syslog-entries",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "syslog_entries"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "egrep -v \"(^$)|(^#)\" /etc/syslog.conf",
+        "ls -ld /var/log/syslog/auth.log /var/log/syslog/info.log /var/log/syslog/archive"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-syslog-entries/ck-syslog-entries.ksh",
+      "sha256": "f8133c07565b5c9b877cab9a85ac2fb62d25be9f8e72564644d37e06130bce50"
+    },
+    {
+      "id": "ck-syslog-remote-host",
+      "pillar": "operational-readiness",
+      "category": "monitoring",
+      "finding_ids": [
+        "syslog_remote_host"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "cat /etc/syslog.conf"
+      ],
+      "tags": [
+        "cis-l2"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-syslog-remote-host/ck-syslog-remote-host.ksh",
+      "sha256": "eff6c4c9d77ab195bb0e27b63a9cfcdd5ca082750e4160a8066832755d38fd04"
+    },
+    {
+      "id": "ck-system-account-adm",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "system_account_adm"
+      ],
+      "captures": [
+        "cap-system-accounts"
+      ],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "lsuser -a login rlogin shell account_locked ALL"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-system-account-adm/ck-system-account-adm.ksh",
+      "sha256": "a6057259037ab18be284dfd293e24987f090ddd58695d1f719f2467b9357319f"
+    },
+    {
+      "id": "ck-system-account-bin",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "system_account_bin"
+      ],
+      "captures": [
+        "cap-system-accounts"
+      ],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "lsuser -a login rlogin shell account_locked ALL"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-system-account-bin/ck-system-account-bin.ksh",
+      "sha256": "73384889c9d93349fc7a63c276d61faf7e774813c66063f52e1d8e32690a2104"
+    },
+    {
+      "id": "ck-system-account-daemon",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "system_account_daemon"
+      ],
+      "captures": [
+        "cap-system-accounts"
+      ],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "lsuser -a login rlogin shell account_locked ALL"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-system-account-daemon/ck-system-account-daemon.ksh",
+      "sha256": "73d1663e5203166011d390e3d6dc7ff59484a1fe6a390b36dc0f808a66903309"
+    },
+    {
+      "id": "ck-system-account-guest",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "system_account_guest"
+      ],
+      "captures": [
+        "cap-system-accounts"
+      ],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "lsuser -a login rlogin shell account_locked ALL"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-system-account-guest/ck-system-account-guest.ksh",
+      "sha256": "b53567b5e674a3ca2a62675f9a44a482a0b5160d4e758f23fe04eb127bb09c4d"
+    },
+    {
+      "id": "ck-system-account-lpd",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "system_account_lpd"
+      ],
+      "captures": [
+        "cap-system-accounts"
+      ],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "lsuser -a login rlogin shell account_locked ALL"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-system-account-lpd/ck-system-account-lpd.ksh",
+      "sha256": "db67b10dddcd60e947c1384b456b285c334906b261c085e89cd5b02288a1f66b"
+    },
+    {
+      "id": "ck-system-account-nobody",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "system_account_nobody"
+      ],
+      "captures": [
+        "cap-system-accounts"
+      ],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "lsuser -a login rlogin shell account_locked ALL"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-system-account-nobody/ck-system-account-nobody.ksh",
+      "sha256": "1ef4dd81cf12be276e52c184ba6946bda676ac3c5814e11300bf2471cf092d19"
+    },
+    {
+      "id": "ck-system-account-nuucp",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "system_account_nuucp"
+      ],
+      "captures": [
+        "cap-system-accounts"
+      ],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "lsuser -a login rlogin shell account_locked ALL"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-system-account-nuucp/ck-system-account-nuucp.ksh",
+      "sha256": "3c95d22f912169f2846256a26dcf87265b391d48c5923b8da4568d45cbedc305"
+    },
+    {
+      "id": "ck-system-account-sys",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "system_account_sys"
+      ],
+      "captures": [
+        "cap-system-accounts"
+      ],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "lsuser -a login rlogin shell account_locked ALL"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-system-account-sys/ck-system-account-sys.ksh",
+      "sha256": "c3f3e10be6f0ef8ec75f06c08503f3e312e69e35428da1d850aea37135d64893"
+    },
+    {
+      "id": "ck-system-account-uucp",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "system_account_uucp"
+      ],
+      "captures": [
+        "cap-system-accounts"
+      ],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "lsuser -a login rlogin shell account_locked ALL"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-system-account-uucp/ck-system-account-uucp.ksh",
+      "sha256": "a1702f37ad2c58cadc2fc2e2dde7a2cccbfdeba56d52e722a80d55159c4adf88"
+    },
+    {
+      "id": "ck-system-accounts-ftp",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "system_accounts_ftpusers"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "ls -ld /etc/ftpusers",
+        "cat /etc/ftpusers"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-system-accounts-ftp/ck-system-accounts-ftp.ksh",
+      "sha256": "3cdc6752c9e81441edd14d87fef850433305d9f102428b48ae964f8cbd293321"
+    },
+    {
+      "id": "ck-system-aslr",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "system_aslr"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "/usr/sbin/vmo -aF"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-system-aslr/ck-system-aslr.ksh",
+      "sha256": "f4e3248678d7f3aa6ea7db63f14c0c8cdb1a328e3a69cb32636cac8359ce2929"
+    },
+    {
+      "id": "ck-system-config-capture-cron",
+      "pillar": "operational-readiness",
+      "category": "config",
+      "finding_ids": [
+        "system_config_capture_cron"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "crontab -l",
+        "egrep 'syslog/inventory.log' /etc/syslog.conf"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-system-config-capture-cron/ck-system-config-capture-cron.ksh",
+      "sha256": "8fe8e9c0c71301880b9215749873ae6a9c56ec35fc65aeb2cfe70de5b85ad468"
+    },
+    {
+      "id": "ck-trustchk-chkexec",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "trustchk_chkexec"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "/usr/sbin/trustchk -p TE CHKEXEC",
+        "/usr/bin/grep kern.info /etc/syslog.conf"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-trustchk-chkexec/ck-trustchk-chkexec.ksh",
+      "sha256": "1de9298f6f4e8d0830808c8663b89023a98fc9701ed6ae556d9679eff59dd53d"
+    },
+    {
+      "id": "ck-trustchk-lock-kern-policies",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "trustchk_lock_kern"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "trustchk -p LOCK_KERN_POLICIES"
+      ],
+      "tags": [
+        "cis-l2"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-trustchk-lock-kern-policies/ck-trustchk-lock-kern-policies.ksh",
+      "sha256": "4c6d338bc442eeebf73dccef8f7d1db030340f07620805a7cf40e6ece0163c49"
+    },
+    {
+      "id": "ck-trustchk-stop-untrusted",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "trustchk_stop_untrusted"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "trustchk -p stop_untrustd stop_on_chkfail te"
+      ],
+      "tags": [
+        "cis-l2"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-trustchk-stop-untrusted/ck-trustchk-stop-untrusted.ksh",
+      "sha256": "dc427197cd54de2999616edb976483c0965fe790c0c44e83d76735da5ba488b8"
+    },
+    {
+      "id": "ck-trustchk-te-tep",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "trustchk_te_tep"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "trustchk -p TE TEP"
+      ],
+      "tags": [
+        "cis-l2"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-trustchk-te-tep/ck-trustchk-te-tep.ksh",
+      "sha256": "271f10cdcfa4fa5b4619e562e3ab13e0d45aaeb656ebd5be12f16291a5555869"
+    },
+    {
+      "id": "ck-trustchk-untrusted-scan",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "trustchk_untrusted_scan"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "whence trustchk",
+        "trustchk -i -n tree /"
+      ],
+      "tags": [
+        "cis-l2"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-trustchk-untrusted-scan/ck-trustchk-untrusted-scan.ksh",
+      "sha256": "0e1944edfdee3214e9183d282dc1e33e306cd1d0d4681ef2121e8de198f47c58"
+    },
+    {
+      "id": "ck-umask-default",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "umask_default"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "lssec -f /etc/security/user -s default -a umask"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-umask-default/ck-umask-default.ksh",
+      "sha256": "3e6dfad6320c770229f0f30de7d5992774935615f8a2860909ce16b911ad1990"
+    },
+    {
+      "id": "ck-unowned-files",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "unowned_files"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "/usr/bin/find / \\( -fstype jfs -o -fstype jfs2 \\) \\( -type d -o -type f \\) \\( -nouser -o -nogroup \\) -ls"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-unowned-files/ck-unowned-files.ksh",
+      "sha256": "b9f4fe37e251ef855ffe6d85054a8e82762004ad8e20fe5bd63af1a5c5da5923"
     },
     {
       "id": "ck-vg-capacity",
@@ -715,16 +6565,101 @@
       "tags": [],
       "license": "Apache-2.0",
       "artifact": "checks/ck-vg-capacity/ck-vg-capacity.ksh",
-      "sha256": "f73932f2b16ed7c15f2019eb7e9bcb596d85416db93da3e50d934ef6ba7d09d4"
+      "sha256": "e44e2e37cd20a2e0c357c8776bf4ac0384bb6b01e2cdce6727bf0b2c76db2e1e"
+    },
+    {
+      "id": "ck-worldwrite-dirs-nosvtx",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "worldwrite_dirs_nosvtx"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "find / \\( -fstype jfs -o -fstype jfs2 \\) -type d -perm -o+w ! -perm -1000 -ls"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-worldwrite-dirs-nosvtx/ck-worldwrite-dirs-nosvtx.ksh",
+      "sha256": "6279587849938e9a82c769073f7268649cb80927ea36ee3de146be5fa715d5f7"
+    },
+    {
+      "id": "ck-worldwrite-files",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "worldwrite_files"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "find / \\( -fstype jfs -o -fstype jfs2 \\) -type f -perm -o+w -ls"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-worldwrite-files/ck-worldwrite-files.ksh",
+      "sha256": "4caf6380ad2a434cfda2fe95fdc8e5ad9e5fe9fa89eb425c8e6d3073a7d1996d"
+    },
+    {
+      "id": "ck-worldwrite-objects",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "worldwrite_objects"
+      ],
+      "captures": [],
+      "requires_root": true,
+      "read_only": true,
+      "commands": [
+        "find -L / \\( -fstype jfs -o -fstype jfs2 \\) ! -type d -perm -g+w -ls",
+        "lsgroup -a admin ALL | grep true"
+      ],
+      "tags": [
+        "cis-l2"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-worldwrite-objects/ck-worldwrite-objects.ksh",
+      "sha256": "9e2af2f59c5db29b86a7dd5c3f06059767eae2ecf4b55b6dfe9bf57ee0d8f84c"
+    },
+    {
+      "id": "ck-writesrv",
+      "pillar": "security",
+      "category": "security",
+      "finding_ids": [
+        "writesrv"
+      ],
+      "captures": [],
+      "requires_root": false,
+      "read_only": true,
+      "commands": [
+        "lssrc -a"
+      ],
+      "tags": [
+        "cis-l1"
+      ],
+      "license": "Apache-2.0",
+      "artifact": "checks/ck-writesrv/ck-writesrv.ksh",
+      "sha256": "6f54a09194da91723bef9d0cad88077beba156b16985884b10f9c4d57e7e6e9b"
     }
   ],
   "assembled_scanner": {
     "artifact": "aixray-aix.sh",
     "site_artifact": "site/aixray-aix.sh",
-    "sha256": "c8b7b67e0b24ff0087eb12b8796118c77ea8dfb454594d755a62ba113cc1f362"
+    "sha256": "093c9f9932448f5dd2363753de07b9582984362cf7831110b3b10c38ba3fdaea"
   },
   "review_pack": {
     "artifact": "aixray-review-pack.sh",
-    "sha256": "f7fa42539cb1f9f9e6ec4a9bfa6c367bd11bcef623b8aa6ab986697f18268bf7"
+    "sha256": "49ae0fd59bc828af8d90d99813c91db499b56c209b6db3b38c61597b2f28be44"
+  },
+  "review_validator": {
+    "artifact": "aixray-review-validate.awk",
+    "sha256": "5b28a96449e687bfbd363799c3d5f351b15fea064eb530f5bcb07045a93747b8"
   }
 }

@@ -1,0 +1,19 @@
+{
+  "id": "ck-login-root-su-restrict",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "root_su_restrict"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "lsuser -a login rlogin su sugroups root"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-login-root-su-restrict/ck-login-root-su-restrict.ksh"
+}

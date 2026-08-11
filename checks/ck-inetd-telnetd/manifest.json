@@ -1,0 +1,19 @@
+{
+  "id": "ck-inetd-telnetd",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "inetd_telnetd"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "grep -E '^[[:space:]]*(telnet|telnetd|ftp|ftpd|shell|login|exec|rsh|rlogin)[[:space:]]' /etc/inetd.conf"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-inetd-telnetd/ck-inetd-telnetd.ksh"
+}

@@ -1,0 +1,19 @@
+{
+  "id": "ck-pw-minspecialchar",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "pw_minspecialchar"
+  ],
+  "captures": [],
+  "requires_root": true,
+  "read_only": true,
+  "commands": [
+    "lssec -f /etc/security/user -s default -a minspecialchar"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-pw-minspecialchar/ck-pw-minspecialchar.ksh"
+}

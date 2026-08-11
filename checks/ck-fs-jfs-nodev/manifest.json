@@ -1,0 +1,20 @@
+{
+  "id": "ck-fs-jfs-nodev",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "fs_jfs_nodev"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "lsfs",
+    "mount"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-fs-jfs-nodev/ck-fs-jfs-nodev.ksh"
+}

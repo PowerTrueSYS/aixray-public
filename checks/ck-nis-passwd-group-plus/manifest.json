@@ -1,0 +1,19 @@
+{
+  "id": "ck-nis-passwd-group-plus",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "nis_plus_entries"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "grep \"^+\" /etc/passwd /etc/group"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-nis-passwd-group-plus/ck-nis-passwd-group-plus.ksh"
+}

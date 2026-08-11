@@ -1,0 +1,19 @@
+{
+  "id": "ck-diracc-secaudit-owner",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "diracc_secaudit_owner"
+  ],
+  "captures": [],
+  "requires_root": true,
+  "read_only": true,
+  "commands": [
+    "ls -ldn /etc/security/audit"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-diracc-secaudit-owner/ck-diracc-secaudit-owner.ksh"
+}

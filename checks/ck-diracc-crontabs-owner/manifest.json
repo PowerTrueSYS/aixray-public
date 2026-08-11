@@ -1,0 +1,19 @@
+{
+  "id": "ck-diracc-crontabs-owner",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "diracc_crontabs_owner"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "ls -ldn /var/spool/cron/crontabs"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-diracc-crontabs-owner/ck-diracc-crontabs-owner.ksh"
+}

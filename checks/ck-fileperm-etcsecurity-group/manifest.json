@@ -1,0 +1,19 @@
+{
+  "id": "ck-fileperm-etcsecurity-group",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "fileperm_etcsecurity_group"
+  ],
+  "captures": [],
+  "requires_root": true,
+  "read_only": true,
+  "commands": [
+    "ls -ldn /etc/security"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-fileperm-etcsecurity-group/ck-fileperm-etcsecurity-group.ksh"
+}

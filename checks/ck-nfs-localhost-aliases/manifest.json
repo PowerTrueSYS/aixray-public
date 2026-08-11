@@ -1,0 +1,20 @@
+{
+  "id": "ck-nfs-localhost-aliases",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "nfs_localhost_aliases"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "test -e /etc/exports",
+    "cat /etc/exports"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-nfs-localhost-aliases/ck-nfs-localhost-aliases.ksh"
+}

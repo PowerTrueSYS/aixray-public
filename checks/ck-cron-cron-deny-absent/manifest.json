@@ -1,0 +1,20 @@
+{
+  "id": "ck-cron-cron-deny-absent",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "cron_cron_deny_absent"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "ls -ld /var/adm/cron/cron.deny",
+    "cat /var/adm/cron/cron.allow"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-cron-cron-deny-absent/ck-cron-cron-deny-absent.ksh"
+}

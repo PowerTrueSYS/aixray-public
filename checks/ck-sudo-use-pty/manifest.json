@@ -1,0 +1,20 @@
+{
+  "id": "ck-sudo-use-pty",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "sudo_use_pty"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "grep -Eir '^\\s*Defaults\\s+([^#]+,\\s*)?use_pty(,\\s+\\S+\\s*)*(\\s+#.*)?$' /etc/sudoers*",
+    "grep -Eir '^\\s*Defaults\\s+([^#]+,\\s*)?!use_pty(,\\s+\\S+\\s*)*(\\s+#.*)?$' /etc/sudoers*"
+  ],
+  "tags": [
+    "cis-l2"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-sudo-use-pty/ck-sudo-use-pty.ksh"
+}

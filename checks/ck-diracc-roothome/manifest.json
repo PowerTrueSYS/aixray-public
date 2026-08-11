@@ -1,0 +1,20 @@
+{
+  "id": "ck-diracc-roothome",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "diracc_roothome"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "lsuser -a home root",
+    "ls -ldn /root"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-diracc-roothome/ck-diracc-roothome.ksh"
+}

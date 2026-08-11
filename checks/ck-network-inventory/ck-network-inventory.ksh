@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="0.1.0"
+AIXRAY_STANDALONE_VERSION="1.0.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -26,6 +26,49 @@ function aix {
     return 127
   fi
   "$@" 2>/dev/null
+}
+
+# aixv preserves stderr as evidence, for read-only commands that write their
+# version banner or diagnostics there rather than to stdout. (Deliberately no
+# example command name here: this comment is copied into all 324 standalone
+# tools, and tools/ci/egress-lint.sh reads a banned network command name in a
+# comment as a violation just as it would in a command position.)
+function aixv {
+  typeset key rc
+  key=$1
+  shift
+  if [ -n "${AIXRAY_FIXTURES:-}" ]; then
+    if [ -r "$AIXRAY_FIXTURES/$key.out" ] || [ -r "$AIXRAY_FIXTURES/$key.err" ]; then
+      [ -r "$AIXRAY_FIXTURES/$key.out" ] && cat "$AIXRAY_FIXTURES/$key.out"
+      [ -r "$AIXRAY_FIXTURES/$key.err" ] && cat "$AIXRAY_FIXTURES/$key.err"
+      rc=0
+      [ -r "$AIXRAY_FIXTURES/$key.rc" ] && read rc < "$AIXRAY_FIXTURES/$key.rc"
+      return $rc
+    fi
+    return 127
+  fi
+  "$@" 2>&1
+}
+
+# aix_capture_missing <key> — fixture-replay helper: true (rc=0) iff no capture
+# exists for <key> at all, i.e. the rc a probe just received was the "no
+# capture" default and not a genuine command status. aix()/aixv() return 127 for
+# BOTH a missing capture and a genuinely absent command, so a module that wants
+# to claim "the command is not installed" must first rule out "nobody captured
+# it". Live mode returns false (rc=1): a real box has no concept of a missing
+# fixture, and rc=127 there genuinely means the command was not found. Must be
+# called in the PARENT shell after the probe, not inside the $(aix ...)
+# substitution. Byte-for-byte the monolith's semantics (src/aixray-aix.sh.in);
+# without it here, an undefined-command rc of 127 makes the guard read false and
+# the caller launders a missing capture into NOT_APPLICABLE.
+function aix_capture_missing {
+  if [ -n "${AIXRAY_FIXTURES:-}" ]; then
+    if [ -r "$AIXRAY_FIXTURES/$1.out" ] || [ -r "$AIXRAY_FIXTURES/$1.err" ]; then
+      return 1
+    fi
+    return 0
+  fi
+  return 1
 }
 
 function jesc {
@@ -61,7 +104,13 @@ function add {
     *) echo "$AIXRAY_TOOL: internal error: unknown category '$1'" >&2; exit 1;;
   esac
   case "$4" in
-    PASS|WARN|FAIL|NOT_ASSESSED) ;;
+    # NOT_APPLICABLE is a verdict, not a refusal: the control constrains a
+    # property of a thing that need not exist. It is already a first-class
+    # status in the monolith (vios_level on a plain AIX LPAR) and in the
+    # contract schema (STATUSES, pipeline/contract_v2/schema.py), but was
+    # missing here, so any standalone tool reaching that branch aborted with
+    # an internal error instead of emitting its envelope.
+    PASS|WARN|FAIL|NOT_ASSESSED|NOT_APPLICABLE) ;;
     *) echo "$AIXRAY_TOOL: internal error: unknown status '$4'" >&2; exit 1;;
   esac
   F_CAT[$NFIND]=$1
@@ -297,8 +346,10 @@ function standalone_main {
 
 AIXRAY_TOOL=ck-network-inventory
 
-# Standalone facts emitter for AIX interface, route, and resolver inventory.
-# Include-safe: integration calls emit_fact_network_inventory from the facts renderer.
+_AIXRAY_SESSION_KEYS=""
+# Standalone fact and finding producer for AIX interface, route, and resolver
+# inventory. Include-safe: integration calls the fact emitter from the facts
+# renderer and the check from the assessment spine.
 
 function network_inventory_json_escape {
   awk '
@@ -517,23 +568,62 @@ function network_inventory_entstat_speed {
       sub(/[ \t]+$/, "", value)
       return value
     }
+    function label(kind) {
+      if (kind=="media") return "Media Speed Running"
+      return "Adapter Data Rate"
+    }
+    function parse_speed(value, kind, part, unit, shown, number) {
+      value=trim(value)
+      split(value, part, /[ \t]+/)
+      rows[kind]++
+      shown=part[1]
+      if (part[2]!="") shown=shown " " part[2]
+      if (shown_values[kind]!="") shown_values[kind]=shown_values[kind] ", "
+      shown_values[kind]=shown_values[kind] shown
+
+      if (part[1] !~ /^[1-9][0-9]*$/) {
+        reason[kind]=label(kind) " reported a non-numeric value"
+        return
+      }
+      if (part[2]=="") {
+        reason[kind]=label(kind) " value lacked a unit"
+        return
+      }
+      number=part[1]
+      unit=tolower(part[2])
+      if (unit=="mbps") {
+        converted[kind]=number
+      } else if (unit=="gbps") {
+        converted[kind]=(number * 1000)
+      } else {
+        reason[kind]=label(kind) " reported an unrecognized unit"
+      }
+    }
     /^Media Speed Running:/ {
       value=$0
       sub(/^[^:]*:[ \t]*/, "", value)
-      value=trim(value)
-      split(value, part, /[ \t]+/)
-      if (part[1] ~ /^[1-9][0-9]*$/) media=part[1]
+      parse_speed(value, "media")
     }
     /^Adapter Data Rate:/ {
       value=$0
       sub(/^[^:]*:[ \t]*/, "", value)
-      value=trim(value)
-      split(value, part, /[ \t]+/)
-      if (part[1] ~ /^[1-9][0-9]*$/) rate=part[1]
+      parse_speed(value, "rate")
     }
     END {
-      if (media!="") print media
-      else if (rate!="") print rate
+      if (rows["media"]>0) kind="media"
+      else if (rows["rate"]>0) kind="rate"
+      else {
+        print "NOT_ASSESSED|did not report media speed or adapter data rate"
+        exit
+      }
+
+      if (rows[kind]!=1) {
+        print "NOT_ASSESSED|" label(kind) " reported multiple rows (values: " shown_values[kind] ")"
+      } else if (reason[kind]!="") {
+        print "NOT_ASSESSED|" reason[kind]
+      } else {
+        print "OBSERVED|" converted[kind]
+      }
     }
   '
 }
@@ -754,7 +844,8 @@ function emit_fact_network_inventory {
   typeset NI_IPV4 NI_MTU NI_MTU_STATUS NI_MTU_REASON NI_MTU_REASON_JSON
   typeset NI_LSATTR NI_LSATTR_RC NI_ADAPTER NI_ADAPTER_TYPE
   typeset NI_ADAPTER_STATUS NI_ADAPTER_REASON NI_ADAPTER_REASON_JSON
-  typeset NI_SPEED NI_SPEED_STATUS NI_SPEED_REASON NI_SPEED_REASON_JSON
+  typeset NI_SPEED NI_SPEED_RESULT NI_SPEED_STATUS NI_SPEED_REASON
+  typeset NI_SPEED_REASON_JSON
   typeset NI_ENTSTAT NI_ENTSTAT_RC NI_SUFFIX NI_ADAPTER_CANDIDATE
   typeset NI_ITEM_STATUS NI_ITEM_REASON
   typeset NI_ITEM_REASON_ESC NI_ITEM_REASON_JSON NI_ADAPTER_JSON NI_TYPE_ESC
@@ -869,17 +960,24 @@ function emit_fact_network_inventory {
               network_inventory_entstat_type)
             NI_ADAPTER_STATUS="OBSERVED"
             NI_ADAPTER_REASON=""
-            NI_SPEED=$(printf '%s\n' "$NI_ENTSTAT" |
+            NI_SPEED_RESULT=$(printf '%s\n' "$NI_ENTSTAT" |
               network_inventory_entstat_speed)
           fi
 
           if [ "$NI_ADAPTER_STATUS" = "OBSERVED" ]; then
-            if [ -n "$NI_SPEED" ]; then
+            NI_SPEED_STATUS=${NI_SPEED_RESULT%%\|*}
+            NI_SPEED=${NI_SPEED_RESULT#*\|}
+            if [ "$NI_SPEED_STATUS" = "OBSERVED" ]; then
               NI_SPEED_STATUS="OBSERVED"
               NI_SPEED_REASON=""
             else
+              NI_SPEED_REASON=$NI_SPEED
+              NI_SPEED=""
               NI_SPEED_STATUS="NOT_ASSESSED"
-              NI_SPEED_REASON="entstat -d $NI_ADAPTER_CANDIDATE did not report media speed or adapter data rate"
+              if [ "$NI_SPEED_REASON" = \
+                  "did not report media speed or adapter data rate" ]; then
+                NI_SPEED_REASON="entstat -d $NI_ADAPTER_CANDIDATE $NI_SPEED_REASON"
+              fi
             fi
           else
             NI_SPEED_STATUS="NOT_ASSESSED"
@@ -1103,8 +1201,47 @@ EOF
   fi
 }
 
+# Network discovery is useful evidence, but without an approved expected-state
+# baseline it is not itself a configuration assessment.
+function check_network_inventory {
+  typeset NI_CHECK_OUT NI_CHECK_RC NI_CHECK_COUNT NI_CHECK_NOUN NI_CHECK_VERB
+  typeset NI_CHECK_OBS NI_CHECK_MEAN NI_CHECK_FIX
+
+  NI_CHECK_OUT=$(aix network_ifconfig_a ifconfig -a); NI_CHECK_RC=$?
+  if [ "$NI_CHECK_RC" -ne 0 ]; then
+    NI_CHECK_OBS="not assessed — ifconfig -a interface inventory failed (rc=$NI_CHECK_RC)"
+    NI_CHECK_MEAN="The interface inventory source was unavailable, so expected interfaces, addresses, routes, and resolvers could not be assessed."
+    NI_CHECK_FIX="restore access to 'ifconfig -a', provide the site-approved network baseline, and rerun AIXray."
+  elif [ -z "$NI_CHECK_OUT" ]; then
+    NI_CHECK_OBS="not assessed — ifconfig -a reported no interface inventory (rc=0)"
+    NI_CHECK_MEAN="An empty interface capture cannot establish the system's network configuration or compare it with expected state."
+    NI_CHECK_FIX="verify the complete output of 'ifconfig -a', provide the site-approved network baseline, and rerun AIXray."
+  elif ! printf '%s\n' "$NI_CHECK_OUT" |
+      network_inventory_ifconfig_shape; then
+    NI_CHECK_OBS="not assessed — ifconfig -a interface inventory was unparseable (rc=0)"
+    NI_CHECK_MEAN="The interface capture did not match the expected AIX ifconfig structure, so network configuration could not be assessed."
+    NI_CHECK_FIX="capture the complete output of 'ifconfig -a', correct the replay source if needed, provide the site-approved network baseline, and rerun AIXray."
+  else
+    NI_CHECK_COUNT=$(printf '%s\n' "$NI_CHECK_OUT" |
+      network_inventory_parse_ifconfig |
+      awk -F '	' '$1=="I" {n++} END{print n+0}')
+    NI_CHECK_NOUN=interfaces
+    NI_CHECK_VERB=were
+    if [ "$NI_CHECK_COUNT" -eq 1 ]; then
+      NI_CHECK_NOUN=interface
+      NI_CHECK_VERB=was
+    fi
+    NI_CHECK_OBS="not assessed — $NI_CHECK_COUNT $NI_CHECK_NOUN $NI_CHECK_VERB inventoried from ifconfig -a, but no site-approved expected interface, address, route, and DNS baseline was available"
+    NI_CHECK_MEAN="Observed network inventory alone cannot distinguish an intended configuration from a missing, unexpected, or misaddressed interface, route, or resolver."
+    NI_CHECK_FIX="provide a site-approved expected interface, address, route, and DNS baseline, compare it with this inventory, and rerun AIXray."
+  fi
+
+  add config network_inventory "Network inventory baseline" \
+    NOT_ASSESSED med "$NI_CHECK_OBS" "$NI_CHECK_MEAN" "$NI_CHECK_FIX"
+}
+
 function standalone_run {
-  :
+  check_network_inventory
 }
 
 standalone_main "$@"

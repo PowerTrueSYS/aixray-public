@@ -1,0 +1,19 @@
+{
+  "id": "ck-net-udp-pmtu-discover",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "net_udp_pmtu_discover"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "no -o udp_pmtu_discover"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-net-udp-pmtu-discover/ck-net-udp-pmtu-discover.ksh"
+}

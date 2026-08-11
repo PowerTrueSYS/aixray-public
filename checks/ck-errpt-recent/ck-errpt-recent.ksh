@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="0.1.0"
+AIXRAY_STANDALONE_VERSION="1.0.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -26,6 +26,49 @@ function aix {
     return 127
   fi
   "$@" 2>/dev/null
+}
+
+# aixv preserves stderr as evidence, for read-only commands that write their
+# version banner or diagnostics there rather than to stdout. (Deliberately no
+# example command name here: this comment is copied into all 324 standalone
+# tools, and tools/ci/egress-lint.sh reads a banned network command name in a
+# comment as a violation just as it would in a command position.)
+function aixv {
+  typeset key rc
+  key=$1
+  shift
+  if [ -n "${AIXRAY_FIXTURES:-}" ]; then
+    if [ -r "$AIXRAY_FIXTURES/$key.out" ] || [ -r "$AIXRAY_FIXTURES/$key.err" ]; then
+      [ -r "$AIXRAY_FIXTURES/$key.out" ] && cat "$AIXRAY_FIXTURES/$key.out"
+      [ -r "$AIXRAY_FIXTURES/$key.err" ] && cat "$AIXRAY_FIXTURES/$key.err"
+      rc=0
+      [ -r "$AIXRAY_FIXTURES/$key.rc" ] && read rc < "$AIXRAY_FIXTURES/$key.rc"
+      return $rc
+    fi
+    return 127
+  fi
+  "$@" 2>&1
+}
+
+# aix_capture_missing <key> — fixture-replay helper: true (rc=0) iff no capture
+# exists for <key> at all, i.e. the rc a probe just received was the "no
+# capture" default and not a genuine command status. aix()/aixv() return 127 for
+# BOTH a missing capture and a genuinely absent command, so a module that wants
+# to claim "the command is not installed" must first rule out "nobody captured
+# it". Live mode returns false (rc=1): a real box has no concept of a missing
+# fixture, and rc=127 there genuinely means the command was not found. Must be
+# called in the PARENT shell after the probe, not inside the $(aix ...)
+# substitution. Byte-for-byte the monolith's semantics (src/aixray-aix.sh.in);
+# without it here, an undefined-command rc of 127 makes the guard read false and
+# the caller launders a missing capture into NOT_APPLICABLE.
+function aix_capture_missing {
+  if [ -n "${AIXRAY_FIXTURES:-}" ]; then
+    if [ -r "$AIXRAY_FIXTURES/$1.out" ] || [ -r "$AIXRAY_FIXTURES/$1.err" ]; then
+      return 1
+    fi
+    return 0
+  fi
+  return 1
 }
 
 function jesc {
@@ -61,7 +104,13 @@ function add {
     *) echo "$AIXRAY_TOOL: internal error: unknown category '$1'" >&2; exit 1;;
   esac
   case "$4" in
-    PASS|WARN|FAIL|NOT_ASSESSED) ;;
+    # NOT_APPLICABLE is a verdict, not a refusal: the control constrains a
+    # property of a thing that need not exist. It is already a first-class
+    # status in the monolith (vios_level on a plain AIX LPAR) and in the
+    # contract schema (STATUSES, pipeline/contract_v2/schema.py), but was
+    # missing here, so any standalone tool reaching that branch aborted with
+    # an internal error instead of emitting its envelope.
+    PASS|WARN|FAIL|NOT_ASSESSED|NOT_APPLICABLE) ;;
     *) echo "$AIXRAY_TOOL: internal error: unknown status '$4'" >&2; exit 1;;
   esac
   F_CAT[$NFIND]=$1
@@ -297,26 +346,64 @@ function standalone_main {
 
 AIXRAY_TOOL=ck-errpt-recent
 
+_AIXRAY_SESSION_KEYS=""
 function errnotify_decode {
-  aix odmget_errnotify odmget errnotify | awk '
-    /en_method[ \t]*=/{
-      m=$0; sub(/^[^"]*"/,"",m); sub(/"[^"]*$/,"",m)
-      if(m=="") next
-      if(m ~ /^\/usr\/(lib|lpp|sbin)\//){ defc++; if(m ~ /diagela/) diag=1 }
-      else { custc++; cust=cust (cn++?"; ":"") m }
-    }
-    END{ printf "%d\t%d\t%d\t%s", custc+0, defc+0, diag+0, cust }'
+  ERRNOTIFY_ODM=$(aix odmget_errnotify odmget errnotify); ERRNOTIFY_RC=$?
+  ERRNOTIFY_OK=0; ERRNOTIFY_WHY=""; ERRNOTIFY_DEC=""
+  if [ "$ERRNOTIFY_RC" -ne 0 ]; then
+    ERRNOTIFY_WHY="not assessed — odmget errnotify capture failed (rc=$ERRNOTIFY_RC)"
+  elif [ -z "$ERRNOTIFY_ODM" ]; then
+    ERRNOTIFY_WHY="not assessed — odmget errnotify capture empty (rc=0)"
+  elif printf '%s\n' "$ERRNOTIFY_ODM" | awk '
+      /^[[:space:]]*$/ {
+        if (in_record) after_record=1
+        next
+      }
+      /^errnotify:[[:space:]]*$/ {
+        if (in_record && keys == 0) bad=1
+        headers++
+        in_record=1
+        keys=0
+        after_record=0
+        next
+      }
+      /^[ \t]+en_[A-Za-z0-9_][A-Za-z0-9_]*[ \t]*=[ \t]*.*$/ {
+        if (!in_record || after_record) bad=1
+        keys++
+        next
+      }
+      { bad=1 }
+      END {
+        # AIX ships five base errnotify records. Fewer complete-looking records
+        # cannot be distinguished from a capture cut cleanly between records.
+        if (headers < 5 || keys == 0 || after_record || bad) exit 1
+      }
+    '
+  then
+    ERRNOTIFY_OK=1
+    ERRNOTIFY_DEC=$(printf '%s\n' "$ERRNOTIFY_ODM" | awk '
+      /en_method[ \t]*=/ {
+        m=$0; sub(/^[^"]*"/,"",m); sub(/"[^"]*$/,"",m)
+        if(m=="") next
+        if(m ~ /^\/usr\/(lib|lpp|sbin)\//){ defc++; if(m ~ /diagela/) diag=1 }
+        else { custc++; cust=cust (cn++?"; ":"") m }
+      }
+      END{ printf "%d\t%d\t%d\t%s", custc+0, defc+0, diag+0, cust }')
+  else
+    ERRNOTIFY_WHY="not assessed — odmget errnotify capture unparseable (rc=0)"
+  fi
+  return "$ERRNOTIFY_RC"
 }
 
 function checks_errors {
-  typeset C7 C30 ER EH N INFO OBSN TOP RES SD RC PRIM VM
+  typeset C7 C30 ER EH N INFO OBSN TOP RES SD RC PRIM VM VMRC VM_OK VMWHY VMN
   typeset ERDRUN ERDL ERDSZ ERDDUP ERA CRITFLAT DECODE DWORST DNONI DTOP DCRIT
   typeset SIGS SHI SLIST ENDEC ENCUST ENDEF ENDIAG ENLIST DIAGN
   typeset DHIS DSTAT DDATE DOK
 
   C7=$(errpt_cutoff 7); C30=$(errpt_cutoff 30)
 
-  # errpt is not root-required, but a nonzero rc means the log was unreadable — that
+  # errpt is not root-gated, but a nonzero rc means the log was unreadable — that
   # must WARN, never masquerade as "0 entries" clean. Count only non-informational
   # entries: the T (type) column is field 3 of the summary lines — exclude T=I,
   # keep P/T/U/PEND.

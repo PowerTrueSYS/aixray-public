@@ -1,0 +1,19 @@
+{
+  "id": "ck-nfs-server-absent",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "nfs_server_absent"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "lslpp -L"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-nfs-server-absent/ck-nfs-server-absent.ksh"
+}

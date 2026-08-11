@@ -1,0 +1,19 @@
+{
+  "id": "ck-group-gid-duplicate",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "group_gid_duplicate"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "cat /etc/group"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-group-gid-duplicate/ck-group-gid-duplicate.ksh"
+}

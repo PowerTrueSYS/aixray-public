@@ -1,0 +1,19 @@
+{
+  "id": "ck-net-nonlocsrcroute",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "net_nonlocsrcroute"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "no -o nonlocsrcroute"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-net-nonlocsrcroute/ck-net-nonlocsrcroute.ksh"
+}

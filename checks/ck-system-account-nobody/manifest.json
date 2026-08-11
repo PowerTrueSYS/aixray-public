@@ -1,0 +1,21 @@
+{
+  "id": "ck-system-account-nobody",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "system_account_nobody"
+  ],
+  "captures": [
+    "cap-system-accounts"
+  ],
+  "requires_root": true,
+  "read_only": true,
+  "commands": [
+    "lsuser -a login rlogin shell account_locked ALL"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-system-account-nobody/ck-system-account-nobody.ksh"
+}

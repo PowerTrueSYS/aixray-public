@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="0.1.0"
+AIXRAY_STANDALONE_VERSION="1.0.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -26,6 +26,49 @@ function aix {
     return 127
   fi
   "$@" 2>/dev/null
+}
+
+# aixv preserves stderr as evidence, for read-only commands that write their
+# version banner or diagnostics there rather than to stdout. (Deliberately no
+# example command name here: this comment is copied into all 324 standalone
+# tools, and tools/ci/egress-lint.sh reads a banned network command name in a
+# comment as a violation just as it would in a command position.)
+function aixv {
+  typeset key rc
+  key=$1
+  shift
+  if [ -n "${AIXRAY_FIXTURES:-}" ]; then
+    if [ -r "$AIXRAY_FIXTURES/$key.out" ] || [ -r "$AIXRAY_FIXTURES/$key.err" ]; then
+      [ -r "$AIXRAY_FIXTURES/$key.out" ] && cat "$AIXRAY_FIXTURES/$key.out"
+      [ -r "$AIXRAY_FIXTURES/$key.err" ] && cat "$AIXRAY_FIXTURES/$key.err"
+      rc=0
+      [ -r "$AIXRAY_FIXTURES/$key.rc" ] && read rc < "$AIXRAY_FIXTURES/$key.rc"
+      return $rc
+    fi
+    return 127
+  fi
+  "$@" 2>&1
+}
+
+# aix_capture_missing <key> — fixture-replay helper: true (rc=0) iff no capture
+# exists for <key> at all, i.e. the rc a probe just received was the "no
+# capture" default and not a genuine command status. aix()/aixv() return 127 for
+# BOTH a missing capture and a genuinely absent command, so a module that wants
+# to claim "the command is not installed" must first rule out "nobody captured
+# it". Live mode returns false (rc=1): a real box has no concept of a missing
+# fixture, and rc=127 there genuinely means the command was not found. Must be
+# called in the PARENT shell after the probe, not inside the $(aix ...)
+# substitution. Byte-for-byte the monolith's semantics (src/aixray-aix.sh.in);
+# without it here, an undefined-command rc of 127 makes the guard read false and
+# the caller launders a missing capture into NOT_APPLICABLE.
+function aix_capture_missing {
+  if [ -n "${AIXRAY_FIXTURES:-}" ]; then
+    if [ -r "$AIXRAY_FIXTURES/$1.out" ] || [ -r "$AIXRAY_FIXTURES/$1.err" ]; then
+      return 1
+    fi
+    return 0
+  fi
+  return 1
 }
 
 function jesc {
@@ -61,7 +104,13 @@ function add {
     *) echo "$AIXRAY_TOOL: internal error: unknown category '$1'" >&2; exit 1;;
   esac
   case "$4" in
-    PASS|WARN|FAIL|NOT_ASSESSED) ;;
+    # NOT_APPLICABLE is a verdict, not a refusal: the control constrains a
+    # property of a thing that need not exist. It is already a first-class
+    # status in the monolith (vios_level on a plain AIX LPAR) and in the
+    # contract schema (STATUSES, pipeline/contract_v2/schema.py), but was
+    # missing here, so any standalone tool reaching that branch aborted with
+    # an internal error instead of emitting its envelope.
+    PASS|WARN|FAIL|NOT_ASSESSED|NOT_APPLICABLE) ;;
     *) echo "$AIXRAY_TOOL: internal error: unknown status '$4'" >&2; exit 1;;
   esac
   F_CAT[$NFIND]=$1
@@ -299,13 +348,67 @@ AIXRAY_TOOL=ck-mpio-paths
 
 
 function standalone_check {
+_AIXRAY_SESSION_KEYS=""
 
   # MPIO path health
-  LSP=$(aix lspath lspath); RC=$?
-  if [ "$RC" -ne 0 ] || [ -z "$LSP" ]; then
-    add storage mpio "MPIO path health" PASS low "no MPIO paths reported" \
-        "No multipath I/O configured (common with single-path virtual SCSI)." \
-        "if this box should have redundant SAN paths, that is a gap worth closing."
+  typeset LSP_OK LSPWHY LSP_RC LSP_NO_PATHS LSP_DISK_COUNT
+  LSP=$(aix lspath lspath); LSP_RC=$?
+  LSP_OK=0; LSPWHY=""; LSP_NO_PATHS=0; LSP_DISK_COUNT=0
+  if [ "$LSP_RC" -ne 0 ]; then
+    LSPWHY="not assessed — lspath capture failed (rc=$LSP_RC)"
+  elif [ -z "$LSP" ]; then
+    # Empty lspath is not evidence of a clean path state by itself. Corroborate
+    # it with a separately parsed disk inventory so "no MPIO paths" remains
+    # distinct from an enumeration/capture failure.
+    LSP_DISKS=$(aix lsdev_disk_fields lsdev -Cc disk -F \
+      "name:status:description"); LSP_DISKS_RC=$?
+    if [ "$LSP_DISKS_RC" -ne 0 ]; then
+      LSPWHY="not assessed — lspath capture empty (rc=0); lsdev disk inventory capture failed (rc=$LSP_DISKS_RC)"
+    elif [ -z "$LSP_DISKS" ]; then
+      LSPWHY="not assessed — lspath capture empty (rc=0); lsdev disk inventory capture empty (rc=0)"
+    elif LSP_DISK_COUNT=$(printf '%s\n' "$LSP_DISKS" | awk -F ':' '
+        NF {
+          rows++
+          if (NF != 3 ||
+              $1 !~ /^hdisk[0-9][0-9]*$/ ||
+              ($2 != "Available" && $2 != "Defined" && $2 != "Stopped") ||
+              $3 !~ /[^ 	]/ || seen[$1]++) bad=1
+        }
+        END {
+          if (rows == 0 || bad) exit 1
+          print rows
+        }
+      ')
+    then
+      LSP_OK=1
+      LSP_NO_PATHS=1
+    else
+      LSPWHY="not assessed — lspath capture empty (rc=0); lsdev disk inventory capture unparseable (rc=0)"
+    fi
+  elif printf '%s\n' "$LSP" | awk '
+      NF {
+        rows++
+        if (NF != 3 ||
+            $1 !~ /^(Enabled|Disabled|Failed|Missing|Defined)$/ ||
+            $2 !~ /^[A-Za-z0-9_.-][A-Za-z0-9_.-]*$/ ||
+            $3 !~ /^[A-Za-z0-9_.-][A-Za-z0-9_.-]*$/) bad=1
+      }
+      END { if (rows == 0 || bad) exit 1 }
+    '
+  then
+    LSP_OK=1
+  else
+    LSPWHY="not assessed — lspath capture unparseable (rc=0)"
+  fi
+  if [ "$LSP_OK" -ne 1 ]; then
+    LSP=""
+    add storage mpio "MPIO path health" NOT_ASSESSED high "$LSPWHY" \
+        "MPIO path health could not be assessed because lspath failed, returned no evidence, or included a row/status outside the expected AIX output grammar." \
+        "run 'lspath' manually, resolve the capture or unexpected status, and rerun AIXray before treating path redundancy as healthy."
+  elif [ "$LSP_NO_PATHS" -eq 1 ]; then
+    add storage mpio "MPIO path health" PASS low \
+        "lspath capture empty (rc=0); disk inventory succeeded ($LSP_DISK_COUNT disk(s)); no MPIO paths reported" \
+        "A successful lspath read reported no MPIO paths, and a separate validated disk inventory confirms that disk enumeration itself succeeded." "n/a"
   else
     BAD=$(printf '%s\n' "$LSP" | awk '$1=="Failed" || $1=="Missing" {n++} END{print n+0}')
     DIS=$(printf '%s\n' "$LSP" | awk '$1=="Disabled" || $1=="Defined" {n++} END{print n+0}')

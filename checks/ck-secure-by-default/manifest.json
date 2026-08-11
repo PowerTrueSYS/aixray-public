@@ -1,0 +1,22 @@
+{
+  "id": "ck-secure-by-default",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "secure_by_default"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "ls -l /etc/security/aixpert/log",
+    "grep -n aixpert /etc/firstboot",
+    "ls -l /usr/bin/telnet /usr/bin/ftp /usr/bin/rsh /usr/bin/rcp /usr/sbin/sendmail",
+    "lslpp -L"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-secure-by-default/ck-secure-by-default.ksh"
+}

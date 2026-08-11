@@ -2,7 +2,9 @@
   "id": "ck-software-inventory",
   "pillar": "currency",
   "category": "patch",
-  "finding_ids": [],
+  "finding_ids": [
+    "software_inventory"
+  ],
   "captures": [
     "cap-lslpp-qcl"
   ],

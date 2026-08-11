@@ -1,0 +1,20 @@
+{
+  "id": "ck-cde-xconfig-access",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "cde_xconfig_access"
+  ],
+  "captures": [],
+  "requires_root": true,
+  "read_only": true,
+  "commands": [
+    "lslpp -qcL 'X11.Dt*'",
+    "ls -ld /etc/dt/config/Xconfig /usr/dt/config/Xconfig"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-cde-xconfig-access/ck-cde-xconfig-access.ksh"
+}

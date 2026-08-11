@@ -1,0 +1,17 @@
+{
+  "id": "ck-login-loginreenable",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "login_loginreenable"
+  ],
+  "captures": [],
+  "requires_root": true,
+  "read_only": true,
+  "commands": [
+    "lssec -f /etc/security/login.cfg -s default -a loginreenable"
+  ],
+  "tags": [],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-login-loginreenable/ck-login-loginreenable.ksh"
+}

@@ -1,0 +1,19 @@
+{
+  "id": "ck-login-logindelay",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "login_logindelay"
+  ],
+  "captures": [],
+  "requires_root": true,
+  "read_only": true,
+  "commands": [
+    "lssec -f /etc/security/login.cfg -s default -a logindelay"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-login-logindelay/ck-login-logindelay.ksh"
+}

@@ -1,0 +1,20 @@
+{
+  "id": "ck-login-core-limit",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "login_core_limit"
+  ],
+  "captures": [],
+  "requires_root": true,
+  "read_only": true,
+  "commands": [
+    "lssec -f /etc/security/limits -s default -a core -a core_hard",
+    "lsattr -El sys0 -a fullcore"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-login-core-limit/ck-login-core-limit.ksh"
+}

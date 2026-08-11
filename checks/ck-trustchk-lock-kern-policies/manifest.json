@@ -1,0 +1,19 @@
+{
+  "id": "ck-trustchk-lock-kern-policies",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "trustchk_lock_kern"
+  ],
+  "captures": [],
+  "requires_root": true,
+  "read_only": true,
+  "commands": [
+    "trustchk -p LOCK_KERN_POLICIES"
+  ],
+  "tags": [
+    "cis-l2"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-trustchk-lock-kern-policies/ck-trustchk-lock-kern-policies.ksh"
+}

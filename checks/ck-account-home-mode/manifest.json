@@ -1,0 +1,23 @@
+{
+  "id": "ck-account-home-mode",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "account_home",
+    "account_home_missing",
+    "account_home_mode",
+    "account_home_acl"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "lsuser -R files -a id home ALL",
+    "ls -ld <home>"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-account-home-mode/ck-account-home-mode.ksh"
+}

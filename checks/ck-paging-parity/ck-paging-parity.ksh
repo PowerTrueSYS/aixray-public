@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="0.1.0"
+AIXRAY_STANDALONE_VERSION="1.0.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -26,6 +26,49 @@ function aix {
     return 127
   fi
   "$@" 2>/dev/null
+}
+
+# aixv preserves stderr as evidence, for read-only commands that write their
+# version banner or diagnostics there rather than to stdout. (Deliberately no
+# example command name here: this comment is copied into all 324 standalone
+# tools, and tools/ci/egress-lint.sh reads a banned network command name in a
+# comment as a violation just as it would in a command position.)
+function aixv {
+  typeset key rc
+  key=$1
+  shift
+  if [ -n "${AIXRAY_FIXTURES:-}" ]; then
+    if [ -r "$AIXRAY_FIXTURES/$key.out" ] || [ -r "$AIXRAY_FIXTURES/$key.err" ]; then
+      [ -r "$AIXRAY_FIXTURES/$key.out" ] && cat "$AIXRAY_FIXTURES/$key.out"
+      [ -r "$AIXRAY_FIXTURES/$key.err" ] && cat "$AIXRAY_FIXTURES/$key.err"
+      rc=0
+      [ -r "$AIXRAY_FIXTURES/$key.rc" ] && read rc < "$AIXRAY_FIXTURES/$key.rc"
+      return $rc
+    fi
+    return 127
+  fi
+  "$@" 2>&1
+}
+
+# aix_capture_missing <key> — fixture-replay helper: true (rc=0) iff no capture
+# exists for <key> at all, i.e. the rc a probe just received was the "no
+# capture" default and not a genuine command status. aix()/aixv() return 127 for
+# BOTH a missing capture and a genuinely absent command, so a module that wants
+# to claim "the command is not installed" must first rule out "nobody captured
+# it". Live mode returns false (rc=1): a real box has no concept of a missing
+# fixture, and rc=127 there genuinely means the command was not found. Must be
+# called in the PARENT shell after the probe, not inside the $(aix ...)
+# substitution. Byte-for-byte the monolith's semantics (src/aixray-aix.sh.in);
+# without it here, an undefined-command rc of 127 makes the guard read false and
+# the caller launders a missing capture into NOT_APPLICABLE.
+function aix_capture_missing {
+  if [ -n "${AIXRAY_FIXTURES:-}" ]; then
+    if [ -r "$AIXRAY_FIXTURES/$1.out" ] || [ -r "$AIXRAY_FIXTURES/$1.err" ]; then
+      return 1
+    fi
+    return 0
+  fi
+  return 1
 }
 
 function jesc {
@@ -61,7 +104,13 @@ function add {
     *) echo "$AIXRAY_TOOL: internal error: unknown category '$1'" >&2; exit 1;;
   esac
   case "$4" in
-    PASS|WARN|FAIL|NOT_ASSESSED) ;;
+    # NOT_APPLICABLE is a verdict, not a refusal: the control constrains a
+    # property of a thing that need not exist. It is already a first-class
+    # status in the monolith (vios_level on a plain AIX LPAR) and in the
+    # contract schema (STATUSES, pipeline/contract_v2/schema.py), but was
+    # missing here, so any standalone tool reaching that branch aborted with
+    # an internal error instead of emitting its envelope.
+    PASS|WARN|FAIL|NOT_ASSESSED|NOT_APPLICABLE) ;;
     *) echo "$AIXRAY_TOOL: internal error: unknown status '$4'" >&2; exit 1;;
   esac
   F_CAT[$NFIND]=$1
@@ -337,6 +386,7 @@ function capture_cap_lsps_a {
 
 
 function standalone_check {
+_AIXRAY_SESSION_KEYS=""
 
   # paging_parity — multi-space size and active-state correctness. AIX VMM
   # round-robins across active paging spaces, so unequal sizes stop balanced
@@ -348,7 +398,13 @@ function standalone_check {
         "run 'lsps -a' manually, then rerun AIXray before treating multi-space paging as balanced."
   else
     PPAR_COUNT=$(printf '%s\n' "$LSPS" | awk 'NR>1 && NF>1 {n++} END {print n+0}')
-    if [ "$PPAR_COUNT" -gt 1 ]; then
+    PPAR_COUNT_RC=$?
+    if [ "$PPAR_COUNT_RC" -ne 0 ] || [ -z "$PPAR_COUNT" ]; then
+      add storage paging_parity "Paging space parity" NOT_ASSESSED med \
+          "not assessed — lsps -a row-count scan failed (rc=$PPAR_COUNT_RC)" \
+          "Paging-space parity could not be assessed because a validated lsps -a derivation failed before size and active-state parity could be determined." \
+          "make the lsps -a row-count and parity scans complete successfully, then rerun AIXray before treating multi-space paging as balanced."
+    elif [ "$PPAR_COUNT" -gt 1 ]; then
       PPAR_TABLE=$(printf '%s\n' "$LSPS" | awk '
         BEGIN { print "NAME | PV | SIZE | ACTIVE" }
         NR>1 && NF>1 { print $1 " | " $2 " | " $4 " | " $6 }
@@ -398,30 +454,38 @@ function standalone_check {
           printf "%d\t%d\t%s\t%s\n", smallest+0, wasted+0, odd, inactive
         }
       ')
-      PPAR_MIN_MB=$(printf '%s\n' "$PPAR_META" | awk -F '\t' '{print $1}')
-      PPAR_WASTE_MB=$(printf '%s\n' "$PPAR_META" | awk -F '\t' '{print $2}')
-      PPAR_ODD=$(printf '%s\n' "$PPAR_META" | awk -F '\t' '{print $3}')
-      PPAR_INACTIVE=$(printf '%s\n' "$PPAR_META" | awk -F '\t' '{print $4}')
-
-      if [ "$PPAR_WASTE_MB" -eq 0 ] && [ -z "$PPAR_INACTIVE" ]; then
-        add storage paging_parity "Paging space parity" PASS med "$PPAR_TABLE" \
-            "All $PPAR_COUNT paging spaces are active and exactly ${PPAR_MIN_MB}MB, so VMM can round-robin them without an early size cap." \
-            "n/a"
+      PPAR_META_RC=$?
+      if [ "$PPAR_META_RC" -ne 0 ] || [ -z "$PPAR_META" ]; then
+        add storage paging_parity "Paging space parity" NOT_ASSESSED med \
+            "not assessed — lsps -a parity scan failed (rc=$PPAR_META_RC)" \
+            "Paging-space parity could not be assessed because a validated lsps -a derivation failed before size and active-state parity could be determined." \
+            "make the lsps -a row-count and parity scans complete successfully, then rerun AIXray before treating multi-space paging as balanced."
       else
-        PPAR_ISSUES=""
-        if [ "$PPAR_WASTE_MB" -gt 0 ]; then
-          PPAR_ISSUES="odd size: $PPAR_ODD; wasted delta: ${PPAR_WASTE_MB}MB above the smallest defined paging-space size (${PPAR_MIN_MB}MB)"
-        fi
-        if [ -n "$PPAR_INACTIVE" ]; then
-          [ -z "$PPAR_ISSUES" ] \
-            || PPAR_ISSUES="$PPAR_ISSUES; "
-          PPAR_ISSUES="${PPAR_ISSUES}inactive: $PPAR_INACTIVE"
-        fi
-        PPAR_OBSERVED="$PPAR_TABLE
+        PPAR_MIN_MB=$(printf '%s\n' "$PPAR_META" | awk -F '\t' '{print $1}')
+        PPAR_WASTE_MB=$(printf '%s\n' "$PPAR_META" | awk -F '\t' '{print $2}')
+        PPAR_ODD=$(printf '%s\n' "$PPAR_META" | awk -F '\t' '{print $3}')
+        PPAR_INACTIVE=$(printf '%s\n' "$PPAR_META" | awk -F '\t' '{print $4}')
+
+        if [ "$PPAR_WASTE_MB" -eq 0 ] && [ -z "$PPAR_INACTIVE" ]; then
+          add storage paging_parity "Paging space parity" PASS med "$PPAR_TABLE" \
+              "All $PPAR_COUNT paging spaces are active and exactly ${PPAR_MIN_MB}MB, so VMM can round-robin them without an early size cap." \
+              "n/a"
+        else
+          PPAR_ISSUES=""
+          if [ "$PPAR_WASTE_MB" -gt 0 ]; then
+            PPAR_ISSUES="odd size: $PPAR_ODD; wasted delta: ${PPAR_WASTE_MB}MB above the smallest defined paging-space size (${PPAR_MIN_MB}MB)"
+          fi
+          if [ -n "$PPAR_INACTIVE" ]; then
+            [ -z "$PPAR_ISSUES" ] \
+              || PPAR_ISSUES="$PPAR_ISSUES; "
+            PPAR_ISSUES="${PPAR_ISSUES}inactive: $PPAR_INACTIVE"
+          fi
+          PPAR_OBSERVED="$PPAR_TABLE
 Issues: $PPAR_ISSUES"
-        add storage paging_parity "Paging space parity" WARN med "$PPAR_OBSERVED" \
-            "Multiple defined paging spaces are not balanced: inactive spaces do not participate in VMM round-robin, and unequal sizes leave capacity outside the smallest-space parity baseline." \
-            "make every defined paging space exactly the same size and active during an approved change window."
+          add storage paging_parity "Paging space parity" WARN med "$PPAR_OBSERVED" \
+              "Multiple defined paging spaces are not balanced: inactive spaces do not participate in VMM round-robin, and unequal sizes leave capacity outside the smallest-space parity baseline." \
+              "make every defined paging space exactly the same size and active during an approved change window."
+        fi
       fi
     else
       add storage paging_parity "Paging space parity" PASS med \

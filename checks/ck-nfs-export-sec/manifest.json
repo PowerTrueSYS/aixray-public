@@ -1,0 +1,23 @@
+{
+  "id": "ck-nfs-export-sec",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "nfs_export_sec"
+  ],
+  "control_id": "4.4.1.7",
+  "level": "L2",
+  "severity": "medium",
+  "blast_radius": "moderate",
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "lsnfsexp"
+  ],
+  "tags": [
+    "cis-l2"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-nfs-export-sec/ck-nfs-export-sec.ksh"
+}

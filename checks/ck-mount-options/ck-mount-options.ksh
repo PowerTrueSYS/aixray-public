@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="0.1.0"
+AIXRAY_STANDALONE_VERSION="1.0.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -26,6 +26,49 @@ function aix {
     return 127
   fi
   "$@" 2>/dev/null
+}
+
+# aixv preserves stderr as evidence, for read-only commands that write their
+# version banner or diagnostics there rather than to stdout. (Deliberately no
+# example command name here: this comment is copied into all 324 standalone
+# tools, and tools/ci/egress-lint.sh reads a banned network command name in a
+# comment as a violation just as it would in a command position.)
+function aixv {
+  typeset key rc
+  key=$1
+  shift
+  if [ -n "${AIXRAY_FIXTURES:-}" ]; then
+    if [ -r "$AIXRAY_FIXTURES/$key.out" ] || [ -r "$AIXRAY_FIXTURES/$key.err" ]; then
+      [ -r "$AIXRAY_FIXTURES/$key.out" ] && cat "$AIXRAY_FIXTURES/$key.out"
+      [ -r "$AIXRAY_FIXTURES/$key.err" ] && cat "$AIXRAY_FIXTURES/$key.err"
+      rc=0
+      [ -r "$AIXRAY_FIXTURES/$key.rc" ] && read rc < "$AIXRAY_FIXTURES/$key.rc"
+      return $rc
+    fi
+    return 127
+  fi
+  "$@" 2>&1
+}
+
+# aix_capture_missing <key> — fixture-replay helper: true (rc=0) iff no capture
+# exists for <key> at all, i.e. the rc a probe just received was the "no
+# capture" default and not a genuine command status. aix()/aixv() return 127 for
+# BOTH a missing capture and a genuinely absent command, so a module that wants
+# to claim "the command is not installed" must first rule out "nobody captured
+# it". Live mode returns false (rc=1): a real box has no concept of a missing
+# fixture, and rc=127 there genuinely means the command was not found. Must be
+# called in the PARENT shell after the probe, not inside the $(aix ...)
+# substitution. Byte-for-byte the monolith's semantics (src/aixray-aix.sh.in);
+# without it here, an undefined-command rc of 127 makes the guard read false and
+# the caller launders a missing capture into NOT_APPLICABLE.
+function aix_capture_missing {
+  if [ -n "${AIXRAY_FIXTURES:-}" ]; then
+    if [ -r "$AIXRAY_FIXTURES/$1.out" ] || [ -r "$AIXRAY_FIXTURES/$1.err" ]; then
+      return 1
+    fi
+    return 0
+  fi
+  return 1
 }
 
 function jesc {
@@ -61,7 +104,13 @@ function add {
     *) echo "$AIXRAY_TOOL: internal error: unknown category '$1'" >&2; exit 1;;
   esac
   case "$4" in
-    PASS|WARN|FAIL|NOT_ASSESSED) ;;
+    # NOT_APPLICABLE is a verdict, not a refusal: the control constrains a
+    # property of a thing that need not exist. It is already a first-class
+    # status in the monolith (vios_level on a plain AIX LPAR) and in the
+    # contract schema (STATUSES, pipeline/contract_v2/schema.py), but was
+    # missing here, so any standalone tool reaching that branch aborted with
+    # an internal error instead of emitting its envelope.
+    PASS|WARN|FAIL|NOT_ASSESSED|NOT_APPLICABLE) ;;
     *) echo "$AIXRAY_TOOL: internal error: unknown status '$4'" >&2; exit 1;;
   esac
   F_CAT[$NFIND]=$1
@@ -299,34 +348,86 @@ AIXRAY_TOOL=ck-mount-options
 
 
 function standalone_check {
+_AIXRAY_SESSION_KEYS=""
 
   # mount_options — structural mount hygiene from `mount`.
   # Veteran signal: /tmp not its own filesystem (a runaway /tmp then fills root); a JFS2 mount
   # with no log (crash-recovery and write ordering suffer). Performance options (noatime,
   # cio/dio, rbrw) are workload-specific — you cannot know app intent, so they are reported
   # as informational context, not a finding, to avoid crying wolf on a normal default mount.
-  MNT=$(aix mount mount)
-  set -- $(printf '%s\n' "$MNT" | awk '
-    $1 ~ /^\// {
-      mp=$2; vfs=$3; opt=$NF
-      if(mp=="/tmp") tmp=1
-      if(vfs=="jfs2"){ j++
-        if(index(opt,"log=")==0) nolog=nolog (nn++?",":"") mp
-        if(index(opt,"noatime")==0) at++ }
-    }
-    END{ printf "%d %d %d %s", tmp+0, j+0, at+0, (nolog==""?"none":nolog) }')
-  TMPSEP=${1:-0}; NJFS2=${2:-0}; ATIMEN=${3:-0}; NOLOG=${4:-none}
-  if [ "$TMPSEP" -ne 1 ]; then
-    add storage mount_options "Mount options" WARN med "/tmp is not a separate filesystem" \
-        "/tmp is not mounted as its own filesystem, so it shares space with / — a runaway process that fills /tmp then fills the root filesystem, which can stop logins and logging system-wide." \
-        "give /tmp its own logical volume and filesystem (crfs -v jfs2 -m /tmp ...), or confirm this is intentional on a minimal build." "ffiec:II.C.11"
-  elif [ "$NOLOG" != none ]; then
-    add storage mount_options "Mount options" WARN low "jfs2 without a log: $NOLOG" \
-        "A JFS2 filesystem is mounted with no log device — without a JFS2 log, crash recovery falls back to a full fsck and write ordering is weaker, so a crash risks a long recovery or metadata inconsistency." \
-        "give it a jfs2log LV or use an inline log ('chfs -a logname=INLINE $NOLOG' after adding inline-log space); verify with 'mount'." "ffiec:II.C.11"
+  typeset MNT_RC MNT_OK MNTWHY MNTSTAT
+  MNT=$(aix mount mount); MNT_RC=$?
+  MNT_OK=0; MNTWHY=""; MNTSTAT=""
+  if [ "$MNT_RC" -ne 0 ]; then
+    MNTWHY="not assessed — mount capture failed (rc=$MNT_RC)"
+  elif [ -z "$MNT" ]; then
+    MNTWHY="not assessed — mount capture empty (rc=0)"
+  elif MNTSTAT=$(printf '%s\n' "$MNT" | awk '
+      NR == 1 {
+        if (NF != 7 || $1 != "node" || $2 != "mounted" ||
+            $3 != "mounted" || $4 != "over" || $5 != "vfs" ||
+            $6 != "date" || $7 != "options") bad=1
+        next
+      }
+      NR == 2 {
+        if (NF != 6) bad=1
+        for (i=1; i<=NF; i++) if ($i !~ /^-+$/) bad=1
+        next
+      }
+      NF {
+        rows++
+        if ($1 ~ /^\//) {
+          if (NF != 7) bad=1
+          src=$1; mp=$2; vfs=$3; mon=$4; day=$5; tm=$6; opt=$7
+        } else {
+          if (NF != 8) bad=1
+          src=$2; mp=$3; vfs=$4; mon=$5; day=$6; tm=$7; opt=$8
+        }
+        if (src !~ /^\// || mp !~ /^\// ||
+            vfs !~ /^[A-Za-z][A-Za-z0-9_.-]*$/ ||
+            mon !~ /^[A-Za-z][A-Za-z][A-Za-z]$/ ||
+            day !~ /^[0-9][0-9]*$/ ||
+            tm !~ /^[0-9][0-9]:[0-9][0-9]$/ || opt == "" ||
+            seen_mount[mp]++) bad=1
+        if (mp == "/tmp") tmp=1
+        if (vfs == "jfs2") {
+          j++
+          if (index(opt,"log=") == 0)
+            nolog=nolog (nn++?",":"") mp
+          if (index(opt,"noatime") == 0) at++
+        }
+      }
+      END {
+        if (NR < 3 || rows == 0 || bad) exit 1
+        printf "%d %d %d %s", tmp+0, j+0, at+0,
+          (nolog==""?"none":nolog)
+      }
+    ')
+  then
+    MNT_OK=1
   else
-    add storage mount_options "Mount options" PASS low "/tmp separate; $NJFS2 jfs2 mount(s), all logged; $ATIMEN using default atime" \
-        "Mount hygiene is sound: /tmp is its own filesystem and every JFS2 mount has a log. Performance options (noatime for read-heavy mounts, cio/dio for databases, rbrw) are workload-specific and left to the app owner — atime-on is the AIX default and fine unless a mount is known read-heavy." "n/a"
+    MNTWHY="not assessed — mount capture unparseable (rc=0)"
+  fi
+  if [ "$MNT_OK" -ne 1 ]; then
+    MNT=""
+    add storage mount_options "Mount options" NOT_ASSESSED med "$MNTWHY" \
+        "Mount hygiene could not be assessed because mount failed, returned no evidence, or did not match the expected AIX output shape." \
+        "run 'mount' manually, then rerun AIXray before treating /tmp separation or JFS2 logging as healthy." "ffiec:II.C.11"
+  else
+    set -- $MNTSTAT
+    TMPSEP=${1:-0}; NJFS2=${2:-0}; ATIMEN=${3:-0}; NOLOG=${4:-none}
+    if [ "$TMPSEP" -ne 1 ]; then
+      add storage mount_options "Mount options" WARN med "/tmp is not a separate filesystem" \
+          "/tmp is not mounted as its own filesystem, so it shares space with / — a runaway process that fills /tmp then fills the root filesystem, which can stop logins and logging system-wide." \
+          "give /tmp its own logical volume and filesystem (crfs -v jfs2 -m /tmp ...), or confirm this is intentional on a minimal build." "ffiec:II.C.11"
+    elif [ "$NOLOG" != none ]; then
+      add storage mount_options "Mount options" WARN low "jfs2 without a log: $NOLOG" \
+          "A JFS2 filesystem is mounted with no log device — without a JFS2 log, crash recovery falls back to a full fsck and write ordering is weaker, so a crash risks a long recovery or metadata inconsistency." \
+          "give it a jfs2log LV or use an inline log ('chfs -a logname=INLINE $NOLOG' after adding inline-log space); verify with 'mount'." "ffiec:II.C.11"
+    else
+      add storage mount_options "Mount options" PASS low "/tmp separate; $NJFS2 jfs2 mount(s), all logged; $ATIMEN using default atime" \
+          "Mount hygiene is sound: /tmp is its own filesystem and every JFS2 mount has a log. Performance options (noatime for read-heavy mounts, cio/dio for databases, rbrw) are workload-specific and left to the app owner — atime-on is the AIX default and fine unless a mount is known read-heavy." "n/a"
+    fi
   fi
 }
 

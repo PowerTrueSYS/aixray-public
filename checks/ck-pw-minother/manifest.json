@@ -1,0 +1,20 @@
+{
+  "id": "ck-pw-minother",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "pw_minother"
+  ],
+  "captures": [],
+  "requires_root": true,
+  "read_only": true,
+  "commands": [
+    "lssec -f /etc/security/user -s default -a minother"
+  ],
+  "tags": [
+    "cis-l1",
+    "ffiec:II.C.15"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-pw-minother/ck-pw-minother.ksh"
+}

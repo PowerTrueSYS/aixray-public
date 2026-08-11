@@ -1,0 +1,19 @@
+{
+  "id": "ck-fileperm-rmstartlog-owner",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "fileperm_rmstartlog_owner"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "ls -ln /var/ct/RMstart.log"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-fileperm-rmstartlog-owner/ck-fileperm-rmstartlog-owner.ksh"
+}

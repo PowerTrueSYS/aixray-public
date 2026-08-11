@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="0.1.0"
+AIXRAY_STANDALONE_VERSION="1.0.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -26,6 +26,49 @@ function aix {
     return 127
   fi
   "$@" 2>/dev/null
+}
+
+# aixv preserves stderr as evidence, for read-only commands that write their
+# version banner or diagnostics there rather than to stdout. (Deliberately no
+# example command name here: this comment is copied into all 324 standalone
+# tools, and tools/ci/egress-lint.sh reads a banned network command name in a
+# comment as a violation just as it would in a command position.)
+function aixv {
+  typeset key rc
+  key=$1
+  shift
+  if [ -n "${AIXRAY_FIXTURES:-}" ]; then
+    if [ -r "$AIXRAY_FIXTURES/$key.out" ] || [ -r "$AIXRAY_FIXTURES/$key.err" ]; then
+      [ -r "$AIXRAY_FIXTURES/$key.out" ] && cat "$AIXRAY_FIXTURES/$key.out"
+      [ -r "$AIXRAY_FIXTURES/$key.err" ] && cat "$AIXRAY_FIXTURES/$key.err"
+      rc=0
+      [ -r "$AIXRAY_FIXTURES/$key.rc" ] && read rc < "$AIXRAY_FIXTURES/$key.rc"
+      return $rc
+    fi
+    return 127
+  fi
+  "$@" 2>&1
+}
+
+# aix_capture_missing <key> — fixture-replay helper: true (rc=0) iff no capture
+# exists for <key> at all, i.e. the rc a probe just received was the "no
+# capture" default and not a genuine command status. aix()/aixv() return 127 for
+# BOTH a missing capture and a genuinely absent command, so a module that wants
+# to claim "the command is not installed" must first rule out "nobody captured
+# it". Live mode returns false (rc=1): a real box has no concept of a missing
+# fixture, and rc=127 there genuinely means the command was not found. Must be
+# called in the PARENT shell after the probe, not inside the $(aix ...)
+# substitution. Byte-for-byte the monolith's semantics (src/aixray-aix.sh.in);
+# without it here, an undefined-command rc of 127 makes the guard read false and
+# the caller launders a missing capture into NOT_APPLICABLE.
+function aix_capture_missing {
+  if [ -n "${AIXRAY_FIXTURES:-}" ]; then
+    if [ -r "$AIXRAY_FIXTURES/$1.out" ] || [ -r "$AIXRAY_FIXTURES/$1.err" ]; then
+      return 1
+    fi
+    return 0
+  fi
+  return 1
 }
 
 function jesc {
@@ -61,7 +104,13 @@ function add {
     *) echo "$AIXRAY_TOOL: internal error: unknown category '$1'" >&2; exit 1;;
   esac
   case "$4" in
-    PASS|WARN|FAIL|NOT_ASSESSED) ;;
+    # NOT_APPLICABLE is a verdict, not a refusal: the control constrains a
+    # property of a thing that need not exist. It is already a first-class
+    # status in the monolith (vios_level on a plain AIX LPAR) and in the
+    # contract schema (STATUSES, pipeline/contract_v2/schema.py), but was
+    # missing here, so any standalone tool reaching that branch aborted with
+    # an internal error instead of emitting its envelope.
+    PASS|WARN|FAIL|NOT_ASSESSED|NOT_APPLICABLE) ;;
     *) echo "$AIXRAY_TOOL: internal error: unknown status '$4'" >&2; exit 1;;
   esac
   F_CAT[$NFIND]=$1
@@ -334,85 +383,233 @@ function capture_cap_prtconf {
 
 
 function standalone_check {
+_AIXRAY_SESSION_KEYS=""
 
   # ==================== LEVEL 2/3 STORAGE DEPTH (grouped findings) ======================
   # Each check states its veteran signal in the comment. Tuning-level findings default to
   # WARN/informational unless something is genuinely broken (see docs/DEPTH-STANDARD.md).
-  REALMB=$(printf '%s\n' "$PRTCONF" | awk -F': *' '/Memory Size/{v=$2; sub(/[ 	]*MB.*/,"",v); print v+0; exit}')
+  REALMB=0
+  if [ "${PRTCONF_RC:-1}" -eq 0 ]; then
+    REALMB=$(printf '%s\n' "$PRTCONF" | awk -F': *' '/Memory Size/{v=$2; sub(/[ 	]*MB.*/,"",v); print v+0; exit}')
+  fi
 
   # vg_geometry — PP size vs VG size: is the physical-partition map laid out sanely?
   # Veteran signal: a big VG carved with a tiny PP (thousands of PPs per disk) bloats the
   # allocation map and marches toward the per-PV PP ceiling; a huge PP on a small VG wastes
   # space in coarse allocation units. A sane VG keeps a few hundred-to-~1016 PPs per disk.
-  GWORST=PASS; GEOOBS=""; GEOVG=""; GSUM=""
-  for VG in $VGL; do
-    set -- $(printf '%s\n' "$(aix "lsvg_$VG" lsvg "$VG")" | awk '
-      /PP SIZE:/   {for(i=1;i<=NF;i++) if($i=="SIZE:"  && $(i-1)=="PP")    pp=$(i+1)+0}
-      /TOTAL PPs:/ {for(i=1;i<=NF;i++) if($i=="PPs:"   && $(i-1)=="TOTAL") tp=$(i+1)+0}
-      /TOTAL PVs:/ {for(i=1;i<=NF;i++) if($i=="PVs:"   && $(i-1)=="TOTAL") tv=$(i+1)+0}
-      END{print pp+0, tp+0, tv+0}')
-    PPSZ=${1:-0}; TPP=${2:-0}; TPV=${3:-0}
-    [ "$TPV" -le 0 ] && continue
-    [ "$TPP" -le 0 ] && continue
-    PPPV=$(( TPP / TPV ))
-    VGSZMB=$(( TPP * PPSZ ))
-    GSUM="${GSUM}${GSUM:+; }$VG ${PPSZ}MB PP, ${PPPV} PP/disk"
-    if [ "$PPPV" -gt "$STOR_PP_PER_PV_HI" ]; then
-      GWORST=WARN; GEOVG=$VG
-      GEOOBS="$VG: ${PPPV} PPs per disk at a ${PPSZ}MB PP (VG ~$(( VGSZMB/1024 ))GB) — PP size too small"
-    elif [ "$PPSZ" -ge "$STOR_HUGE_PP_MB" ] && [ "$TPP" -lt "$STOR_SMALL_VG_PPS" ]; then
-      if [ "$GWORST" = PASS ]; then
-        GWORST=WARN; GEOVG=$VG
-        GEOOBS="$VG: ${PPSZ}MB PP on a ${TPP}-PP VG — coarse allocation unit, wastes space on small LVs"
-      fi
-    fi
-  done
-  if [ "$GWORST" = WARN ]; then
-    add storage vg_geometry "Volume group geometry" WARN low "$GEOOBS" \
-        "A volume group's physical-partition size does not fit its size: either a tiny PP on a large VG (a bloated allocation map that crowds the per-disk PP ceiling and slows LVM operations) or a huge PP on a small VG (coarse units that round every small LV up and waste space). It works, but it is not how you would lay it out from scratch." \
-        "PP size is fixed at mkvg time — to change it you recreate the VG (back up with savevg, recreate with 'mkvg -s <ppsize>', restore). Do it opportunistically at the next migration; it is not urgent." "ffiec:II.C.11"
+  typeset GEOGAPS GEOSTAT LVPGAPS LVROWS LVPMIR_COUNT LSLVSTAT LSVG_L LSVG_L_RC
+  GWORST=PASS; GEOOBS=""; GEOVG=""; GSUM=""; GEOGAPS=""
+  if [ "${VGL_OK:-0}" -ne 1 ]; then
+    add storage vg_geometry "Volume group geometry" NOT_ASSESSED low \
+        "${VGLWHY:-not assessed — lsvg -o capture unavailable}" \
+        "Volume-group geometry could not be assessed because the online VG inventory was unavailable or unparseable." \
+        "run 'lsvg -o' manually, then rerun AIXray before treating every online VG's PP geometry as healthy." "ffiec:II.C.11"
   else
-    add storage vg_geometry "Volume group geometry" PASS low "${GSUM:-no online VGs}" \
-        "Physical-partition geometry is sane on every online VG — the PP size fits the VG size, so the allocation map is neither bloated (tiny PP) nor wasteful (huge PP)." "n/a"
+    for VG in $VGL; do
+      VGO=$(aix "lsvg_$VG" lsvg "$VG"); VGORC=$?
+      GEOSTAT=""
+      if [ "$VGORC" -ne 0 ]; then
+        GEOGAPS="${GEOGAPS}${GEOGAPS:+; }$VG lsvg capture failed (rc=$VGORC)"
+        continue
+      elif [ -z "$VGO" ]; then
+        GEOGAPS="${GEOGAPS}${GEOGAPS:+; }$VG lsvg capture empty (rc=0)"
+        continue
+      elif GEOSTAT=$(printf '%s\n' "$VGO" | awk -v vg="$VG" '
+          /^[ 	]*#/ {
+            bad=1
+            next
+          }
+          {
+            if ($1=="VOLUME" && $2=="GROUP:") {
+              name_count++
+              if ($3 != vg) bad=1
+            }
+            if ($4=="PP" && $5=="SIZE:") {
+              pp_count++
+              pp=$6
+              unit=$7
+              if (pp !~ /^[0-9][0-9]*$/ || unit != "megabyte(s)")
+                bad=1
+            }
+            if ($4=="TOTAL" && $5=="PPs:") {
+              total_count++
+              total=$6
+              if (total !~ /^[0-9][0-9]*$/) bad=1
+            }
+            if ($1=="TOTAL" && $2=="PVs:") {
+              pv_count++
+              pvs=$3
+              if (pvs !~ /^[0-9][0-9]*$/) bad=1
+            }
+          }
+          END {
+            if (name_count != 1 || pp_count != 1 ||
+                total_count != 1 || pv_count != 1 ||
+                bad || pp == 0 || total == 0 || pvs == 0 ||
+                pvs + 0 > total + 0) exit 1
+            print pp, total, pvs
+          }
+        ')
+      then
+        set -- $GEOSTAT
+        PPSZ=$1; TPP=$2; TPV=$3
+      else
+        GEOGAPS="${GEOGAPS}${GEOGAPS:+; }$VG lsvg capture unparseable (rc=0)"
+        continue
+      fi
+      PPPV=$(( TPP / TPV ))
+      VGSZMB=$(( TPP * PPSZ ))
+      GSUM="${GSUM}${GSUM:+; }$VG ${PPSZ}MB PP, ${PPPV} PP/disk"
+      if [ "$PPPV" -gt "$STOR_PP_PER_PV_HI" ]; then
+        GWORST=WARN; GEOVG=$VG
+        GEOOBS="$VG: ${PPPV} PPs per disk at a ${PPSZ}MB PP (VG ~$(( VGSZMB/1024 ))GB) — PP size too small"
+      elif [ "$PPSZ" -ge "$STOR_HUGE_PP_MB" ] && [ "$TPP" -lt "$STOR_SMALL_VG_PPS" ]; then
+        if [ "$GWORST" = PASS ]; then
+          GWORST=WARN; GEOVG=$VG
+          GEOOBS="$VG: ${PPSZ}MB PP on a ${TPP}-PP VG — coarse allocation unit, wastes space on small LVs"
+        fi
+      fi
+    done
+    if [ -n "$GEOGAPS" ]; then
+      add storage vg_geometry "Volume group geometry" NOT_ASSESSED low \
+          "not assessed — online VG geometry capture incomplete: $GEOGAPS" \
+          "At least one online VG's PP size or PV/PP totals could not be read completely, so an every-VG geometry verdict cannot be made from the surviving members." \
+          "rerun 'lsvg <vg>' for every named VG and resolve failed, empty, or malformed output before relying on VG geometry." "ffiec:II.C.11"
+    elif [ "$GWORST" = WARN ]; then
+      add storage vg_geometry "Volume group geometry" WARN low "$GEOOBS" \
+          "A volume group's physical-partition size does not fit its size: either a tiny PP on a large VG (a bloated allocation map that crowds the per-disk PP ceiling and slows LVM operations) or a huge PP on a small VG (coarse units that round every small LV up and waste space). It works, but it is not how you would lay it out from scratch." \
+          "PP size is fixed at mkvg time — to change it you recreate the VG (back up with savevg, recreate with 'mkvg -s <ppsize>', restore). Do it opportunistically at the next migration; it is not urgent." "ffiec:II.C.11"
+    else
+      add storage vg_geometry "Volume group geometry" PASS low "$GSUM" \
+          "Physical-partition geometry is sane on every online VG — the PP size fits the VG size, so the allocation map is neither bloated (tiny PP) nor wasteful (huge PP)." "n/a"
+    fi
   fi
 
   # lv_policy — mirrored LVs whose copies share a disk (false protection).
   # Veteran signal: COPIES>1 but the copies land on ONE physical volume (PVs < copies, or
   # inter-policy minimum with copies not forced onto separate PVs) = a mirror that does not
-  # survive a disk failure. Detected from lsvg -l (copies = PPs/LPs, PVs = disks the LV spans),
-  # enriched from lslv (INTER-POLICY, "EACH LP COPY ON A SEPARATE PV ?") for the flagged LVs.
-  # mirrored LVs, one per line "vg lv copies pvs" (copies = PPs/LPs, integer only)
-  LVPMIR=$(for VG in $VGL; do
-      printf '%s\n' "$(aix "lsvg_l_$VG" lsvg -l "$VG")" | awk -v vg="$VG" '
-        NR>2 && NF>=5 { lps=$3+0; pps=$4+0; pvs=$5+0
-          if(lps>0 && pps%lps==0){ cpy=pps/lps; if(cpy>=2) print vg, $1, cpy, pvs } }'
-    done)
-  LVPMIR=${LVPMIR:-}
-  # flag the mirrored LVs whose copies do NOT span enough disks (copies share a PV); the
-  # subshell's stdout is captured, so no temp file and no write to disk (read-only posture).
-  LVPFLAG=$(printf '%s\n' "$LVPMIR" | while read VG LVNAME CPY LVPVS; do
-      [ -n "$VG" ] || continue
-      [ "$LVPVS" -lt "$CPY" ] || continue
-      LVPEXTRA=""
-      LSLVO=$(aix "lslv_$LVNAME" lslv "$LVNAME")
-      if [ -n "$LSLVO" ]; then
-        IPOL=$(printf '%s\n' "$LSLVO" | awk '/INTER-POLICY:/{print $2; exit}')
-        SEPPV=$(printf '%s\n' "$LSLVO" | awk '/EACH LP COPY ON A SEPARATE PV/{print $NF; exit}')
-        [ -n "$IPOL" ] && LVPEXTRA=" [inter-policy $IPOL, separate-PV ${SEPPV:-?}]"
-      fi
-      printf '%s/%s (%s copies on %s disk)%s\n' "$VG" "$LVNAME" "$CPY" "$LVPVS" "$LVPEXTRA"
-    done | awk 'NF{printf "%s%s",(n++?"; ":""),$0}')
-  LVPMIR=$(printf '%s\n' "$LVPMIR" | awk 'NF{n++} END{print n+0}')
-  if [ -n "$LVPFLAG" ]; then
-    add storage lv_policy "LV mirror placement" FAIL high "$LVPFLAG" \
-        "A mirrored logical volume has all its copies on ONE physical volume — the mirror looks like protection but does not survive a disk failure, because both copies die with that disk. Usually the result of inter-policy 'minimum' without forcing copies onto separate PVs." \
-        "move one copy to another disk so the copies are physically separate: 'migratepv -l <lv> <fromdisk> <todisk>', or drop and re-add the copy with 'rmlvcopy'/'mklvcopy <lv> 2 <otherdisk>'; set the LV to require separate PVs (chlv -s y)." "ffiec:II.C.11"
-  elif [ "${LVPMIR:-0}" -gt 0 ]; then
-    add storage lv_policy "LV mirror placement" PASS low "$LVPMIR mirrored LV(s), copies on separate disks" \
-        "Every mirrored logical volume keeps its copies on separate physical volumes — the mirrors are real protection that survives a single-disk failure." "n/a"
+  # survive a disk failure. Detected from validated lsvg -l rows (copies = PPs/LPs,
+  # PVs = disks the LV spans), enriched from lslv for the already-proven bad LVs.
+  LVPMIR=""; LVPGAPS=""
+  if [ "${VGL_OK:-0}" -ne 1 ]; then
+    add storage lv_policy "LV mirror placement" NOT_ASSESSED high \
+        "${VGLWHY:-not assessed — lsvg -o capture unavailable}" \
+        "LV mirror placement could not be assessed because the online VG inventory was unavailable or unparseable." \
+        "run 'lsvg -o' manually, then rerun AIXray before treating mirrored-LV disk separation as healthy." "ffiec:II.C.11"
   else
-    add storage lv_policy "LV mirror placement" PASS low "no mirrored LVs" \
-        "No logical volume is mirrored in-LPAR — single-copy LVs here rely on the SAN/VIOS for redundancy (in-LPAR mirroring is separate and not configured)." "n/a"
+    for VG in $VGL; do
+      LSVG_L=$(aix "lsvg_l_$VG" lsvg -l "$VG"); LSVG_L_RC=$?
+      LVROWS=""
+      if [ "$LSVG_L_RC" -ne 0 ]; then
+        LVPGAPS="${LVPGAPS}${LVPGAPS:+; }$VG lsvg -l capture failed (rc=$LSVG_L_RC)"
+        continue
+      elif [ -z "$LSVG_L" ]; then
+        LVPGAPS="${LVPGAPS}${LVPGAPS:+; }$VG lsvg -l capture empty (rc=0)"
+        continue
+      elif LVROWS=$(printf '%s\n' "$LSVG_L" | awk -v vg="$VG" '
+          NR == 1 {
+            if (NF != 1 || $1 != vg ":") bad=1
+            next
+          }
+          NR == 2 {
+            if (NF != 10 || $1 != "LV" || $2 != "NAME" ||
+                $3 != "TYPE" || $4 != "LPs" || $5 != "PPs" ||
+                $6 != "PVs" || $7 != "LV" || $8 != "STATE" ||
+                $9 != "MOUNT" || $10 != "POINT") bad=1
+            next
+          }
+          NF {
+            rows++
+            if (NF != 7 ||
+                $1 !~ /^[A-Za-z0-9_.-][A-Za-z0-9_.-]*$/ ||
+                $2 !~ /^[A-Za-z0-9_.-][A-Za-z0-9_.-]*$/ ||
+                $3 !~ /^[0-9][0-9]*$/ ||
+                $4 !~ /^[0-9][0-9]*$/ ||
+                $5 !~ /^[0-9][0-9]*$/ ||
+                $3 == 0 || $4 == 0 || $4 + 0 < $3 + 0 ||
+                $5 == 0 || $5 + 0 > $4 + 0 ||
+                $4 % $3 != 0 || seen_lv[$1]++) {
+              bad=1
+              next
+            }
+            copies=$4/$3
+            if (copies >= 2) print vg, $1, copies, $5
+          }
+          END { if (NR < 2 || bad) exit 1 }
+        ')
+      then
+        if [ -n "$LVROWS" ]; then
+          if [ -n "$LVPMIR" ]; then
+            LVPMIR="$LVPMIR
+$LVROWS"
+          else
+            LVPMIR=$LVROWS
+          fi
+        fi
+      else
+        LVPGAPS="${LVPGAPS}${LVPGAPS:+; }$VG lsvg -l capture unparseable (rc=0)"
+      fi
+    done
+
+    # A failed lslv read cannot contribute plausible-looking enrichment. The
+    # independently proven copies-on-one-disk defect remains actionable and is
+    # emitted as FAIL with the enrichment gap disclosed in the same row.
+    LVPFLAG=$(printf '%s\n' "$LVPMIR" | while read VG LVNAME CPY LVPVS; do
+        [ -n "$VG" ] || continue
+        [ "$LVPVS" -lt "$CPY" ] || continue
+        LVPEXTRA=""
+        LSLVO=$(aix "lslv_$LVNAME" lslv "$LVNAME"); LSLV_RC=$?
+        LSLVSTAT=""
+        if [ "$LSLV_RC" -ne 0 ]; then
+          LVPEXTRA=" [lslv enrichment unavailable: capture failed (rc=$LSLV_RC)]"
+        elif [ -z "$LSLVO" ]; then
+          LVPEXTRA=" [lslv enrichment unavailable: capture empty (rc=0)]"
+        elif LSLVSTAT=$(printf '%s\n' "$LSLVO" | awk '
+            $1 == "INTER-POLICY:" {
+              count_inter++
+              inter=$2
+              if (inter !~ /^[A-Za-z0-9_.-][A-Za-z0-9_.-]*$/) bad=1
+            }
+            $1 == "EACH" && $2 == "LP" && $3 == "COPY" &&
+                $4 == "ON" && $5 == "A" && $6 == "SEPARATE" &&
+                $7 == "PV" && $8 == "?:" {
+              count_sep++
+              sep=$NF
+              if (sep !~ /^(yes|no)$/) bad=1
+            }
+            END {
+              if (count_inter != 1 || count_sep != 1 || bad) exit 1
+              print inter, sep
+            }
+          ')
+        then
+          set -- $LSLVSTAT
+          IPOL=$1; SEPPV=$2
+          LVPEXTRA=" [inter-policy $IPOL, separate-PV $SEPPV]"
+        else
+          LVPEXTRA=" [lslv enrichment unavailable: capture unparseable (rc=0)]"
+        fi
+        printf '%s/%s (%s copies on %s disk)%s\n' \
+          "$VG" "$LVNAME" "$CPY" "$LVPVS" "$LVPEXTRA"
+      done | awk 'NF{printf "%s%s",(n++?"; ":""),$0}')
+    LVPMIR_COUNT=$(printf '%s\n' "$LVPMIR" | awk 'NF{n++} END{print n+0}')
+    if [ -n "$LVPFLAG" ]; then
+      [ -n "$LVPGAPS" ] && LVPFLAG="$LVPFLAG; assessment gaps: $LVPGAPS"
+      add storage lv_policy "LV mirror placement" FAIL high "$LVPFLAG" \
+          "A mirrored logical volume has all its copies on ONE physical volume — the mirror looks like protection but does not survive a disk failure, because both copies die with that disk. Any named assessment gap means other online VGs remain ungraded, but it does not erase the proven defect." \
+          "move one copy to another disk so the copies are physically separate: 'migratepv -l <lv> <fromdisk> <todisk>', or drop and re-add the copy with 'rmlvcopy'/'mklvcopy <lv> 2 <otherdisk>'; set the LV to require separate PVs (chlv -s y)." "ffiec:II.C.11"
+    elif [ -n "$LVPGAPS" ]; then
+      add storage lv_policy "LV mirror placement" NOT_ASSESSED high \
+          "not assessed — online VG LV inventory incomplete: $LVPGAPS" \
+          "At least one online VG's logical-volume inventory could not be read completely, so a survivor-only result cannot prove that every mirrored LV keeps its copies on separate disks." \
+          "rerun 'lsvg -l <vg>' for every named VG and resolve failed, empty, or malformed output before relying on mirror placement." "ffiec:II.C.11"
+    elif [ "$LVPMIR_COUNT" -gt 0 ]; then
+      add storage lv_policy "LV mirror placement" PASS low "$LVPMIR_COUNT mirrored LV(s), copies on separate disks" \
+          "Every mirrored logical volume keeps its copies on separate physical volumes — the mirrors are real protection that survives a single-disk failure." "n/a"
+    else
+      add storage lv_policy "LV mirror placement" PASS low "no mirrored LVs" \
+          "No logical volume is mirrored in-LPAR — single-copy LVs here rely on the SAN/VIOS for redundancy (in-LPAR mirroring is separate and not configured)." "n/a"
+    fi
   fi
 }
 

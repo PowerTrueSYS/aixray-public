@@ -1,0 +1,19 @@
+{
+  "id": "ck-pw-minage",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "pw_minage"
+  ],
+  "captures": [],
+  "requires_root": true,
+  "read_only": true,
+  "commands": [
+    "lssec -f /etc/security/user -s default -a minage"
+  ],
+  "tags": [
+    "cis-l2"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-pw-minage/ck-pw-minage.ksh"
+}

@@ -1,0 +1,19 @@
+{
+  "id": "ck-audit-classes-default",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "audit_classes_default"
+  ],
+  "captures": [],
+  "requires_root": true,
+  "read_only": true,
+  "commands": [
+    "cat /etc/security/audit/config"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-audit-classes-default/ck-audit-classes-default.ksh"
+}

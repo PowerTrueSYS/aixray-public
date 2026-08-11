@@ -1,0 +1,19 @@
+{
+  "id": "ck-net-ipsendredirects",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "net_ipsendredirects"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "no -o ipsendredirects"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-net-ipsendredirects/ck-net-ipsendredirects.ksh"
+}

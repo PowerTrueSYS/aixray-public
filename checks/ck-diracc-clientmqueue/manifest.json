@@ -1,0 +1,19 @@
+{
+  "id": "ck-diracc-clientmqueue",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "diracc_clientmqueue"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "ls -ld /var/spool/clientmqueue"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-diracc-clientmqueue/ck-diracc-clientmqueue.ksh"
+}

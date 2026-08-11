@@ -1,0 +1,19 @@
+{
+  "id": "ck-trustchk-stop-untrusted",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "trustchk_stop_untrusted"
+  ],
+  "captures": [],
+  "requires_root": true,
+  "read_only": true,
+  "commands": [
+    "trustchk -p stop_untrustd stop_on_chkfail te"
+  ],
+  "tags": [
+    "cis-l2"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-trustchk-stop-untrusted/ck-trustchk-stop-untrusted.ksh"
+}

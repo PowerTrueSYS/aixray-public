@@ -1,0 +1,19 @@
+{
+  "id": "ck-net-icmptimestamp",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "net_icmptimestamp"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "no -o icmptimestamp"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-net-icmptimestamp/ck-net-icmptimestamp.ksh"
+}

@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="0.1.0"
+AIXRAY_STANDALONE_VERSION="1.0.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -26,6 +26,49 @@ function aix {
     return 127
   fi
   "$@" 2>/dev/null
+}
+
+# aixv preserves stderr as evidence, for read-only commands that write their
+# version banner or diagnostics there rather than to stdout. (Deliberately no
+# example command name here: this comment is copied into all 324 standalone
+# tools, and tools/ci/egress-lint.sh reads a banned network command name in a
+# comment as a violation just as it would in a command position.)
+function aixv {
+  typeset key rc
+  key=$1
+  shift
+  if [ -n "${AIXRAY_FIXTURES:-}" ]; then
+    if [ -r "$AIXRAY_FIXTURES/$key.out" ] || [ -r "$AIXRAY_FIXTURES/$key.err" ]; then
+      [ -r "$AIXRAY_FIXTURES/$key.out" ] && cat "$AIXRAY_FIXTURES/$key.out"
+      [ -r "$AIXRAY_FIXTURES/$key.err" ] && cat "$AIXRAY_FIXTURES/$key.err"
+      rc=0
+      [ -r "$AIXRAY_FIXTURES/$key.rc" ] && read rc < "$AIXRAY_FIXTURES/$key.rc"
+      return $rc
+    fi
+    return 127
+  fi
+  "$@" 2>&1
+}
+
+# aix_capture_missing <key> — fixture-replay helper: true (rc=0) iff no capture
+# exists for <key> at all, i.e. the rc a probe just received was the "no
+# capture" default and not a genuine command status. aix()/aixv() return 127 for
+# BOTH a missing capture and a genuinely absent command, so a module that wants
+# to claim "the command is not installed" must first rule out "nobody captured
+# it". Live mode returns false (rc=1): a real box has no concept of a missing
+# fixture, and rc=127 there genuinely means the command was not found. Must be
+# called in the PARENT shell after the probe, not inside the $(aix ...)
+# substitution. Byte-for-byte the monolith's semantics (src/aixray-aix.sh.in);
+# without it here, an undefined-command rc of 127 makes the guard read false and
+# the caller launders a missing capture into NOT_APPLICABLE.
+function aix_capture_missing {
+  if [ -n "${AIXRAY_FIXTURES:-}" ]; then
+    if [ -r "$AIXRAY_FIXTURES/$1.out" ] || [ -r "$AIXRAY_FIXTURES/$1.err" ]; then
+      return 1
+    fi
+    return 0
+  fi
+  return 1
 }
 
 function jesc {
@@ -61,7 +104,13 @@ function add {
     *) echo "$AIXRAY_TOOL: internal error: unknown category '$1'" >&2; exit 1;;
   esac
   case "$4" in
-    PASS|WARN|FAIL|NOT_ASSESSED) ;;
+    # NOT_APPLICABLE is a verdict, not a refusal: the control constrains a
+    # property of a thing that need not exist. It is already a first-class
+    # status in the monolith (vios_level on a plain AIX LPAR) and in the
+    # contract schema (STATUSES, pipeline/contract_v2/schema.py), but was
+    # missing here, so any standalone tool reaching that branch aborted with
+    # an internal error instead of emitting its envelope.
+    PASS|WARN|FAIL|NOT_ASSESSED|NOT_APPLICABLE) ;;
     *) echo "$AIXRAY_TOOL: internal error: unknown status '$4'" >&2; exit 1;;
   esac
   F_CAT[$NFIND]=$1
@@ -305,6 +354,7 @@ function capture_cap_lsvg_l_rootvg {
 
 
 function standalone_check {
+_AIXRAY_SESSION_KEYS=""
 
   # multibos_residue — leftover standby-BOS state from a prior multibos operation (docs/aixray-
   # spec-v2.md Sec 5 cap-filesets row; the multibos+nimadm version-dependent interaction, Sec 4,
@@ -312,31 +362,31 @@ function standalone_check {
   # verdict on whether it's safe to proceed with a specific migration method). Sourced two ways,
   # both IBM-documented: 'bos_'-prefixed LV names in the SAME rootvg LV list already captured
   # above (ROOTVG_LVL), and a mounted '/bos_inst' filesystem. Live-verified clean (neither present
-  # — a real, not hypothetical, stock-image negative) on both lab-host-02 and lab-host-03, 2026-07-13.
+  # — a real, not hypothetical, stock-image negative) on both lab LPARs (AIX 7.2 and 7.1), 2026-07-13.
   # Presence is only trusted from a source that itself SUCCEEDED -- gating BOSLV/BOSMNT
   # on their own rc BEFORE using them as signal (rather than gating the overall verdict
-  # afterward) closes a failed-source-to-verdict path Codex's confirming review caught:
+  # afterward) closes a failed-source-to-verdict path the adversarial confirming review caught:
   # a failed 'lsvg -l rootvg' or 'mount' capture that nonetheless leaves plausible partial
-  # text behind must never be able to manufacture a confident "present" finding (Codex
+  # text behind must never be able to manufacture a confident "present" finding (adversarial
   # primary review, M5, round 3, new-bug finding on multibos_residue).
   BOSLV=""
   [ "$ROOTVG_LVL_RC" -eq 0 ] && BOSLV=$(printf '%s\n' "$ROOTVG_LVL" | awk '$1 ~ /^bos_/{printf "%s%s",(n++?",":""),$1}')
   MNT_MULTIBOS=$(aix mount mount); MOUNT_RC=$?
   # Exact whitespace-delimited field match, not a substring search across the whole line
-  # (Codex primary review, M5, round 2, finding #8): an unanchored '/bos_inst' pattern
+  # (adversarial review, M5, round 2, finding #8): an unanchored '/bos_inst' pattern
   # also matches '/bos_inst.old', '/bos_inst_backup', or the string appearing in some
   # other column (e.g. the options field) -- none of which is the real "mounted over"
   # path this check is actually looking for. Search starts at field 2, never field 1:
   # in 'mount' output the FIRST field is always either the remote node or the local
   # mounted-FROM device/path, never the mounted-over path -- so field 1 can never be a
   # legitimate "mounted over /bos_inst" match regardless of node-column shift between
-  # local and NFS-mounted rows (Codex primary review, M5, round 3, finding #8 residual).
+  # local and NFS-mounted rows (adversarial review, M5, round 3, finding #8 residual).
   BOSMNT=""
   [ "$MOUNT_RC" -eq 0 ] && BOSMNT=$(printf '%s\n' "$MNT_MULTIBOS" | awk '{for (i=2;i<=NF;i++) if ($i=="/bos_inst") {print; exit}}')
   # Structural validation, not just rc+nonemptiness -- a nonempty rc=0 capture that doesn't
   # even resemble real 'lsvg -l'/'mount' output (garbled, truncated, or the wrong command
   # entirely) must never be trusted into a confident "none" PASS just because it happened to
-  # contain no bos_/bos_inst token (Codex primary review, M5, HIGH finding #3: reproduced
+  # contain no bos_/bos_inst token (adversarial review, M5, HIGH finding #3: reproduced
   # in-memory with garbled rootvg+mount captures -- output was 'multibos_residue PASS none').
   # Recognizable shape checked here is deliberately minimal, not a full re-parse: 'lsvg -l's
   # own 'rootvg:' vg-name header line plus its 'LV NAME'/'TYPE' column header; 'mount's own
@@ -346,7 +396,7 @@ function standalone_check {
   # while carrying ZERO of the actual LV/mount data rows that would show real residue --
   # reproduced live (a headers-only 'lsvg -l rootvg'/'mount' capture rendered PASS "none").
   # A bare LINE-COUNT floor (an earlier version of this fix) is insufficient on its own
-  # (Codex primary review, 2026-07-14, HIGH: any fixed count is defeated by truncating
+  # (adversarial review, 2026-07-14, HIGH: any fixed count is defeated by truncating
   # one row LATER -- e.g. after 3 ordinary LVs but before a later bos_-prefixed one).
   # Tightened to validate the SPECIFIC mandatory rows every supported real AIX capture has:
   # rootvg's hd5/hd6/hd8/hd4/hd2/hd9var rows, including their real type, positive LP/PP/PV
@@ -407,7 +457,7 @@ function standalone_check {
     # 'lsvg -l rootvg' (rootvg always has LVs) and 'mount' (always at least '/'). PASSing
     # when only ONE source actually returned clean data was the exact NOT_ASSESSED-
     # laundered-into-a-verdict class this repo's own discipline forbids -- caught only
-    # because Codex's primary review on this milestone checked the individual-source
+    # because the adversarial review on this milestone checked the individual-source
     # failure case explicitly, not just the both-empty case self-review had already
     # covered.
     add storage multibos_residue "multibos/alt_disk standby-BOS residue" WARN low "unreadable" \

@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="0.1.0"
+AIXRAY_STANDALONE_VERSION="1.0.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -26,6 +26,49 @@ function aix {
     return 127
   fi
   "$@" 2>/dev/null
+}
+
+# aixv preserves stderr as evidence, for read-only commands that write their
+# version banner or diagnostics there rather than to stdout. (Deliberately no
+# example command name here: this comment is copied into all 324 standalone
+# tools, and tools/ci/egress-lint.sh reads a banned network command name in a
+# comment as a violation just as it would in a command position.)
+function aixv {
+  typeset key rc
+  key=$1
+  shift
+  if [ -n "${AIXRAY_FIXTURES:-}" ]; then
+    if [ -r "$AIXRAY_FIXTURES/$key.out" ] || [ -r "$AIXRAY_FIXTURES/$key.err" ]; then
+      [ -r "$AIXRAY_FIXTURES/$key.out" ] && cat "$AIXRAY_FIXTURES/$key.out"
+      [ -r "$AIXRAY_FIXTURES/$key.err" ] && cat "$AIXRAY_FIXTURES/$key.err"
+      rc=0
+      [ -r "$AIXRAY_FIXTURES/$key.rc" ] && read rc < "$AIXRAY_FIXTURES/$key.rc"
+      return $rc
+    fi
+    return 127
+  fi
+  "$@" 2>&1
+}
+
+# aix_capture_missing <key> — fixture-replay helper: true (rc=0) iff no capture
+# exists for <key> at all, i.e. the rc a probe just received was the "no
+# capture" default and not a genuine command status. aix()/aixv() return 127 for
+# BOTH a missing capture and a genuinely absent command, so a module that wants
+# to claim "the command is not installed" must first rule out "nobody captured
+# it". Live mode returns false (rc=1): a real box has no concept of a missing
+# fixture, and rc=127 there genuinely means the command was not found. Must be
+# called in the PARENT shell after the probe, not inside the $(aix ...)
+# substitution. Byte-for-byte the monolith's semantics (src/aixray-aix.sh.in);
+# without it here, an undefined-command rc of 127 makes the guard read false and
+# the caller launders a missing capture into NOT_APPLICABLE.
+function aix_capture_missing {
+  if [ -n "${AIXRAY_FIXTURES:-}" ]; then
+    if [ -r "$AIXRAY_FIXTURES/$1.out" ] || [ -r "$AIXRAY_FIXTURES/$1.err" ]; then
+      return 1
+    fi
+    return 0
+  fi
+  return 1
 }
 
 function jesc {
@@ -61,7 +104,13 @@ function add {
     *) echo "$AIXRAY_TOOL: internal error: unknown category '$1'" >&2; exit 1;;
   esac
   case "$4" in
-    PASS|WARN|FAIL|NOT_ASSESSED) ;;
+    # NOT_APPLICABLE is a verdict, not a refusal: the control constrains a
+    # property of a thing that need not exist. It is already a first-class
+    # status in the monolith (vios_level on a plain AIX LPAR) and in the
+    # contract schema (STATUSES, pipeline/contract_v2/schema.py), but was
+    # missing here, so any standalone tool reaching that branch aborted with
+    # an internal error instead of emitting its envelope.
+    PASS|WARN|FAIL|NOT_ASSESSED|NOT_APPLICABLE) ;;
     *) echo "$AIXRAY_TOOL: internal error: unknown status '$4'" >&2; exit 1;;
   esac
   F_CAT[$NFIND]=$1
@@ -299,30 +348,97 @@ AIXRAY_TOOL=ck-fs-lv-slack
 
 
 function standalone_check {
+_AIXRAY_SESSION_KEYS=""
 
   # fs_lv_slack — filesystem size vs the LV it lives on (lsfs -q: fs size vs lv size).
   # Veteran signal: lv size >> fs size = partitions allocated to the LV that the filesystem
   # was never grown into — space you are paying for (and cannot use) until you chfs it up.
-  LSFSQ=$(aix lsfs_q lsfs -q)
-  set -- $(printf '%s\n' "$LSFSQ" | awk '
-    /^[ 	]*\(lv size:/ {
-      s=$0; gsub(/[(),:]/," ",s); n=split(s,a," "); lv=0; fs=0
-      for(i=1;i<n;i++){ if(a[i]=="lv"&&a[i+1]=="size"){lv=a[i+2]+0}; if(a[i]=="fs"&&a[i+1]=="size"){fs=a[i+2]+0} }
-      if(lv>0 && lv>fs){ slk=lv-fs; if(slk>ws){ws=slk; wmp=mp; wlv=lv; wfs=fs} }
-      next
-    }
-    $1 ~ /^\/dev\// && NF>=5 { mp=$3; next }
-    END{ printf "%s %d %d %d", (wmp==""?"none":wmp), ws+0, wlv+0, wfs+0 }')
-  SLKMP=${1:-none}; SLKBLK=${2:-0}; SLKLV=${3:-0}; SLKFS=${4:-0}
-  SLKMB=$(( SLKBLK / 2048 ))
-  SLKPCT=0; [ "${SLKLV:-0}" -gt 0 ] && SLKPCT=$(( SLKBLK * 100 / SLKLV ))
-  if [ "$SLKMB" -ge "$STOR_SLACK_MB" ] && [ "$SLKPCT" -ge "$STOR_SLACK_PCT" ]; then
-    add storage fs_lv_slack "Filesystem vs LV sizing" WARN low "$SLKMP: LV $(( SLKLV/2048 ))MB, FS $(( SLKFS/2048 ))MB — ${SLKMB}MB (${SLKPCT}%) allocated but unused" \
-        "The logical volume under $SLKMP has partitions the filesystem was never grown into — ${SLKMB}MB is allocated to the LV but the JFS2 filesystem stops short of it, so you are holding that disk space without being able to use it. Often left behind after an 'extendlv' with no matching 'chfs'." \
-        "grow the filesystem into the LV it already owns: 'chfs -a size=${SLKLV} $SLKMP' (size in 512-byte blocks), or trim the LV if the space was allocated by mistake." "ffiec:II.C.11"
+  typeset LSFSQ_RC LSFSQ_OK LSFSQWHY
+  LSFSQ=$(aix lsfs_q lsfs -q); LSFSQ_RC=$?
+  LSFSQ_OK=0; LSFSQWHY=""
+  if [ "$LSFSQ_RC" -ne 0 ]; then
+    LSFSQWHY="not assessed — lsfs -q capture failed (rc=$LSFSQ_RC)"
+  elif [ -z "$LSFSQ" ]; then
+    LSFSQWHY="not assessed — lsfs -q capture empty (rc=0)"
+  elif printf '%s\n' "$LSFSQ" | awk '
+      NR == 1 {
+        if (NF != 9 || $1 != "Name" || $2 != "Nodename" ||
+            $3 != "Mount" || $4 != "Pt" || $5 != "VFS" ||
+            $6 != "Size" || $7 != "Options" || $8 != "Auto" ||
+            $9 != "Accounting") bad=1
+        next
+      }
+      /^[^ 	]/ {
+        if (need_detail) bad=1
+        rows++
+        if (NF != 8 || $3 !~ /^\// ||
+            $4 !~ /^[A-Za-z][A-Za-z0-9_.-]*$/ ||
+            ($5 !~ /^[0-9][0-9]*$/ && $5 != "--") ||
+            $6 !~ /^(--|[A-Za-z][A-Za-z0-9_,.-]*)$/ ||
+            $7 !~ /^(yes|no)$/ || $8 !~ /^(yes|no)$/ ||
+            seen_mount[$3]++) bad=1
+        if ($1 ~ /^\/dev\// && ($4 == "jfs" || $4 == "jfs2")) {
+          if ($5 !~ /^[0-9][0-9]*$/ || $5 == 0) bad=1
+          need_detail=1
+        }
+        next
+      }
+      /^[ \t]*\(lv size:/ {
+        if (!need_detail) bad=1
+        s=$0
+        gsub(/[(),:]/, " ", s)
+        n=split(s, a, " ")
+        lv_count=0; fs_count=0; lv=""; fs=""
+        for (i=1; i<n; i++) {
+          if (a[i]=="lv" && a[i+1]=="size") {
+            lv_count++
+            lv=a[i+2]
+          }
+          if (a[i]=="fs" && a[i+1]=="size") {
+            fs_count++
+            fs=a[i+2]
+          }
+        }
+        if (lv_count != 1 || fs_count != 1 ||
+            lv !~ /^[0-9][0-9]*$/ || fs !~ /^[0-9][0-9]*$/ ||
+            lv == 0 || fs == 0 || fs + 0 > lv + 0) bad=1
+        need_detail=0
+        next
+      }
+      NF { bad=1 }
+      END { if (rows == 0 || need_detail || bad) exit 1 }
+    '
+  then
+    LSFSQ_OK=1
   else
-    add storage fs_lv_slack "Filesystem vs LV sizing" PASS low "no filesystem lags its LV by ${STOR_SLACK_MB}MB+" \
-        "Every JFS2 filesystem is grown into the logical volume it sits on — no allocated-but-unusable slack between the LV and the filesystem." "n/a"
+    LSFSQWHY="not assessed — lsfs -q capture unparseable (rc=0)"
+  fi
+  if [ "$LSFSQ_OK" -ne 1 ]; then
+    LSFSQ=""
+    add storage fs_lv_slack "Filesystem vs LV sizing" NOT_ASSESSED low "$LSFSQWHY" \
+        "Filesystem-to-LV sizing could not be assessed because lsfs -q failed, returned no evidence, or did not contain complete numeric filesystem/detail row pairs." \
+        "run 'lsfs -q' manually, then rerun AIXray before treating filesystem/LV sizing as healthy." "ffiec:II.C.11"
+  else
+    set -- $(printf '%s\n' "$LSFSQ" | awk '
+      /^[ 	]*\(lv size:/ {
+        s=$0; gsub(/[(),:]/," ",s); n=split(s,a," "); lv=0; fs=0
+        for(i=1;i<n;i++){ if(a[i]=="lv"&&a[i+1]=="size"){lv=a[i+2]+0}; if(a[i]=="fs"&&a[i+1]=="size"){fs=a[i+2]+0} }
+        if(lv>0 && lv>fs){ slk=lv-fs; if(slk>ws){ws=slk; wmp=mp; wlv=lv; wfs=fs} }
+        next
+      }
+      $1 ~ /^\/dev\// && NF>=5 { mp=$3; next }
+      END{ printf "%s %d %d %d", (wmp==""?"none":wmp), ws+0, wlv+0, wfs+0 }')
+    SLKMP=${1:-none}; SLKBLK=${2:-0}; SLKLV=${3:-0}; SLKFS=${4:-0}
+    SLKMB=$(( SLKBLK / 2048 ))
+    SLKPCT=0; [ "${SLKLV:-0}" -gt 0 ] && SLKPCT=$(( SLKBLK * 100 / SLKLV ))
+    if [ "$SLKMB" -ge "$STOR_SLACK_MB" ] && [ "$SLKPCT" -ge "$STOR_SLACK_PCT" ]; then
+      add storage fs_lv_slack "Filesystem vs LV sizing" WARN low "$SLKMP: LV $(( SLKLV/2048 ))MB, FS $(( SLKFS/2048 ))MB — ${SLKMB}MB (${SLKPCT}%) allocated but unused" \
+          "The logical volume under $SLKMP has partitions the filesystem was never grown into — ${SLKMB}MB is allocated to the LV but the JFS2 filesystem stops short of it, so you are holding that disk space without being able to use it. Often left behind after an 'extendlv' with no matching 'chfs'." \
+          "grow the filesystem into the LV it already owns: 'chfs -a size=${SLKLV} $SLKMP' (size in 512-byte blocks), or trim the LV if the space was allocated by mistake." "ffiec:II.C.11"
+    else
+      add storage fs_lv_slack "Filesystem vs LV sizing" PASS low "no filesystem lags its LV by ${STOR_SLACK_MB}MB+" \
+          "Every JFS2 filesystem is grown into the logical volume it sits on — no allocated-but-unusable slack between the LV and the filesystem." "n/a"
+    fi
   fi
 }
 

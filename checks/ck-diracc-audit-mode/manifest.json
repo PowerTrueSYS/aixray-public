@@ -1,0 +1,19 @@
+{
+  "id": "ck-diracc-audit-mode",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "diracc_audit_mode"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "ls -ldn /audit"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-diracc-audit-mode/ck-diracc-audit-mode.ksh"
+}

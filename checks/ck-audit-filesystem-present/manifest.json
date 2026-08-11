@@ -1,0 +1,23 @@
+{
+  "id": "ck-audit-filesystem-present",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "audit_filesystem_present"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "lsfs /audit",
+    "cat /etc/security/audit/config",
+    "lssec -f /usr/lib/security/mkuser.default -s user -a auditclasses",
+    "crontab -l",
+    "lsitab audit"
+  ],
+  "tags": [
+    "cis-l2"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-audit-filesystem-present/ck-audit-filesystem-present.ksh"
+}

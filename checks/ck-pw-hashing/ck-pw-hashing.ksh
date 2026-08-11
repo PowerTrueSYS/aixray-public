@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="0.1.0"
+AIXRAY_STANDALONE_VERSION="1.0.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -26,6 +26,49 @@ function aix {
     return 127
   fi
   "$@" 2>/dev/null
+}
+
+# aixv preserves stderr as evidence, for read-only commands that write their
+# version banner or diagnostics there rather than to stdout. (Deliberately no
+# example command name here: this comment is copied into all 324 standalone
+# tools, and tools/ci/egress-lint.sh reads a banned network command name in a
+# comment as a violation just as it would in a command position.)
+function aixv {
+  typeset key rc
+  key=$1
+  shift
+  if [ -n "${AIXRAY_FIXTURES:-}" ]; then
+    if [ -r "$AIXRAY_FIXTURES/$key.out" ] || [ -r "$AIXRAY_FIXTURES/$key.err" ]; then
+      [ -r "$AIXRAY_FIXTURES/$key.out" ] && cat "$AIXRAY_FIXTURES/$key.out"
+      [ -r "$AIXRAY_FIXTURES/$key.err" ] && cat "$AIXRAY_FIXTURES/$key.err"
+      rc=0
+      [ -r "$AIXRAY_FIXTURES/$key.rc" ] && read rc < "$AIXRAY_FIXTURES/$key.rc"
+      return $rc
+    fi
+    return 127
+  fi
+  "$@" 2>&1
+}
+
+# aix_capture_missing <key> — fixture-replay helper: true (rc=0) iff no capture
+# exists for <key> at all, i.e. the rc a probe just received was the "no
+# capture" default and not a genuine command status. aix()/aixv() return 127 for
+# BOTH a missing capture and a genuinely absent command, so a module that wants
+# to claim "the command is not installed" must first rule out "nobody captured
+# it". Live mode returns false (rc=1): a real box has no concept of a missing
+# fixture, and rc=127 there genuinely means the command was not found. Must be
+# called in the PARENT shell after the probe, not inside the $(aix ...)
+# substitution. Byte-for-byte the monolith's semantics (src/aixray-aix.sh.in);
+# without it here, an undefined-command rc of 127 makes the guard read false and
+# the caller launders a missing capture into NOT_APPLICABLE.
+function aix_capture_missing {
+  if [ -n "${AIXRAY_FIXTURES:-}" ]; then
+    if [ -r "$AIXRAY_FIXTURES/$1.out" ] || [ -r "$AIXRAY_FIXTURES/$1.err" ]; then
+      return 1
+    fi
+    return 0
+  fi
+  return 1
 }
 
 function jesc {
@@ -61,7 +104,13 @@ function add {
     *) echo "$AIXRAY_TOOL: internal error: unknown category '$1'" >&2; exit 1;;
   esac
   case "$4" in
-    PASS|WARN|FAIL|NOT_ASSESSED) ;;
+    # NOT_APPLICABLE is a verdict, not a refusal: the control constrains a
+    # property of a thing that need not exist. It is already a first-class
+    # status in the monolith (vios_level on a plain AIX LPAR) and in the
+    # contract schema (STATUSES, pipeline/contract_v2/schema.py), but was
+    # missing here, so any standalone tool reaching that branch aborted with
+    # an internal error instead of emitting its envelope.
+    PASS|WARN|FAIL|NOT_ASSESSED|NOT_APPLICABLE) ;;
     *) echo "$AIXRAY_TOOL: internal error: unknown status '$4'" >&2; exit 1;;
   esac
   F_CAT[$NFIND]=$1
@@ -299,6 +348,7 @@ AIXRAY_TOOL=ck-pw-hashing
 
 
 function standalone_check {
+_AIXRAY_SESSION_KEYS=""
 
   # pw_hashing — the usw password-hash algorithm. An unset pwd_algorithm
   # falls back to legacy DES crypt, which considers only the first 8 password
@@ -312,12 +362,28 @@ function standalone_check {
     PWH_RAW=$(aix pwd_algorithm lssec -f /etc/security/login.cfg -s usw -a pwd_algorithm); PWH_RC=$?
   fi
   if [ "$PWH_RC" -ne 0 ]; then
-    nr_warn security pw_hashing "Password hashing algorithm" \
-        "the password hashing policy" \
-        "lssec -f /etc/security/login.cfg -s usw -a pwd_algorithm" \
-        "cis-l1" NOT_ASSESSED high
+    if [ "${MYUID:-0}" != "0" ]; then
+      add security pw_hashing "Password hashing algorithm" \
+          NOT_ASSESSED high \
+          "not assessed — pwd_algorithm capture not executed (requires root; rc=$PWH_RC)" \
+          "The password hashing policy needs root access and no pwd_algorithm capture was executed." \
+          "re-run aixray as root, or inspect 'lssec -f /etc/security/login.cfg -s usw -a pwd_algorithm' manually." "cis-l1"
+    else
+      add security pw_hashing "Password hashing algorithm" \
+          NOT_ASSESSED high \
+          "not assessed — pwd_algorithm capture failed (rc=$PWH_RC)" \
+          "The pwd_algorithm read failed, which is unexpected as root, so AIXray obtained no trustworthy password-hashing evidence." \
+          "run 'lssec -f /etc/security/login.cfg -s usw -a pwd_algorithm' manually, restore read access, then rerun AIXray." "cis-l1"
+    fi
   else
     PWH_PARSED=$(printf '%s\n' "$PWH_RAW" | awk '
+      function remember(candidate) {
+        if (candidate == "") candidate="(empty)"
+        if (!seen_value[candidate]++) {
+          if (values != "") values=values ", "
+          values=values candidate
+        }
+      }
       NF {
         rows++
         if ($1 != "usw") bad=1
@@ -325,34 +391,46 @@ function standalone_check {
           if (index($i,"pwd_algorithm=")==1) {
             attrs++
             value=substr($i,length("pwd_algorithm=")+1)
+            remember(value)
           } else {
             bad=1
           }
         }
       }
       END {
-        if (rows==0) print "unset"
-        else if (bad || rows!=1 || attrs>1) print "bad"
-        else if (attrs==0 || value=="") print "unset"
-        else if (value ~ /^[A-Za-z0-9_.-]+$/) print "value " value
-        else print "bad"
+        if (rows==0) print "empty|"
+        else if (rows!=1 && attrs<=1) print "bad|"
+        else if (rows!=1) print "multiple|" values
+        else if (bad || attrs!=1) print "bad|"
+        else if (value=="") print "absent|"
+        else if (value ~ /^[A-Za-z0-9_.-]+$/) print "value|" value
+        else print "bad|"
       }')
-    PWH_STATE=${PWH_PARSED%% *}
-    case "$PWH_PARSED" in
-      value\ *) PWH_VALUE=${PWH_PARSED#value } ;;
-      *) PWH_VALUE="" ;;
-    esac
+    PWH_STATE=${PWH_PARSED%%\|*}
+    PWH_VALUE=${PWH_PARSED#*\|}
 
     case "$PWH_STATE" in
+      empty)
+        add security pw_hashing "Password hashing algorithm" NOT_ASSESSED high \
+            "not assessed — pwd_algorithm capture empty (rc=0); read returned no assignment" \
+            "The successful read returned no pwd_algorithm assignment, so AIXray cannot claim the attribute is absent or select a release default." \
+            "run 'lssec -f /etc/security/login.cfg -s usw -a pwd_algorithm' manually, then rerun AIXray." "cis-l1"
+        ;;
+      multiple)
+        add security pw_hashing "Password hashing algorithm" NOT_ASSESSED high \
+            "not assessed — multiple pwd_algorithm assignments (values: $PWH_VALUE)" \
+            "The capture contained more than one pwd_algorithm assignment, so AIXray cannot determine one effective hashing policy." \
+            "remove duplicate or conflicting usw pwd_algorithm assignments, then rerun AIXray." "cis-l1"
+        ;;
       bad)
         add security pw_hashing "Password hashing algorithm" NOT_ASSESSED high \
-            "not assessed — lssec pwd_algorithm output was unparseable" \
+            "not assessed — pwd_algorithm capture unparseable: output was not exactly one usw pwd_algorithm assignment" \
             "The password hashing policy could not be parsed, so AIXray cannot claim that password hashes use an approved algorithm." \
             "run 'lssec -f /etc/security/login.cfg -s usw -a pwd_algorithm' manually, then rerun AIXray." "cis-l1"
         ;;
-      unset)
+      absent)
         add security pw_hashing "Password hashing algorithm" FAIL high \
-            "(unset — defaults to legacy crypt)" \
+            "/etc/security/login.cfg usw pwd_algorithm unset (defaults to legacy crypt); requires ssha256, ssha512 or bcrypt" \
             "An unset pwd_algorithm defaults to legacy DES crypt, which truncates passwords to 8 characters; characters after the eighth do not strengthen the stored hash." \
             "set pwd_algorithm to ssha256 at minimum (for example, 'chsec -f /etc/security/login.cfg -s usw -a pwd_algorithm=ssha256'); AIXray only recommends this command and never executes it." "cis-l1"
         ;;
@@ -366,13 +444,13 @@ function standalone_check {
             ;;
           crypt)
             add security pw_hashing "Password hashing algorithm" FAIL high \
-                "$PWH_VALUE" \
+                "/etc/security/login.cfg usw pwd_algorithm=$PWH_VALUE; requires ssha256, ssha512 or bcrypt" \
                 "pwd_algorithm=crypt selects legacy DES crypt, which truncates passwords to 8 characters; characters after the eighth do not strengthen the stored hash." \
                 "set pwd_algorithm to ssha256 at minimum (for example, 'chsec -f /etc/security/login.cfg -s usw -a pwd_algorithm=ssha256'); AIXray only recommends this command and never executes it." "cis-l1"
             ;;
           *)
             add security pw_hashing "Password hashing algorithm" FAIL high \
-                "$PWH_VALUE" \
+                "/etc/security/login.cfg usw pwd_algorithm=$PWH_VALUE; requires ssha256, ssha512 or bcrypt" \
                 "The configured password hashing algorithm is not one of the accepted choices (ssha256, ssha512, or bcrypt); ssha256 is the minimum recommendation." \
                 "set pwd_algorithm to ssha256 at minimum (for example, 'chsec -f /etc/security/login.cfg -s usw -a pwd_algorithm=ssha256'); AIXray only recommends this command and never executes it." "cis-l1"
             ;;

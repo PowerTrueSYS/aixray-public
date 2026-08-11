@@ -1,0 +1,20 @@
+{
+  "id": "ck-home-config-file-perms",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "home_config_file_perms"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "lsuser -a home ALL",
+    "ls -lan <qualifying home directory>"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-home-config-file-perms/ck-home-config-file-perms.ksh"
+}

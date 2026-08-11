@@ -1,0 +1,19 @@
+{
+  "id": "ck-fileperm-hosts-mode",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "fileperm_hosts_mode"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "ls -ln /etc/hosts"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-fileperm-hosts-mode/ck-fileperm-hosts-mode.ksh"
+}

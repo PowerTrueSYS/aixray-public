@@ -1,0 +1,19 @@
+{
+  "id": "ck-worldwrite-dirs-nosvtx",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "worldwrite_dirs_nosvtx"
+  ],
+  "captures": [],
+  "requires_root": true,
+  "read_only": true,
+  "commands": [
+    "find / \\( -fstype jfs -o -fstype jfs2 \\) -type d -perm -o+w ! -perm -1000 -ls"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-worldwrite-dirs-nosvtx/ck-worldwrite-dirs-nosvtx.ksh"
+}

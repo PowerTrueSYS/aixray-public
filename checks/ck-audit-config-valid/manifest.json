@@ -1,0 +1,19 @@
+{
+  "id": "ck-audit-config-valid",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "audit_config_valid"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "cat /etc/security/audit/config"
+  ],
+  "tags": [
+    "cis-l2"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-audit-config-valid/ck-audit-config-valid.ksh"
+}

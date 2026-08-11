@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="0.1.0"
+AIXRAY_STANDALONE_VERSION="1.0.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -26,6 +26,49 @@ function aix {
     return 127
   fi
   "$@" 2>/dev/null
+}
+
+# aixv preserves stderr as evidence, for read-only commands that write their
+# version banner or diagnostics there rather than to stdout. (Deliberately no
+# example command name here: this comment is copied into all 324 standalone
+# tools, and tools/ci/egress-lint.sh reads a banned network command name in a
+# comment as a violation just as it would in a command position.)
+function aixv {
+  typeset key rc
+  key=$1
+  shift
+  if [ -n "${AIXRAY_FIXTURES:-}" ]; then
+    if [ -r "$AIXRAY_FIXTURES/$key.out" ] || [ -r "$AIXRAY_FIXTURES/$key.err" ]; then
+      [ -r "$AIXRAY_FIXTURES/$key.out" ] && cat "$AIXRAY_FIXTURES/$key.out"
+      [ -r "$AIXRAY_FIXTURES/$key.err" ] && cat "$AIXRAY_FIXTURES/$key.err"
+      rc=0
+      [ -r "$AIXRAY_FIXTURES/$key.rc" ] && read rc < "$AIXRAY_FIXTURES/$key.rc"
+      return $rc
+    fi
+    return 127
+  fi
+  "$@" 2>&1
+}
+
+# aix_capture_missing <key> — fixture-replay helper: true (rc=0) iff no capture
+# exists for <key> at all, i.e. the rc a probe just received was the "no
+# capture" default and not a genuine command status. aix()/aixv() return 127 for
+# BOTH a missing capture and a genuinely absent command, so a module that wants
+# to claim "the command is not installed" must first rule out "nobody captured
+# it". Live mode returns false (rc=1): a real box has no concept of a missing
+# fixture, and rc=127 there genuinely means the command was not found. Must be
+# called in the PARENT shell after the probe, not inside the $(aix ...)
+# substitution. Byte-for-byte the monolith's semantics (src/aixray-aix.sh.in);
+# without it here, an undefined-command rc of 127 makes the guard read false and
+# the caller launders a missing capture into NOT_APPLICABLE.
+function aix_capture_missing {
+  if [ -n "${AIXRAY_FIXTURES:-}" ]; then
+    if [ -r "$AIXRAY_FIXTURES/$1.out" ] || [ -r "$AIXRAY_FIXTURES/$1.err" ]; then
+      return 1
+    fi
+    return 0
+  fi
+  return 1
 }
 
 function jesc {
@@ -61,7 +104,13 @@ function add {
     *) echo "$AIXRAY_TOOL: internal error: unknown category '$1'" >&2; exit 1;;
   esac
   case "$4" in
-    PASS|WARN|FAIL|NOT_ASSESSED) ;;
+    # NOT_APPLICABLE is a verdict, not a refusal: the control constrains a
+    # property of a thing that need not exist. It is already a first-class
+    # status in the monolith (vios_level on a plain AIX LPAR) and in the
+    # contract schema (STATUSES, pipeline/contract_v2/schema.py), but was
+    # missing here, so any standalone tool reaching that branch aborted with
+    # an internal error instead of emitting its envelope.
+    PASS|WARN|FAIL|NOT_ASSESSED|NOT_APPLICABLE) ;;
     *) echo "$AIXRAY_TOOL: internal error: unknown status '$4'" >&2; exit 1;;
   esac
   F_CAT[$NFIND]=$1
@@ -297,6 +346,7 @@ function standalone_main {
 
 AIXRAY_TOOL=ck-alt-disk-recoverability
 
+_AIXRAY_SESSION_KEYS=""
 # Assess the alt-disk recovery path and emit its graded finding plus the two
 # Step-0 recovery facts owned by this one read-only job. Include-safe: the
 # assembled scanner calls check_alt_disk_recoverability after the shared aix
@@ -416,7 +466,7 @@ function alt_disk_set_finding {
   typeset ALT_FIND_OS ALT_FIND_UPDATED ALT_FIND_AGE ALT_FIND_FRESHNESS ALT_FIND_REASON
   typeset ALT_FIND_DISK_JSON ALT_FIND_DISKS_KNOWN ALT_FIND_FIRST
   typeset ALT_FIND_SOURCES ALT_FIND_SOURCE_OVERRIDE
-  typeset ALT_FIND_REASON_SUFFIX
+  typeset ALT_FIND_REASON_SUFFIX ALT_FIND_MISSING ALT_FIND_MISSING_SUFFIX
 
   ALT_FIND_FACT_STATUS=$1
   ALT_FIND_USABLE=$2
@@ -433,6 +483,19 @@ function alt_disk_set_finding {
   ALT_FIND_REASON=${13}
   ALT_FIND_DISKS_KNOWN=${14:-true}
   ALT_FIND_SOURCE_OVERRIDE=${15:-}
+  ALT_FIND_MISSING=${16:-}
+
+  if [ "$ALT_FIND_FACT_STATUS" = NOT_ASSESSED ] && [ -n "$ALT_FIND_MISSING" ]; then
+    ALT_FIND_MISSING=$(printf '%s\n' "$ALT_FIND_MISSING" | awk '
+      {
+        for (field=1; field<=NF; field++)
+          if ($field != "usable")
+            printf "%s%s", (seen++ ? " " : ""), $field
+      }
+    ')
+  else
+    ALT_FIND_MISSING=""
+  fi
 
   if [ "$ALT_FIND_DISKS_KNOWN" = true ]; then
     ALT_FIND_DISK_JSON=$(alt_disk_finding_disks "$ALT_FIND_DISKS")
@@ -460,12 +523,17 @@ function alt_disk_set_finding {
   else
     ALT_FIND_REASON_SUFFIX=""
   fi
+  if [ -n "$ALT_FIND_MISSING" ]; then
+    ALT_FIND_MISSING_SUFFIX="; missing_evidence=$(alt_disk_finding_disks "$ALT_FIND_MISSING")"
+  else
+    ALT_FIND_MISSING_SUFFIX=""
+  fi
 
   ALT_DISK_FINDING_OBSERVED="status=$ALT_FIND_FACT_STATUS; usable=$(alt_disk_finding_value "$ALT_FIND_USABLE"); volume_group=$(alt_disk_finding_value "$ALT_FIND_VG"); disks=$ALT_FIND_DISK_JSON"
   if [ -n "$ALT_FIND_DISKS" ]; then
     ALT_DISK_FINDING_OBSERVED="$ALT_DISK_FINDING_OBSERVED; boot_disk=$(alt_disk_finding_value "$ALT_FIND_BOOT"); device_states=$(alt_disk_finding_device_states "$ALT_FIND_DEVICE_STATES"); platform_bootable=$(alt_disk_finding_value "$ALT_FIND_BOOTABLE"); in_normal_bootlist=$(alt_disk_finding_value "$ALT_FIND_BOOTLIST"); running_oslevel=$(alt_disk_finding_value "$ALT_FIND_OS"); freshness=$(alt_disk_finding_value "$ALT_FIND_FRESHNESS"); last_updated=$(alt_disk_finding_value "$ALT_FIND_UPDATED"); age_days=$(alt_disk_finding_value "$ALT_FIND_AGE")"
   fi
-  ALT_DISK_FINDING_OBSERVED="$ALT_DISK_FINDING_OBSERVED$ALT_FIND_REASON_SUFFIX; source_commands=[$ALT_FIND_SOURCES]"
+  ALT_DISK_FINDING_OBSERVED="$ALT_DISK_FINDING_OBSERVED$ALT_FIND_MISSING_SUFFIX$ALT_FIND_REASON_SUFFIX; source_commands=[$ALT_FIND_SOURCES]"
 
   case "$ALT_FIND_FACT_STATUS" in
     USABLE)
@@ -775,12 +843,12 @@ function alt_disk_log_completion {
   ALT_LOG_DISKS=$(printf '%s\n' "$1" | awk \
     'NF { printf "%s%s", (seen++ ? " " : ""), $1 }')
   awk -v wanted="$ALT_LOG_DISKS" '
-    function normalized_targets(line, count, field, start, value) {
+    function normalized_targets(line, count, field, start, value, k) {
       gsub(/"/, " ", line)
       gsub(/\047/, " ", line)
       count=split(line, token, /[ \t]+/)
       start=0
-      delete target
+      for (k in target) delete target[k]
       target_count=0
       for (field=1; field<=count; field++) {
         if (token[field] == "-d") {
@@ -1556,7 +1624,8 @@ EOF
     "$ALT_BASIS" "$(alt_disk_jlist "$ALT_UNREAD")" "$(alt_disk_jlist "$ALT_NA")")"
   alt_disk_set_finding "$ALT_STATUS" "$ALT_USABLE" "$ALT_VG" "$ALT_EXISTING_DISKS" \
     "$ALT_BOOT_DISK" "$ALT_DEVICE_ITEMS" "$ALT_PLATFORM_BOOTABLE" "$ALT_IN_BOOTLIST" \
-    "$ALT_RUNNING_OS" "$ALT_LAST_UPDATED" "$ALT_AGE" "$ALT_FRESHNESS" "$ALT_REASON"
+    "$ALT_RUNNING_OS" "$ALT_LAST_UPDATED" "$ALT_AGE" "$ALT_FRESHNESS" "$ALT_REASON" \
+    true "" "$ALT_UNREAD"
 }
 
 function check_alt_disk_recoverability {

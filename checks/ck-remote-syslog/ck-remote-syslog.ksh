@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="0.1.0"
+AIXRAY_STANDALONE_VERSION="1.0.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -26,6 +26,49 @@ function aix {
     return 127
   fi
   "$@" 2>/dev/null
+}
+
+# aixv preserves stderr as evidence, for read-only commands that write their
+# version banner or diagnostics there rather than to stdout. (Deliberately no
+# example command name here: this comment is copied into all 324 standalone
+# tools, and tools/ci/egress-lint.sh reads a banned network command name in a
+# comment as a violation just as it would in a command position.)
+function aixv {
+  typeset key rc
+  key=$1
+  shift
+  if [ -n "${AIXRAY_FIXTURES:-}" ]; then
+    if [ -r "$AIXRAY_FIXTURES/$key.out" ] || [ -r "$AIXRAY_FIXTURES/$key.err" ]; then
+      [ -r "$AIXRAY_FIXTURES/$key.out" ] && cat "$AIXRAY_FIXTURES/$key.out"
+      [ -r "$AIXRAY_FIXTURES/$key.err" ] && cat "$AIXRAY_FIXTURES/$key.err"
+      rc=0
+      [ -r "$AIXRAY_FIXTURES/$key.rc" ] && read rc < "$AIXRAY_FIXTURES/$key.rc"
+      return $rc
+    fi
+    return 127
+  fi
+  "$@" 2>&1
+}
+
+# aix_capture_missing <key> — fixture-replay helper: true (rc=0) iff no capture
+# exists for <key> at all, i.e. the rc a probe just received was the "no
+# capture" default and not a genuine command status. aix()/aixv() return 127 for
+# BOTH a missing capture and a genuinely absent command, so a module that wants
+# to claim "the command is not installed" must first rule out "nobody captured
+# it". Live mode returns false (rc=1): a real box has no concept of a missing
+# fixture, and rc=127 there genuinely means the command was not found. Must be
+# called in the PARENT shell after the probe, not inside the $(aix ...)
+# substitution. Byte-for-byte the monolith's semantics (src/aixray-aix.sh.in);
+# without it here, an undefined-command rc of 127 makes the guard read false and
+# the caller launders a missing capture into NOT_APPLICABLE.
+function aix_capture_missing {
+  if [ -n "${AIXRAY_FIXTURES:-}" ]; then
+    if [ -r "$AIXRAY_FIXTURES/$1.out" ] || [ -r "$AIXRAY_FIXTURES/$1.err" ]; then
+      return 1
+    fi
+    return 0
+  fi
+  return 1
 }
 
 function jesc {
@@ -61,7 +104,13 @@ function add {
     *) echo "$AIXRAY_TOOL: internal error: unknown category '$1'" >&2; exit 1;;
   esac
   case "$4" in
-    PASS|WARN|FAIL|NOT_ASSESSED) ;;
+    # NOT_APPLICABLE is a verdict, not a refusal: the control constrains a
+    # property of a thing that need not exist. It is already a first-class
+    # status in the monolith (vios_level on a plain AIX LPAR) and in the
+    # contract schema (STATUSES, pipeline/contract_v2/schema.py), but was
+    # missing here, so any standalone tool reaching that branch aborted with
+    # an internal error instead of emitting its envelope.
+    PASS|WARN|FAIL|NOT_ASSESSED|NOT_APPLICABLE) ;;
     *) echo "$AIXRAY_TOOL: internal error: unknown status '$4'" >&2; exit 1;;
   esac
   F_CAT[$NFIND]=$1
@@ -299,9 +348,36 @@ AIXRAY_TOOL=ck-remote-syslog
 
 
 function standalone_check {
+_AIXRAY_SESSION_KEYS=""
 
   # remote_syslog
-  SYS=$(printf '%s\n' "$(aix syslog_conf grep '@' /etc/syslog.conf)" | awk '!/^#/ && /@/ {n++} END{print n+0}')
+  SYSRAW=$(aix syslog_conf grep '@' /etc/syslog.conf); SYSRC=$?
+  SYS_OK=0; SYSWHY=""
+  if [ "$SYSRC" -ge 2 ]; then
+    SYSWHY="not assessed — grep '@' /etc/syslog.conf capture failed (rc=$SYSRC)"
+  elif [ "$SYSRC" -eq 1 ]; then
+    SYS_OK=1
+  elif [ -z "$SYSRAW" ]; then
+    SYSWHY="not assessed — grep '@' /etc/syslog.conf capture empty (rc=0)"
+  elif printf '%s\n' "$SYSRAW" | awk '
+      NF{ n++; if(index($0,"@")==0) bad=1 }
+      END{ if(n==0 || bad) exit 1 }
+    '
+  then
+    SYS_OK=1
+  else
+    SYSWHY="not assessed — grep '@' /etc/syslog.conf capture unparseable (rc=0)"
+  fi
+  if [ "$SYS_OK" -ne 1 ]; then
+    add monitoring remote_syslog "Remote syslog" NOT_ASSESSED low "$SYSWHY" \
+        "Remote syslog forwarding could not be assessed because the syslog grep capture failed, returned no evidence, or returned output that does not match the requested '@' lines." \
+        "run \"grep '@' /etc/syslog.conf\" manually, then re-run AIXray before treating remote logging as configured." "ffiec:II.C.22"
+  else
+  if [ "$SYSRC" -eq 1 ]; then
+    SYS=0
+  else
+    SYS=$(printf '%s\n' "$SYSRAW" | awk '!/^[ \t]*#/ && /@/{n++} END{print n+0}')
+  fi
   if [ "${SYS:-0}" -ge 1 ]; then
     add monitoring remote_syslog "Remote syslog" PASS low "$SYS forwarding rule(s)" \
         "syslog forwards to a remote collector — logs survive the box." "n/a" "ffiec:II.C.22"
@@ -309,6 +385,7 @@ function standalone_check {
     add monitoring remote_syslog "Remote syslog" WARN low "no remote target" \
         "No remote syslog target — logs die with the box, exactly when you need them." \
         "add an '@loghost' line to /etc/syslog.conf and 'refresh -s syslogd'." "ffiec:II.C.22"
+  fi
   fi
 }
 

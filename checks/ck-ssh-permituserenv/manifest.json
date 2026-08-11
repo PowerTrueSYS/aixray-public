@@ -1,0 +1,19 @@
+{
+  "id": "ck-ssh-permituserenv",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "ssh_permituserenv"
+  ],
+  "captures": [],
+  "requires_root": true,
+  "read_only": true,
+  "commands": [
+    "sshd -T"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-ssh-permituserenv/ck-ssh-permituserenv.ksh"
+}

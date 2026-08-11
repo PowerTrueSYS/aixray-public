@@ -1,0 +1,19 @@
+{
+  "id": "ck-shell-timeout-readonly",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "shell_timeout_readonly"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "grep -E 'TMOUT|TIMEOUT' /etc/profile"
+  ],
+  "tags": [
+    "cis-l2"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-shell-timeout-readonly/ck-shell-timeout-readonly.ksh"
+}

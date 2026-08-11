@@ -1,0 +1,19 @@
+{
+  "id": "ck-system-aslr",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "system_aslr"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "/usr/sbin/vmo -aF"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-system-aslr/ck-system-aslr.ksh"
+}

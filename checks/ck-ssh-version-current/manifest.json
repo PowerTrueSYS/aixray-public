@@ -1,0 +1,19 @@
+{
+  "id": "ck-ssh-version-current",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "sshd_version"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "sshd -V"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-ssh-version-current/ck-ssh-version-current.ksh"
+}

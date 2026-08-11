@@ -1,0 +1,23 @@
+{
+  "id": "ck-sudo-syslog-priority",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "sudo_syslog_priority"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "ls -ld /etc/sudoers",
+    "ls -ld /etc/sudoers.d",
+    "grep -Ei '^\\s*Defaults\\s+syslog_badpri=none' <file-list>",
+    "grep -Ei '^\\s*Defaults\\s+syslog_goodpri=none' <file-list>",
+    "grep -Ei '^\\s*Defaults\\s+logfile=\\S+' <file-list>"
+  ],
+  "tags": [
+    "cis-l2"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-sudo-syslog-priority/ck-sudo-syslog-priority.ksh"
+}

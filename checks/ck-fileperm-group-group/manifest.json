@@ -1,0 +1,19 @@
+{
+  "id": "ck-fileperm-group-group",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "fileperm_group_group"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "ls -ln /etc/group"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-fileperm-group-group/ck-fileperm-group-group.ksh"
+}

@@ -1,0 +1,21 @@
+{
+  "id": "ck-rhost-dotfiles-absent",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "rhost_dotfiles_absent"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "find / \\( -fstype jfs -o -fstype jfs2 \\) -name '.netrc' -print",
+    "find / \\( -fstype jfs -o -fstype jfs2 \\) -name '.rhosts' -print",
+    "find / \\( -fstype jfs -o -fstype jfs2 \\) -name '.shosts' -print"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-rhost-dotfiles-absent/ck-rhost-dotfiles-absent.ksh"
+}

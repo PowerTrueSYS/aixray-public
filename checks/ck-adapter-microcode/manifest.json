@@ -2,7 +2,9 @@
   "id": "ck-adapter-microcode",
   "pillar": "currency",
   "category": "lifecycle",
-  "finding_ids": [],
+  "finding_ids": [
+    "adapter_microcode"
+  ],
   "captures": [],
   "requires_root": false,
   "read_only": true,

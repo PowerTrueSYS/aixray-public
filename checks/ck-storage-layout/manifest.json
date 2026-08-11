@@ -2,7 +2,9 @@
   "id": "ck-storage-layout",
   "pillar": "resiliency",
   "category": "storage",
-  "finding_ids": [],
+  "finding_ids": [
+    "storage_layout"
+  ],
   "captures": [],
   "requires_root": false,
   "read_only": true,

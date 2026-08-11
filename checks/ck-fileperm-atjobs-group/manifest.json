@@ -1,0 +1,19 @@
+{
+  "id": "ck-fileperm-atjobs-group",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "fileperm_atjobs_group"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "ls -ldn /var/spool/cron/atjobs"
+  ],
+  "tags": [
+    "stig:V-245567"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-fileperm-atjobs-group/ck-fileperm-atjobs-group.ksh"
+}

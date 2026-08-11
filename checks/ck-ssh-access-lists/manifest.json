@@ -1,0 +1,21 @@
+{
+  "id": "ck-ssh-access-lists",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "ssh_access_lists"
+  ],
+  "captures": [],
+  "requires_root": true,
+  "read_only": true,
+  "blast_radius": "moderate",
+  "commands": [
+    "lslpp -L openssh.base.server",
+    "sshd -T"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-ssh-access-lists/ck-ssh-access-lists.ksh"
+}

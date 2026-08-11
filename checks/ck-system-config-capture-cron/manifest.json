@@ -1,0 +1,20 @@
+{
+  "id": "ck-system-config-capture-cron",
+  "pillar": "operational-readiness",
+  "category": "config",
+  "finding_ids": [
+    "system_config_capture_cron"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "crontab -l",
+    "egrep 'syslog/inventory.log' /etc/syslog.conf"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-system-config-capture-cron/ck-system-config-capture-cron.ksh"
+}

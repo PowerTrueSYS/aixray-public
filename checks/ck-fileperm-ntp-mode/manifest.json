@@ -1,0 +1,17 @@
+{
+  "id": "ck-fileperm-ntp-mode",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "fileperm_ntp_mode"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "ls -ln /etc/ntp.conf"
+  ],
+  "tags": [],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-fileperm-ntp-mode/ck-fileperm-ntp-mode.ksh"
+}

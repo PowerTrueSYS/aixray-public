@@ -1,0 +1,20 @@
+{
+  "id": "ck-ssh-sftp-args",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "ssh_sftp_args"
+  ],
+  "captures": [],
+  "requires_root": true,
+  "read_only": true,
+  "commands": [
+    "test -x /usr/sbin/sshd",
+    "/usr/sbin/sshd -T 2>/dev/null"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-ssh-sftp-args/ck-ssh-sftp-args.ksh"
+}

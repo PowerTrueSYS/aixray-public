@@ -1,0 +1,19 @@
+{
+  "id": "ck-inetd-talk",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "inetd_talk"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "grep -E '^[\t ]*talk[\t ]' /etc/inetd.conf"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-inetd-talk/ck-inetd-talk.ksh"
+}

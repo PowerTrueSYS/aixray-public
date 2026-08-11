@@ -1,0 +1,19 @@
+{
+  "id": "ck-ssh-permitrootlogin",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "ssh_permitrootlogin"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "/usr/bin/egrep \"^PermitRootLogin\" /etc/ssh/sshd_config"
+  ],
+  "tags": [
+    "cis-l2"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-ssh-permitrootlogin/ck-ssh-permitrootlogin.ksh"
+}

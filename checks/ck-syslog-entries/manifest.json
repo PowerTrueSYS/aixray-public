@@ -1,0 +1,20 @@
+{
+  "id": "ck-syslog-entries",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "syslog_entries"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "egrep -v \"(^$)|(^#)\" /etc/syslog.conf",
+    "ls -ld /var/log/syslog/auth.log /var/log/syslog/info.log /var/log/syslog/archive"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-syslog-entries/ck-syslog-entries.ksh"
+}

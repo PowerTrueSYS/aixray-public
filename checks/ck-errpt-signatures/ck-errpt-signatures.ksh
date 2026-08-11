@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="0.1.0"
+AIXRAY_STANDALONE_VERSION="1.0.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -26,6 +26,49 @@ function aix {
     return 127
   fi
   "$@" 2>/dev/null
+}
+
+# aixv preserves stderr as evidence, for read-only commands that write their
+# version banner or diagnostics there rather than to stdout. (Deliberately no
+# example command name here: this comment is copied into all 324 standalone
+# tools, and tools/ci/egress-lint.sh reads a banned network command name in a
+# comment as a violation just as it would in a command position.)
+function aixv {
+  typeset key rc
+  key=$1
+  shift
+  if [ -n "${AIXRAY_FIXTURES:-}" ]; then
+    if [ -r "$AIXRAY_FIXTURES/$key.out" ] || [ -r "$AIXRAY_FIXTURES/$key.err" ]; then
+      [ -r "$AIXRAY_FIXTURES/$key.out" ] && cat "$AIXRAY_FIXTURES/$key.out"
+      [ -r "$AIXRAY_FIXTURES/$key.err" ] && cat "$AIXRAY_FIXTURES/$key.err"
+      rc=0
+      [ -r "$AIXRAY_FIXTURES/$key.rc" ] && read rc < "$AIXRAY_FIXTURES/$key.rc"
+      return $rc
+    fi
+    return 127
+  fi
+  "$@" 2>&1
+}
+
+# aix_capture_missing <key> — fixture-replay helper: true (rc=0) iff no capture
+# exists for <key> at all, i.e. the rc a probe just received was the "no
+# capture" default and not a genuine command status. aix()/aixv() return 127 for
+# BOTH a missing capture and a genuinely absent command, so a module that wants
+# to claim "the command is not installed" must first rule out "nobody captured
+# it". Live mode returns false (rc=1): a real box has no concept of a missing
+# fixture, and rc=127 there genuinely means the command was not found. Must be
+# called in the PARENT shell after the probe, not inside the $(aix ...)
+# substitution. Byte-for-byte the monolith's semantics (src/aixray-aix.sh.in);
+# without it here, an undefined-command rc of 127 makes the guard read false and
+# the caller launders a missing capture into NOT_APPLICABLE.
+function aix_capture_missing {
+  if [ -n "${AIXRAY_FIXTURES:-}" ]; then
+    if [ -r "$AIXRAY_FIXTURES/$1.out" ] || [ -r "$AIXRAY_FIXTURES/$1.err" ]; then
+      return 1
+    fi
+    return 0
+  fi
+  return 1
 }
 
 function jesc {
@@ -61,7 +104,13 @@ function add {
     *) echo "$AIXRAY_TOOL: internal error: unknown category '$1'" >&2; exit 1;;
   esac
   case "$4" in
-    PASS|WARN|FAIL|NOT_ASSESSED) ;;
+    # NOT_APPLICABLE is a verdict, not a refusal: the control constrains a
+    # property of a thing that need not exist. It is already a first-class
+    # status in the monolith (vios_level on a plain AIX LPAR) and in the
+    # contract schema (STATUSES, pipeline/contract_v2/schema.py), but was
+    # missing here, so any standalone tool reaching that branch aborted with
+    # an internal error instead of emitting its envelope.
+    PASS|WARN|FAIL|NOT_ASSESSED|NOT_APPLICABLE) ;;
     *) echo "$AIXRAY_TOOL: internal error: unknown status '$4'" >&2; exit 1;;
   esac
   F_CAT[$NFIND]=$1
@@ -300,10 +349,12 @@ AIXRAY_TOOL=ck-errpt-signatures
 # Shared detailed seven-day error-log capture used by signature analysis.
 function capture_cap_errpt_a7 {
   ERA=$(aix errpt_a7 errpt -a -s "$C7"); ERA_RC=$?
+  return "$ERA_RC"
 }
 
 
 function standalone_check {
+_AIXRAY_SESSION_KEYS=""
 
   # errpt_signatures (LEVEL 3) — scan for the classic PRE-FAILURE signatures a veteran watches
   # for: disk media/hardware errors (drive about to fail), SCSI/FC path errors, EPOW power or
@@ -312,7 +363,108 @@ function standalone_check {
   # a component is degrading NOW, before it fails hard — the "it caught my disk before it died"
   # check. A genuine signature (PERM, recurring, power/memory/LVM/dump) FAILs high; a single
   # recovered (TEMP) event WARNs.
-  SIGS=$(printf '%s\n' "$ERA" | awk '
+  typeset ERA_OK ERAWHY ERA_SHAPE_RC
+  ERA_OK=0; ERAWHY=""
+  if [ "${ERA_RC:-127}" -ne 0 ]; then
+    ERAWHY="not assessed — errpt -a capture failed (rc=${ERA_RC:-127})"
+  elif [ -z "$ERA" ]; then
+    # A quiet AIX error log is valid evidence when errpt itself returned rc=0.
+    ERA_OK=1
+  else
+    printf '%s\n' "$ERA" | awk '
+    function begin_stanza() {
+      label=identifier=date_time=sequence=machine=node=class=type=description=0
+      in_stanza=1
+    }
+    function end_stanza() {
+      if (!in_stanza) return
+      if (label != 1 || identifier != 1 || date_time != 1 ||
+          sequence != 1 || machine != 1 || node != 1 || class != 1 ||
+          type != 1 || description != 1) bad=1
+      in_stanza=0
+    }
+    /^----------[-]*$/ {
+      end_stanza()
+      separator=1
+      next
+    }
+    $1 == "LABEL:" {
+      if (in_stanza) {
+        bad=1
+        end_stanza()
+      }
+      if (!separator) bad=1
+      begin_stanza()
+      stanzas++
+      separator=0
+      label++
+      if (NF != 2 || $2 !~ /^[A-Z0-9_][A-Z0-9_]*$/) bad=1
+      next
+    }
+    !in_stanza {
+      if (NF) bad=1
+      next
+    }
+    $1 == "IDENTIFIER:" {
+      identifier++
+      if (NF != 2 || length($2) != 8 ||
+          $2 !~ /^[0-9A-Fa-f][0-9A-Fa-f]*$/) bad=1
+      next
+    }
+    $1 == "Date/Time:" {
+      date_time++
+      if (NF < 5) bad=1
+      next
+    }
+    $1 == "Sequence" && $2 == "Number:" {
+      sequence++
+      if (NF != 3 || $3 !~ /^[0-9][0-9]*$/) bad=1
+      next
+    }
+    $1 == "Machine" && $2 == "Id:" {
+      machine++
+      if (NF != 3 || $3 !~ /^[0-9A-Fa-f][0-9A-Fa-f]*$/) bad=1
+      next
+    }
+    $1 == "Node" && $2 == "Id:" {
+      node++
+      if (NF != 3) bad=1
+      next
+    }
+    $1 == "Class:" {
+      class++
+      if (NF != 2 || $2 !~ /^(H|S|O|U)$/) bad=1
+      next
+    }
+    $1 == "Type:" {
+      type++
+      if (NF != 2 || $2 !~ /^[A-Z][A-Z]*$/) bad=1
+      next
+    }
+    $1 == "Description" {
+      description++
+      if (NF != 1) bad=1
+      next
+    }
+    END {
+      end_stanza()
+      if (stanzas == 0 || bad) exit 1
+    }
+  '
+    ERA_SHAPE_RC=$?
+    if [ "$ERA_SHAPE_RC" -eq 0 ]; then
+      ERA_OK=1
+    else
+      ERAWHY="not assessed — errpt -a capture unparseable (rc=0)"
+    fi
+  fi
+
+  if [ "$ERA_OK" -ne 1 ]; then
+    add errors errpt_signatures "Pre-failure signatures" NOT_ASSESSED high "$ERAWHY" \
+        "The detailed seven-day error-log capture could not be trusted, so AIXray did not infer that no pre-failure signatures were present." \
+        "run 'errpt -a -s <MMDDhhmmyy>'; resolve the reported capture failure or malformed output, then rerun AIXray."
+  else
+    SIGS=$(printf '%s\n' "$ERA" | awk '
     function rec(){
       if(!have) return
       have=0
@@ -364,10 +516,11 @@ function standalone_check {
     add errors errpt_signatures "Pre-failure signatures" PASS high "none in 7 days" \
         "None of the classic pre-failure patterns a veteran hunts for — disk/adapter errors, SAN/SCSI path faults, EPOW power or thermal events, memory ECC errors, LVM disk loss, or dump-device faults — appear in the error log for the last 7 days." "n/a"
   fi
+  fi
 }
 
 function standalone_run {
-  capture_cap_errpt_a7 || return 1
+  capture_cap_errpt_a7 || :
   standalone_check
 }
 

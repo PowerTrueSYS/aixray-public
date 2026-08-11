@@ -1,0 +1,19 @@
+{
+  "id": "ck-account-pwdck-valid",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "account_pwdck_valid"
+  ],
+  "captures": [],
+  "requires_root": true,
+  "read_only": true,
+  "commands": [
+    "pwdck -n ALL"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-account-pwdck-valid/ck-account-pwdck-valid.ksh"
+}

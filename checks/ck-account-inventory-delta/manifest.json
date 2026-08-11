@@ -1,0 +1,18 @@
+{
+  "id": "ck-account-inventory-delta",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "account_inventory_delta"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "awk -F: '$3==0 {print $1}' /etc/passwd",
+    "lsuser -a admin maxage account_locked time_last_login ALL"
+  ],
+  "tags": [],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-account-inventory-delta/ck-account-inventory-delta.ksh"
+}

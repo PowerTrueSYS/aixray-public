@@ -1,0 +1,19 @@
+{
+  "id": "ck-rctcpip-ndpd-host",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "rc_tcpip_ndpd_host"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "grep '^#start[[:blank:]]/usr/sbin/ndpd-host' /etc/rc.tcpip"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-rctcpip-ndpd-host/ck-rctcpip-ndpd-host.ksh"
+}

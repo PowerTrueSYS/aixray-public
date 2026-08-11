@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="0.1.0"
+AIXRAY_STANDALONE_VERSION="1.0.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -26,6 +26,49 @@ function aix {
     return 127
   fi
   "$@" 2>/dev/null
+}
+
+# aixv preserves stderr as evidence, for read-only commands that write their
+# version banner or diagnostics there rather than to stdout. (Deliberately no
+# example command name here: this comment is copied into all 324 standalone
+# tools, and tools/ci/egress-lint.sh reads a banned network command name in a
+# comment as a violation just as it would in a command position.)
+function aixv {
+  typeset key rc
+  key=$1
+  shift
+  if [ -n "${AIXRAY_FIXTURES:-}" ]; then
+    if [ -r "$AIXRAY_FIXTURES/$key.out" ] || [ -r "$AIXRAY_FIXTURES/$key.err" ]; then
+      [ -r "$AIXRAY_FIXTURES/$key.out" ] && cat "$AIXRAY_FIXTURES/$key.out"
+      [ -r "$AIXRAY_FIXTURES/$key.err" ] && cat "$AIXRAY_FIXTURES/$key.err"
+      rc=0
+      [ -r "$AIXRAY_FIXTURES/$key.rc" ] && read rc < "$AIXRAY_FIXTURES/$key.rc"
+      return $rc
+    fi
+    return 127
+  fi
+  "$@" 2>&1
+}
+
+# aix_capture_missing <key> — fixture-replay helper: true (rc=0) iff no capture
+# exists for <key> at all, i.e. the rc a probe just received was the "no
+# capture" default and not a genuine command status. aix()/aixv() return 127 for
+# BOTH a missing capture and a genuinely absent command, so a module that wants
+# to claim "the command is not installed" must first rule out "nobody captured
+# it". Live mode returns false (rc=1): a real box has no concept of a missing
+# fixture, and rc=127 there genuinely means the command was not found. Must be
+# called in the PARENT shell after the probe, not inside the $(aix ...)
+# substitution. Byte-for-byte the monolith's semantics (src/aixray-aix.sh.in);
+# without it here, an undefined-command rc of 127 makes the guard read false and
+# the caller launders a missing capture into NOT_APPLICABLE.
+function aix_capture_missing {
+  if [ -n "${AIXRAY_FIXTURES:-}" ]; then
+    if [ -r "$AIXRAY_FIXTURES/$1.out" ] || [ -r "$AIXRAY_FIXTURES/$1.err" ]; then
+      return 1
+    fi
+    return 0
+  fi
+  return 1
 }
 
 function jesc {
@@ -61,7 +104,13 @@ function add {
     *) echo "$AIXRAY_TOOL: internal error: unknown category '$1'" >&2; exit 1;;
   esac
   case "$4" in
-    PASS|WARN|FAIL|NOT_ASSESSED) ;;
+    # NOT_APPLICABLE is a verdict, not a refusal: the control constrains a
+    # property of a thing that need not exist. It is already a first-class
+    # status in the monolith (vios_level on a plain AIX LPAR) and in the
+    # contract schema (STATUSES, pipeline/contract_v2/schema.py), but was
+    # missing here, so any standalone tool reaching that branch aborted with
+    # an internal error instead of emitting its envelope.
+    PASS|WARN|FAIL|NOT_ASSESSED|NOT_APPLICABLE) ;;
     *) echo "$AIXRAY_TOOL: internal error: unknown status '$4'" >&2; exit 1;;
   esac
   F_CAT[$NFIND]=$1
@@ -299,58 +348,114 @@ AIXRAY_TOOL=ck-fc-errors
 
 
 function standalone_check {
+_AIXRAY_SESSION_KEYS=""
 
   # fc_errors — Fibre Channel adapter error counters (cumulative since boot)
-  LSADP=$(aix lsdev_adapter lsdev -c adapter)
-  FCS=$(printf '%s\n' "$LSADP" | awk '$1 ~ /^fcs[0-9]+$/ {print $1}')
-  if [ -n "$FCS" ]; then
-    FCBAD=0; FCTXT=""; FCNR=0; FCN=0; FCUR=0
+  typeset LSADP_RC LSADP_OK LSADPWHY FCSTAT FCGAP
+  LSADP=$(aix lsdev_adapter lsdev -c adapter); LSADP_RC=$?
+  LSADP_OK=0; LSADPWHY=""
+  if [ "$LSADP_RC" -ne 0 ]; then
+    LSADPWHY="not assessed — lsdev adapter inventory capture failed (rc=$LSADP_RC)"
+  elif [ -z "$LSADP" ]; then
+    LSADPWHY="not assessed — lsdev adapter inventory capture empty (rc=0)"
+  elif printf '%s\n' "$LSADP" | awk '
+      NF {
+        rows++
+        if (NF < 3 ||
+            $1 !~ /^[A-Za-z][A-Za-z0-9_.-]*$/ ||
+            $2 !~ /^(Available|Defined)$/ || seen_adapter[$1]++) bad=1
+      }
+      END { if (rows == 0 || bad) exit 1 }
+    '
+  then
+    LSADP_OK=1
+  else
+    LSADPWHY="not assessed — lsdev adapter inventory capture unparseable (rc=0)"
+  fi
+  if [ "$LSADP_OK" -ne 1 ]; then
+    LSADP=""
+    add storage fc_errors "Fibre Channel adapter errors" NOT_ASSESSED low "$LSADPWHY" \
+        "Fibre Channel health could not be assessed because the adapter inventory failed, returned no evidence, or did not match the expected AIX lsdev output shape." \
+        "run 'lsdev -c adapter' manually, then rerun AIXray before treating FC adapter health as clean."
+  else
+    FCS=$(printf '%s\n' "$LSADP" | awk '$1 ~ /^fcs[0-9]+$/ {print $1}')
+    if [ -z "$FCS" ]; then
+      add storage fc_errors "Fibre Channel adapter errors" PASS low \
+          "no Fibre Channel adapters in validated adapter inventory" \
+          "The successful adapter inventory contains no fcs devices, so there is no in-LPAR Fibre Channel adapter to grade." "n/a"
+    else
+      FCBAD=0; FCTXT=""; FCNR=0; FCN=0; FCUR=0; FCGAP=0
     for A in $FCS; do
       FCN=$((FCN+1))
       FST=$(aix "fcstat_$A" fcstat "$A"); FRC=$?
-      # $2+0 keeps the sign: virtual FC (PowerVS/NPIV) reports counters as -1 = "not available".
-      # END-emitted "NA" marks a counter line that was ABSENT (distinct from a zero value).
-      LF=$(printf '%s\n' "$FST" | awk -F: '/Link Failure Count/{print $2+0; f=1; exit} END{if(!f)print "NA"}')
-      LS=$(printf '%s\n' "$FST" | awk -F: '/Loss of Sync Count/{print $2+0; f=1; exit} END{if(!f)print "NA"}')
-      CRC=$(printf '%s\n' "$FST" | awk -F: '/Invalid CRC Count/{print $2+0; f=1; exit} END{if(!f)print "NA"}')
-      # unreadable: fcstat failed, or NONE of the three counter lines were present.
-      # This must not synthesize a clean PASS the way "$2+0 of empty = 0" used to.
-      if [ "$FRC" -ne 0 ] || { [ "$LF" = NA ] && [ "$LS" = NA ] && [ "$CRC" = NA ]; }; then
-        FCTXT="$FCTXT${FCTXT:+; }$A: counters unreadable"
+      FCSTAT=""
+      if [ "$FRC" -ne 0 ]; then
+        FCTXT="$FCTXT${FCTXT:+; }$A: fcstat capture failed (rc=$FRC)"
         FCUR=$((FCUR+1))
+        FCGAP=1
+        continue
+      elif [ -z "$FST" ]; then
+        FCTXT="$FCTXT${FCTXT:+; }$A: fcstat capture empty (rc=0)"
+        FCUR=$((FCUR+1))
+        FCGAP=1
+        continue
+      elif FCSTAT=$(printf '%s\n' "$FST" | awk -F: '
+          function value( raw) {
+            raw=$2
+            gsub(/^[ \t]+|[ \t]+$/, "", raw)
+            return raw
+          }
+          $1 ~ /^[ \t]*Link Failure Count[ \t]*$/ {
+            link_count++
+            link=value()
+            if (NF != 2 || link !~ /^-?[0-9][0-9]*$/) bad=1
+          }
+          $1 ~ /^[ \t]*Loss of Sync Count[ \t]*$/ {
+            sync_count++
+            sync=value()
+            if (NF != 2 || sync !~ /^-?[0-9][0-9]*$/) bad=1
+          }
+          $1 ~ /^[ \t]*Invalid CRC Count[ \t]*$/ {
+            crc_count++
+            crc=value()
+            if (NF != 2 || crc !~ /^-?[0-9][0-9]*$/) bad=1
+          }
+          END {
+            if (link_count != 1 || sync_count != 1 || crc_count != 1 || bad)
+              exit 1
+            print link, sync, crc
+          }
+        ')
+      then
+        set -- $FCSTAT
+        LF=$1; LS=$2; CRC=$3
+      else
+        FCTXT="$FCTXT${FCTXT:+; }$A: fcstat capture unparseable (rc=0)"
+        FCUR=$((FCUR+1))
+        FCGAP=1
         continue
       fi
-      [ "$LF" = NA ] && LF=0; [ "$LS" = NA ] && LS=0; [ "$CRC" = NA ] && CRC=0
-      if [ "$CRC" -lt 0 ] && [ "$LF" -lt 0 ] && [ "$LS" -lt 0 ]; then
+      if [ "$CRC" -lt 0 ] || [ "$LF" -lt 0 ] || [ "$LS" -lt 0 ]; then
         FCTXT="$FCTXT${FCTXT:+; }$A: counters not reported (virtual FC)"
         FCNR=$((FCNR+1))
+        FCGAP=1
         continue
       fi
-      [ "$CRC" -lt 0 ] && CRC=0
-      [ "$LF" -lt 0 ] && LF=0
-      [ "$LS" -lt 0 ] && LS=0
-      FCTXT="$FCTXT${FCTXT:+; }$A: CRC ${CRC:-0}, link-fail ${LF:-0}, loss-sync ${LS:-0}"
-      { [ "${CRC:-0}" -gt 0 ] || [ "${LF:-0}" -gt 10 ]; } && FCBAD=1
+      FCTXT="$FCTXT${FCTXT:+; }$A: CRC $CRC, link-fail $LF, loss-sync $LS"
+      { [ "$CRC" -gt 0 ] || [ "$LF" -gt 10 ]; } && FCBAD=1
     done
     if [ "$FCBAD" -eq 1 ]; then
       add storage fc_errors "Fibre Channel adapter errors" WARN med "$FCTXT" \
-          "A Fibre Channel adapter reports CRC errors or repeated link failures. These counts are cumulative since boot, so confirm whether they are still climbing." \
+          "A Fibre Channel adapter reports CRC errors or repeated link failures. These counts are cumulative since boot, so confirm whether they are still climbing; any named unreadable adapter remains an explicit partial-assessment gap." \
           "check SAN cabling, the SFP, and the switch port for the flagged adapter; compare 'fcstat <fcs>' over time."
-    elif [ "$FCUR" -gt 0 ]; then
-      add storage fc_errors "Fibre Channel adapter errors" WARN low "$FCTXT" \
-          "One or more FC adapters returned no readable error counters — a clean pass cannot be claimed for them (a healthy adapter reports zeros, not nothing)." \
-          "run 'fcstat <fcs>' as root; on virtual FC the counters live on the VIOS."
-    elif [ "$FCNR" -eq "$FCN" ]; then
-      # Believability review 2026-07-13 (review-queue #62, finding #9): this used to PASS
-      # here — but "counters not reported" means the CRC/link-failure observation was
-      # never captured at all (virtual FC never exposes it in-LPAR), the same gap the
-      # FCUR>0 branch above already correctly treats as NOT a clean pass. A missing
-      # observation must render NOT_ASSESSED, never PASS, regardless of WHY it is missing.
+    elif [ "$FCGAP" -ne 0 ]; then
       add storage fc_errors "Fibre Channel adapter errors" NOT_ASSESSED low "$FCTXT" \
-          "Virtual FC adapters do not expose error counters inside the LPAR, so CRC/link-failure health could not be observed from here at all — this is not evidence of a clean adapter, just an architectural blind spot. Check path health on the VIOS side." "n/a"
+          "One or more FC adapters returned failed, empty, malformed, missing, or unavailable counters, so a complete clean adapter-health verdict cannot be claimed." \
+          "run 'fcstat <fcs>' as root for each named adapter; on virtual FC, verify the counters and path health on the VIOS side."
     else
       add storage fc_errors "Fibre Channel adapter errors" PASS low "$FCTXT" \
           "No CRC or excessive link errors on the FC adapters (cumulative since boot)." "n/a"
+    fi
     fi
   fi
 }

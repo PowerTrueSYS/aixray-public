@@ -1,0 +1,20 @@
+{
+  "id": "ck-sendmail-privacyoptions",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "sendmail_privacyoptions"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "ls -ld /etc/mail/sendmail.cf",
+    "/usr/bin/egrep -i \"^O PrivacyOptions\" /etc/mail/sendmail.cf"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-sendmail-privacyoptions/ck-sendmail-privacyoptions.ksh"
+}

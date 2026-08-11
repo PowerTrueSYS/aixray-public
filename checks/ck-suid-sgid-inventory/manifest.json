@@ -1,0 +1,22 @@
+{
+  "id": "ck-suid-sgid-inventory",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "suid_sgid"
+  ],
+  "captures": [],
+  "requires_root": true,
+  "read_only": true,
+  "commands": [
+    "mount",
+    "find / \\( -perm -04000 -o -perm -02000 \\) -type f -ls",
+    "find / \\( -fstype jfs -o -fstype jfs2 \\) \\( -perm -04000 -o -perm -02000 \\) -type f -ls",
+    "lslpp -w <path>"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-suid-sgid-inventory/ck-suid-sgid-inventory.ksh"
+}

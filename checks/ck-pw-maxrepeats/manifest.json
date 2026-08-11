@@ -1,0 +1,20 @@
+{
+  "id": "ck-pw-maxrepeats",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "pw_maxrepeats"
+  ],
+  "captures": [],
+  "requires_root": true,
+  "read_only": true,
+  "commands": [
+    "lssec -f /etc/security/user -s default -a maxrepeats"
+  ],
+  "tags": [
+    "cis-l1",
+    "ffiec:II.C.15"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-pw-maxrepeats/ck-pw-maxrepeats.ksh"
+}

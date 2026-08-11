@@ -1,0 +1,19 @@
+{
+  "id": "ck-trustchk-te-tep",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "trustchk_te_tep"
+  ],
+  "captures": [],
+  "requires_root": true,
+  "read_only": true,
+  "commands": [
+    "trustchk -p TE TEP"
+  ],
+  "tags": [
+    "cis-l2"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-trustchk-te-tep/ck-trustchk-te-tep.ksh"
+}

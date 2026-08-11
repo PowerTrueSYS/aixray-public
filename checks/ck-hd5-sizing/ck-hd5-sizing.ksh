@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="0.1.0"
+AIXRAY_STANDALONE_VERSION="1.0.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -26,6 +26,49 @@ function aix {
     return 127
   fi
   "$@" 2>/dev/null
+}
+
+# aixv preserves stderr as evidence, for read-only commands that write their
+# version banner or diagnostics there rather than to stdout. (Deliberately no
+# example command name here: this comment is copied into all 324 standalone
+# tools, and tools/ci/egress-lint.sh reads a banned network command name in a
+# comment as a violation just as it would in a command position.)
+function aixv {
+  typeset key rc
+  key=$1
+  shift
+  if [ -n "${AIXRAY_FIXTURES:-}" ]; then
+    if [ -r "$AIXRAY_FIXTURES/$key.out" ] || [ -r "$AIXRAY_FIXTURES/$key.err" ]; then
+      [ -r "$AIXRAY_FIXTURES/$key.out" ] && cat "$AIXRAY_FIXTURES/$key.out"
+      [ -r "$AIXRAY_FIXTURES/$key.err" ] && cat "$AIXRAY_FIXTURES/$key.err"
+      rc=0
+      [ -r "$AIXRAY_FIXTURES/$key.rc" ] && read rc < "$AIXRAY_FIXTURES/$key.rc"
+      return $rc
+    fi
+    return 127
+  fi
+  "$@" 2>&1
+}
+
+# aix_capture_missing <key> — fixture-replay helper: true (rc=0) iff no capture
+# exists for <key> at all, i.e. the rc a probe just received was the "no
+# capture" default and not a genuine command status. aix()/aixv() return 127 for
+# BOTH a missing capture and a genuinely absent command, so a module that wants
+# to claim "the command is not installed" must first rule out "nobody captured
+# it". Live mode returns false (rc=1): a real box has no concept of a missing
+# fixture, and rc=127 there genuinely means the command was not found. Must be
+# called in the PARENT shell after the probe, not inside the $(aix ...)
+# substitution. Byte-for-byte the monolith's semantics (src/aixray-aix.sh.in);
+# without it here, an undefined-command rc of 127 makes the guard read false and
+# the caller launders a missing capture into NOT_APPLICABLE.
+function aix_capture_missing {
+  if [ -n "${AIXRAY_FIXTURES:-}" ]; then
+    if [ -r "$AIXRAY_FIXTURES/$1.out" ] || [ -r "$AIXRAY_FIXTURES/$1.err" ]; then
+      return 1
+    fi
+    return 0
+  fi
+  return 1
 }
 
 function jesc {
@@ -61,7 +104,13 @@ function add {
     *) echo "$AIXRAY_TOOL: internal error: unknown category '$1'" >&2; exit 1;;
   esac
   case "$4" in
-    PASS|WARN|FAIL|NOT_ASSESSED) ;;
+    # NOT_APPLICABLE is a verdict, not a refusal: the control constrains a
+    # property of a thing that need not exist. It is already a first-class
+    # status in the monolith (vios_level on a plain AIX LPAR) and in the
+    # contract schema (STATUSES, pipeline/contract_v2/schema.py), but was
+    # missing here, so any standalone tool reaching that branch aborted with
+    # an internal error instead of emitting its envelope.
+    PASS|WARN|FAIL|NOT_ASSESSED|NOT_APPLICABLE) ;;
     *) echo "$AIXRAY_TOOL: internal error: unknown status '$4'" >&2; exit 1;;
   esac
   F_CAT[$NFIND]=$1
@@ -327,6 +376,7 @@ function capture_cap_lsvg_o {
 
 
 function standalone_check {
+_AIXRAY_SESSION_KEYS=""
 
   # volume groups: stale copies + missing disks. Each verdict has its own
   # completeness state: an empty accumulator is clean evidence only after every
@@ -452,14 +502,14 @@ function standalone_check {
   # box is not treated as automatically fine. hd5's own LP count comes from the SAME 'lsvg -l
   # rootvg' capture the vg_stale/vg_pvs checks above already made (ROOTVG_LVL, no duplicate
   # command); PP size comes from 'lsvg rootvg'. Live-verified on both real lab boxes, 2026-07-13:
-  # lab-host-02 (7.2) hd5 = 2 LPs x 32 MB PP = 64 MB (current target, PASS); lab-host-03 (7.1) hd5 =
+  # a lab LPAR (AIX 7.2) hd5 = 2 LPs x 32 MB PP = 64 MB (current target, PASS); a lab LPAR (AIX 7.1) hd5 =
   # 1 LP x 32 MB PP = 32 MB (the older-guidance size exactly — a genuine, real WARN case, not a
   # hypothetical).
   RVGOUT=$(aix lsvg_rootvg lsvg rootvg); RVGOUT_RC=$?
   # NOTE: 'lsvg <vg>'s "PP SIZE:" shares its output line with "VG STATE:" (two
   # colon-separated key:value pairs on one row) -- a naive '-F: {print $2}' split
   # grabs the WRONG middle field ("...active...PP SIZE", no digits at all), a
-  # real bug caught live against lab-host-02 during this check's own build (round 1
+  # real bug caught live against a lab LPAR during this check's own build (round 1
   # self-review: HD5LPS parsed correctly but PPSZ silently came back empty,
   # correctly degrading to WARN "unreadable" rather than a wrong number — but
   # still wrong, fixed here with a targeted sed extraction instead of a
@@ -468,7 +518,7 @@ function standalone_check {
   HD5LPS=$(printf '%s\n' "$ROOTVG_LVL" | awk '$1=="hd5"{print $3; exit}')
   # hd5's own PV count from the SAME already-validated 'lsvg -l rootvg' row (field 5,
   # PVs) -- the independent completeness cross-check for the 'lslv -m hd5' mirror map
-  # below (Codex primary review round 4, 2026-07-14, HIGH: HD5PVS was derived SOLELY
+  # below (adversarial review round 4, 2026-07-14, HIGH: HD5PVS was derived SOLELY
   # from whichever 'lslv -m' columns survived capture, with no completeness check at
   # all -- a capture truncated to lose the PP2/PV2 columns hid a mirror copy entirely,
   # and if the still-visible copy happened to be contiguous this reached a false PASS
@@ -477,12 +527,12 @@ function standalone_check {
   # Both source commands must have actually SUCCEEDED, not just produced a value that
   # happens to parse -- a failed 'lsvg rootvg' or 'lsvg -l rootvg' invocation that
   # nonetheless leaves plausible-looking stale/partial text behind must never be trusted
-  # into a confident PASS/WARN/FAIL size verdict (Codex primary review, M5, round 2,
+  # into a confident PASS/WARN/FAIL size verdict (adversarial review, M5, round 2,
   # finding #4: this check recorded ROOTVG_LVL_RC via the shared vg_stale/vg_pvs capture
   # above but never actually checked it here; 'lsvg rootvg's own rc was not recorded at
   # all). Same failed-source-to-verdict laundering class already fixed for the UAK checks
   # and multibos_residue in this same milestone.
-  # A zero LP count or zero PP size is structurally invalid capture data (Codex primary
+  # A zero LP count or zero PP size is structurally invalid capture data (adversarial
   # review, 2026-07-14, LOW: the digits-only check below happily accepted "0", computing
   # HD5MB=0 and reaching a confident FAIL "0MB" -- a corrupt/garbled capture reporting
   # zero is not trustworthy evidence hd5 is actually zero-sized) -- treated the same as
@@ -499,13 +549,13 @@ function standalone_check {
   # Contiguity — size alone is NOT "upgrade-ready": both the spec (aixray-spec-v2.md Sec 5
   # cap-filesets row) and the sourced rule (upgrade-readiness-checks.md Sec 4) require hd5's
   # PPs to be CONTIGUOUS; noncontiguity is explicitly "not ready" regardless of total size
-  # (Codex primary review, M5, HIGH finding #1: the size math above was being trusted into a
+  # (adversarial review, M5, HIGH finding #1: the size math above was being trusted into a
   # PASS with no contiguity check at all). 'lslv -m hd5' identifies which disk(s) hd5's
   # copies land on; 'lspv -M <hdiskN>' then independently confirms those PPs form a
   # contiguous run on that disk. Never a PASS on inconclusive or noncontiguous evidence: no
   # readable PV/contiguity signal degrades to WARN "not assessed," never PASS.
   #
-  # Multi-copy guard (Codex primary review, 2026-07-14, HIGH finding #2): a MIRRORED hd5
+  # Multi-copy guard (adversarial review, 2026-07-14, HIGH finding #2): a MIRRORED hd5
   # has a full copy of every LP on EACH of its PVs (real 'lslv -m hd5' rows carry PP1/PV1,
   # PP2/PV2, PP3/PV3 column pairs, one pair per mirror copy) -- checking only copy 1's PV
   # (the prior version's HD5PV, singular) let a genuinely noncontiguous SECOND copy still
@@ -564,7 +614,7 @@ EOF
   HD5CONTIG=""
   HD5FOUNDCNT=""
   HD5OKPV=""; HD5BADPV=""; HD5INCPV=""; HD5NOSIGPV=""; HD5INCDETAIL=""
-  # Mirror-map completeness cross-check (Codex primary review round 4, 2026-07-14,
+  # Mirror-map completeness cross-check (adversarial review round 4, 2026-07-14,
   # HIGH): the PV set parsed out of 'lslv -m hd5' must agree with the PV count
   # 'lsvg -l rootvg' independently states for hd5 (HD5PVCNT, field 5 of the same
   # already-rc-validated capture the LP count comes from). Fewer PVs seen = the map
@@ -591,7 +641,7 @@ EOF
     for HPV in $HD5PVQUERY; do
       LSPVM=$(aix "lspv_M_$HPV" lspv -M "$HPV"); LSPVM_RC=$?
       if [ "$LSPVM_RC" -eq 0 ] && [ -n "$LSPVM" ]; then
-        # Live-verified against real 'lspv -M' output on lab-host-02/lab-host-03, 2026-07-13: it
+        # Live-verified against real 'lspv -M' output on two lab LPARs, 2026-07-13: it
         # emits ONE PP per line (never a merged 'N-M' range) -- an earlier version of this
         # check wrongly assumed 'lspv -M' merges each LV's own consecutive PPs into a single
         # line and counted LINES naming hd5 as the contiguity signal; on real output that
@@ -622,14 +672,14 @@ EOF
         # as its own "incomplete" outcome, never silently folded into "yes" or "no". Also
         # requires the field immediately AFTER 'hd5' (its own per-copy LP-index marker,
         # 'hd5:N') to be present and numeric, and tracks the SET of those LP-index markers
-        # separately from the physical PP set (Codex primary review, 2026-07-14, HIGH finding
+        # separately from the physical PP set (adversarial review, 2026-07-14, HIGH finding
         # #1: a row truncated right after the bare 'hd5' token, with no trailing LP-index
         # field at all, was silently accepted as a valid match; and two DIFFERENT physical PPs
         # both mislabeled as hd5's SAME LP index, with hd5's other LP index never appearing at
         # all, still produced the expected PHYSICAL-PP count and a spuriously "contiguous"
         # PASS -- reproduced live against a synthetic capture. Requiring the LP-index set's own
         # size to also equal the expected count closes both).
-        # Row grammar is validated per line, never token-scanned (Codex primary review
+        # Row grammar is validated per line, never token-scanned (adversarial review
         # round 4, 2026-07-14, HIGH: the previous version searched for an 'hd5' token at
         # ANY field position with numeric neighbors, so a garbled line like
         # 'garbage 1 hd5 1' -- valid-shaped tokens in coincidentally-right positions on a

@@ -1,0 +1,19 @@
+{
+  "id": "ck-fileperm-motd-write",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "fileperm_motd_write"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "ls -ld /etc/motd"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-fileperm-motd-write/ck-fileperm-motd-write.ksh"
+}

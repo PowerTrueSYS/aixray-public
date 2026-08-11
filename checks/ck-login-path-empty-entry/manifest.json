@@ -1,0 +1,20 @@
+{
+  "id": "ck-login-path-empty-entry",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "login_path_empty_entry"
+  ],
+  "captures": [],
+  "requires_root": true,
+  "read_only": true,
+  "commands": [
+    "echo \"${PATH}\"",
+    "ls -ld"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-login-path-empty-entry/ck-login-path-empty-entry.ksh"
+}

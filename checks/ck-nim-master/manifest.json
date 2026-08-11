@@ -1,0 +1,21 @@
+{
+  "id": "ck-nim-master",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "nim_master_installed"
+  ],
+  "captures": [
+    "cap-lslpp-qcl"
+  ],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "lslpp -qcL"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-nim-master/ck-nim-master.ksh"
+}

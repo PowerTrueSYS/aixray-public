@@ -1,0 +1,21 @@
+{
+  "id": "ck-qdaemon",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "qdaemon"
+  ],
+  "captures": [
+    "cap-cis-services-lssrc-a"
+  ],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "lssrc -a"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-qdaemon/ck-qdaemon.ksh"
+}

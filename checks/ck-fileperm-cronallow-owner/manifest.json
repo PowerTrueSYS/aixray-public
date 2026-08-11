@@ -1,0 +1,19 @@
+{
+  "id": "ck-fileperm-cronallow-owner",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "fileperm_cronallow_owner"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "ls -ln /var/adm/cron/cron.allow"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-fileperm-cronallow-owner/ck-fileperm-cronallow-owner.ksh"
+}

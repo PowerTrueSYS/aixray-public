@@ -1,0 +1,19 @@
+{
+  "id": "ck-fileperm-sshconfig-mode",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "fileperm_sshconfig_mode"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "ls -ln /etc/ssh/ssh_config"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-fileperm-sshconfig-mode/ck-fileperm-sshconfig-mode.ksh"
+}

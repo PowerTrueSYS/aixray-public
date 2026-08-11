@@ -1,0 +1,19 @@
+{
+  "id": "ck-fileperm-syslog-group",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "fileperm_syslog_group"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "ls -ln /etc/syslog.conf"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-fileperm-syslog-group/ck-fileperm-syslog-group.ksh"
+}

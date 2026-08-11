@@ -1,0 +1,19 @@
+{
+  "id": "ck-ftpd-umask",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "inetd_ftpd_umask"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "grep '^ftp[[:blank:]]' /etc/inetd.conf"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-ftpd-umask/ck-ftpd-umask.ksh"
+}

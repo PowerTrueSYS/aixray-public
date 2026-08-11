@@ -1,0 +1,19 @@
+{
+  "id": "ck-fileperm-inetd-owner",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "fileperm_inetd_owner"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "ls -ln /etc/inetd.conf"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-fileperm-inetd-owner/ck-fileperm-inetd-owner.ksh"
+}

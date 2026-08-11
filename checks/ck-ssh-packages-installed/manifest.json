@@ -1,0 +1,20 @@
+{
+  "id": "ck-ssh-packages-installed",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "ssh_packages_installed"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "lslpp -L openssh.base.client",
+    "lslpp -L openssh.base.server"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-ssh-packages-installed/ck-ssh-packages-installed.ksh"
+}

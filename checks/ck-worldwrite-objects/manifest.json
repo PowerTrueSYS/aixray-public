@@ -1,0 +1,20 @@
+{
+  "id": "ck-worldwrite-objects",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "worldwrite_objects"
+  ],
+  "captures": [],
+  "requires_root": true,
+  "read_only": true,
+  "commands": [
+    "find -L / \\( -fstype jfs -o -fstype jfs2 \\) ! -type d -perm -g+w -ls",
+    "lsgroup -a admin ALL | grep true"
+  ],
+  "tags": [
+    "cis-l2"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-worldwrite-objects/ck-worldwrite-objects.ksh"
+}

@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="0.1.0"
+AIXRAY_STANDALONE_VERSION="1.0.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -26,6 +26,49 @@ function aix {
     return 127
   fi
   "$@" 2>/dev/null
+}
+
+# aixv preserves stderr as evidence, for read-only commands that write their
+# version banner or diagnostics there rather than to stdout. (Deliberately no
+# example command name here: this comment is copied into all 324 standalone
+# tools, and tools/ci/egress-lint.sh reads a banned network command name in a
+# comment as a violation just as it would in a command position.)
+function aixv {
+  typeset key rc
+  key=$1
+  shift
+  if [ -n "${AIXRAY_FIXTURES:-}" ]; then
+    if [ -r "$AIXRAY_FIXTURES/$key.out" ] || [ -r "$AIXRAY_FIXTURES/$key.err" ]; then
+      [ -r "$AIXRAY_FIXTURES/$key.out" ] && cat "$AIXRAY_FIXTURES/$key.out"
+      [ -r "$AIXRAY_FIXTURES/$key.err" ] && cat "$AIXRAY_FIXTURES/$key.err"
+      rc=0
+      [ -r "$AIXRAY_FIXTURES/$key.rc" ] && read rc < "$AIXRAY_FIXTURES/$key.rc"
+      return $rc
+    fi
+    return 127
+  fi
+  "$@" 2>&1
+}
+
+# aix_capture_missing <key> — fixture-replay helper: true (rc=0) iff no capture
+# exists for <key> at all, i.e. the rc a probe just received was the "no
+# capture" default and not a genuine command status. aix()/aixv() return 127 for
+# BOTH a missing capture and a genuinely absent command, so a module that wants
+# to claim "the command is not installed" must first rule out "nobody captured
+# it". Live mode returns false (rc=1): a real box has no concept of a missing
+# fixture, and rc=127 there genuinely means the command was not found. Must be
+# called in the PARENT shell after the probe, not inside the $(aix ...)
+# substitution. Byte-for-byte the monolith's semantics (src/aixray-aix.sh.in);
+# without it here, an undefined-command rc of 127 makes the guard read false and
+# the caller launders a missing capture into NOT_APPLICABLE.
+function aix_capture_missing {
+  if [ -n "${AIXRAY_FIXTURES:-}" ]; then
+    if [ -r "$AIXRAY_FIXTURES/$1.out" ] || [ -r "$AIXRAY_FIXTURES/$1.err" ]; then
+      return 1
+    fi
+    return 0
+  fi
+  return 1
 }
 
 function jesc {
@@ -61,7 +104,13 @@ function add {
     *) echo "$AIXRAY_TOOL: internal error: unknown category '$1'" >&2; exit 1;;
   esac
   case "$4" in
-    PASS|WARN|FAIL|NOT_ASSESSED) ;;
+    # NOT_APPLICABLE is a verdict, not a refusal: the control constrains a
+    # property of a thing that need not exist. It is already a first-class
+    # status in the monolith (vios_level on a plain AIX LPAR) and in the
+    # contract schema (STATUSES, pipeline/contract_v2/schema.py), but was
+    # missing here, so any standalone tool reaching that branch aborted with
+    # an internal error instead of emitting its envelope.
+    PASS|WARN|FAIL|NOT_ASSESSED|NOT_APPLICABLE) ;;
     *) echo "$AIXRAY_TOOL: internal error: unknown status '$4'" >&2; exit 1;;
   esac
   F_CAT[$NFIND]=$1
@@ -297,9 +346,10 @@ function standalone_main {
 
 AIXRAY_TOOL=ck-storage-layout
 
+_AIXRAY_SESSION_KEYS=""
 # Emit one JSON member named "storage_layout" from fresh, replayable AIX
-# captures. This facts-only module deliberately does not add a finding; a
-# separate integration build owns the spine include and facts-emitter call.
+# captures and one explicit assessment-gap finding. The integration build owns
+# the spine include plus both check and facts-emitter call sites.
 
 function storage_layout_has_nonblank {
   printf '%s\n' "$1" | awk 'NF { found=1 } END { exit(found ? 0 : 1) }'
@@ -491,7 +541,7 @@ function emit_fact_storage_layout {
 
     printf '%s\n' "$SL_LSPV_ROWS" |
       while read SL_DISK SL_PVID SL_VG; do
-        # Each size is independently captured and validated. A plausible-looking
+        # Each size is independently captured and gated. A plausible-looking
         # payload from a failed command is never used.
         SL_KEY="getconf_disk_size_$SL_DISK"
         SL_SIZE_RAW=$(aix "$SL_KEY" getconf DISK_SIZE "/dev/$SL_DISK")
@@ -717,8 +767,68 @@ function emit_fact_storage_layout {
   '
 }
 
+# Storage facts describe what AIX reported. A topology finding still needs an
+# approved expected-state baseline; emit the gap explicitly when that is absent.
+function check_storage_layout {
+  typeset SL_CHECK_OUT SL_CHECK_RC SL_CHECK_ROWS SL_CHECK_SHAPE_RC
+  typeset SL_CHECK_COUNT SL_CHECK_NOUN SL_CHECK_VERB SL_CHECK_OBS
+  typeset SL_CHECK_MEAN SL_CHECK_FIX
+
+  SL_CHECK_OUT=$(aix lspv lspv); SL_CHECK_RC=$?
+  if [ "$SL_CHECK_RC" -ne 0 ]; then
+    SL_CHECK_OBS="not assessed — lspv storage inventory failed (rc=$SL_CHECK_RC)"
+    SL_CHECK_MEAN="The physical-volume inventory source was unavailable, so storage topology, ownership, and redundancy could not be assessed."
+    SL_CHECK_FIX="restore access to 'lspv', provide the approved storage topology baseline, and rerun AIXray."
+  elif ! storage_layout_has_nonblank "$SL_CHECK_OUT"; then
+    SL_CHECK_OBS="not assessed — lspv reported no storage inventory (rc=0)"
+    SL_CHECK_MEAN="An empty physical-volume inventory cannot establish disk ownership, topology, or redundancy."
+    SL_CHECK_FIX="verify the complete output of 'lspv', provide the approved storage topology baseline, and rerun AIXray."
+  else
+    SL_CHECK_ROWS=$(printf '%s\n' "$SL_CHECK_OUT" | awk '
+      function hdisk(value) { return value ~ /^hdisk[0-9][0-9]*$/ }
+      function pvid(value) {
+        return value == "none" ||
+          (value ~ /^[0-9A-Fa-f][0-9A-Fa-f]*$/ &&
+           substr(value,16,1) != "" && substr(value,17,1) == "")
+      }
+      function vg(value) {
+        return value ~ /^[A-Za-z0-9_][A-Za-z0-9_.-]*$/
+      }
+      /^[ \t]*$/ { next }
+      {
+        rows++
+        if (NF < 3 || !hdisk($1) || !pvid($2) || !vg($3) ||
+            seen[$1]++) bad=1
+      }
+      END {
+        if (bad || rows == 0) exit 1
+        print rows
+      }
+    '); SL_CHECK_SHAPE_RC=$?
+    if [ "$SL_CHECK_SHAPE_RC" -ne 0 ] || [ -z "$SL_CHECK_ROWS" ]; then
+      SL_CHECK_OBS="not assessed — lspv storage inventory was unparseable (rc=0)"
+      SL_CHECK_MEAN="The physical-volume capture did not match the expected AIX lspv structure, so topology, ownership, and redundancy could not be assessed."
+      SL_CHECK_FIX="capture the complete output of 'lspv', correct the replay source if needed, provide the approved storage topology baseline, and rerun AIXray."
+    else
+      SL_CHECK_COUNT=$SL_CHECK_ROWS
+      SL_CHECK_NOUN=disks
+      SL_CHECK_VERB=were
+      if [ "$SL_CHECK_COUNT" -eq 1 ]; then
+        SL_CHECK_NOUN=disk
+        SL_CHECK_VERB=was
+      fi
+      SL_CHECK_OBS="not assessed — $SL_CHECK_COUNT $SL_CHECK_NOUN $SL_CHECK_VERB inventoried from lspv, but no site-approved expected storage topology, ownership, and redundancy baseline was available"
+      SL_CHECK_MEAN="Observed disks and volume groups alone cannot establish whether placement, ownership, pathing, and redundancy match the intended architecture."
+      SL_CHECK_FIX="provide the site-approved expected storage topology, ownership, pathing, and redundancy baseline, compare it with this inventory, and rerun AIXray."
+    fi
+  fi
+
+  add storage storage_layout "Storage layout baseline" \
+    NOT_ASSESSED high "$SL_CHECK_OBS" "$SL_CHECK_MEAN" "$SL_CHECK_FIX"
+}
+
 function standalone_run {
-  :
+  check_storage_layout
 }
 
 standalone_main "$@"

@@ -1,0 +1,20 @@
+{
+  "id": "ck-rctcpip-mrouted",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "rctcpip_mrouted"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "/usr/bin/grep \"start[[:blank:]]/usr/sbin/mrouted\" /etc/rc.tcpip",
+    "/usr/bin/lssrc -s mrouted"
+  ],
+  "tags": [
+    "cis-l2"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-rctcpip-mrouted/ck-rctcpip-mrouted.ksh"
+}

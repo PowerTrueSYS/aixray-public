@@ -1,0 +1,20 @@
+{
+  "id": "ck-system-accounts-ftp",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "system_accounts_ftpusers"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "ls -ld /etc/ftpusers",
+    "cat /etc/ftpusers"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-system-accounts-ftp/ck-system-accounts-ftp.ksh"
+}

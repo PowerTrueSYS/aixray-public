@@ -1,0 +1,17 @@
+{
+  "id": "ck-groupwrite-staff-files",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "groupwrite_staff_files"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "find / \\( -fstype jfs -o -fstype jfs2 \\) -type f -perm -g+w -group staff -ls"
+  ],
+  "tags": [],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-groupwrite-staff-files/ck-groupwrite-staff-files.ksh"
+}

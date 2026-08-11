@@ -1,0 +1,23 @@
+{
+  "id": "ck-remote-rcmd-filesets",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "remote_rcmd_filesets"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "lslpp -L bos.net.tcp.rcmd_server",
+    "lslpp -L bos.net.tcp.rcmd",
+    "lslpp -f bos.net.tcp.rcmd_server",
+    "lslpp -f bos.net.tcp.rcmd",
+    "ls -led <path>"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-remote-rcmd-filesets/ck-remote-rcmd-filesets.ksh"
+}

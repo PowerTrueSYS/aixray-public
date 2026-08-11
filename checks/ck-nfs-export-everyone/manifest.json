@@ -1,0 +1,22 @@
+{
+  "id": "ck-nfs-export-everyone",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "nfs_export_everyone"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "showmount -e",
+    "exportfs",
+    "test -e /etc/exports",
+    "cat /etc/exports"
+  ],
+  "tags": [
+    "cis-l2"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-nfs-export-everyone/ck-nfs-export-everyone.ksh"
+}

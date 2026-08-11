@@ -1,0 +1,19 @@
+{
+  "id": "ck-nfs-rcnfs-disabled",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "rcnfs_lsitab"
+  ],
+  "captures": [],
+  "requires_root": true,
+  "read_only": true,
+  "commands": [
+    "lsitab rcnfs"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-nfs-rcnfs-disabled/ck-nfs-rcnfs-disabled.ksh"
+}

@@ -1,0 +1,19 @@
+{
+  "id": "ck-rctcpip-ndpd-router",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "rctcpip_ndpd_router"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "grep '^#start[[:blank:]]/usr/sbin/ndpd-router' /etc/rc.tcpip"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-rctcpip-ndpd-router/ck-rctcpip-ndpd-router.ksh"
+}

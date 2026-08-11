@@ -1,0 +1,19 @@
+{
+  "id": "ck-inetd-xmquery",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "inetd_xmquery"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "grep -E '^[\t ]*xmquery[\t ]' /etc/inetd.conf"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-inetd-xmquery/ck-inetd-xmquery.ksh"
+}

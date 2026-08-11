@@ -1,0 +1,19 @@
+{
+  "id": "ck-net-nfs-use-reserved-ports",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "net_nfs_use_reserved_ports"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "nfso -o nfs_use_reserved_ports"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-net-nfs-use-reserved-ports/ck-net-nfs-use-reserved-ports.ksh"
+}

@@ -1,0 +1,19 @@
+{
+  "id": "ck-syslog-daemon-remote",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "syslogd_inbound"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "ps -ef"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-syslog-daemon-remote/ck-syslog-daemon-remote.ksh"
+}

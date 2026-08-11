@@ -1,0 +1,20 @@
+{
+  "id": "ck-trustchk-untrusted-scan",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "trustchk_untrusted_scan"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "whence trustchk",
+    "trustchk -i -n tree /"
+  ],
+  "tags": [
+    "cis-l2"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-trustchk-untrusted-scan/ck-trustchk-untrusted-scan.ksh"
+}

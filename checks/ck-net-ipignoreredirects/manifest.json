@@ -1,0 +1,19 @@
+{
+  "id": "ck-net-ipignoreredirects",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "net_ipignoreredirects"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "no -o ipignoreredirects"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-net-ipignoreredirects/ck-net-ipignoreredirects.ksh"
+}

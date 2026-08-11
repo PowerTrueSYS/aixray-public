@@ -1,0 +1,19 @@
+{
+  "id": "ck-fileperm-sshdconfig-group",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "fileperm_sshdconfig_group"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "ls -ln /etc/ssh/sshd_config"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-fileperm-sshdconfig-group/ck-fileperm-sshdconfig-group.ksh"
+}

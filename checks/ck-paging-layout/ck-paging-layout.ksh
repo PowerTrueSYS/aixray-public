@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="0.1.0"
+AIXRAY_STANDALONE_VERSION="1.0.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -26,6 +26,49 @@ function aix {
     return 127
   fi
   "$@" 2>/dev/null
+}
+
+# aixv preserves stderr as evidence, for read-only commands that write their
+# version banner or diagnostics there rather than to stdout. (Deliberately no
+# example command name here: this comment is copied into all 324 standalone
+# tools, and tools/ci/egress-lint.sh reads a banned network command name in a
+# comment as a violation just as it would in a command position.)
+function aixv {
+  typeset key rc
+  key=$1
+  shift
+  if [ -n "${AIXRAY_FIXTURES:-}" ]; then
+    if [ -r "$AIXRAY_FIXTURES/$key.out" ] || [ -r "$AIXRAY_FIXTURES/$key.err" ]; then
+      [ -r "$AIXRAY_FIXTURES/$key.out" ] && cat "$AIXRAY_FIXTURES/$key.out"
+      [ -r "$AIXRAY_FIXTURES/$key.err" ] && cat "$AIXRAY_FIXTURES/$key.err"
+      rc=0
+      [ -r "$AIXRAY_FIXTURES/$key.rc" ] && read rc < "$AIXRAY_FIXTURES/$key.rc"
+      return $rc
+    fi
+    return 127
+  fi
+  "$@" 2>&1
+}
+
+# aix_capture_missing <key> — fixture-replay helper: true (rc=0) iff no capture
+# exists for <key> at all, i.e. the rc a probe just received was the "no
+# capture" default and not a genuine command status. aix()/aixv() return 127 for
+# BOTH a missing capture and a genuinely absent command, so a module that wants
+# to claim "the command is not installed" must first rule out "nobody captured
+# it". Live mode returns false (rc=1): a real box has no concept of a missing
+# fixture, and rc=127 there genuinely means the command was not found. Must be
+# called in the PARENT shell after the probe, not inside the $(aix ...)
+# substitution. Byte-for-byte the monolith's semantics (src/aixray-aix.sh.in);
+# without it here, an undefined-command rc of 127 makes the guard read false and
+# the caller launders a missing capture into NOT_APPLICABLE.
+function aix_capture_missing {
+  if [ -n "${AIXRAY_FIXTURES:-}" ]; then
+    if [ -r "$AIXRAY_FIXTURES/$1.out" ] || [ -r "$AIXRAY_FIXTURES/$1.err" ]; then
+      return 1
+    fi
+    return 0
+  fi
+  return 1
 }
 
 function jesc {
@@ -61,7 +104,13 @@ function add {
     *) echo "$AIXRAY_TOOL: internal error: unknown category '$1'" >&2; exit 1;;
   esac
   case "$4" in
-    PASS|WARN|FAIL|NOT_ASSESSED) ;;
+    # NOT_APPLICABLE is a verdict, not a refusal: the control constrains a
+    # property of a thing that need not exist. It is already a first-class
+    # status in the monolith (vios_level on a plain AIX LPAR) and in the
+    # contract schema (STATUSES, pipeline/contract_v2/schema.py), but was
+    # missing here, so any standalone tool reaching that branch aborted with
+    # an internal error instead of emitting its envelope.
+    PASS|WARN|FAIL|NOT_ASSESSED|NOT_APPLICABLE) ;;
     *) echo "$AIXRAY_TOOL: internal error: unknown status '$4'" >&2; exit 1;;
   esac
   F_CAT[$NFIND]=$1
@@ -372,6 +421,7 @@ function capture_cap_prtconf {
 
 
 function standalone_check {
+_AIXRAY_SESSION_KEYS=""
 
   # paging_layout — paging-space PLACEMENT, distinct from the %-used capacity check above.
   # Veteran signal: >1 paging space on ONE physical volume (they contend for the same disk —
@@ -387,26 +437,35 @@ function standalone_check {
         "Paging-space placement could not be assessed completely because the online volume-group list was unavailable or unparseable." \
         "run 'lsvg -o' manually, then rerun AIXray before treating cross-VG paging placement as healthy." "ffiec:II.C.11"
   else
-    set -- $(printf '%s\n' "$LSPS" | awk '
+    PLSTAT=$(printf '%s\n' "$LSPS" | awk '
       NR>1 && NF>1 {
         n++; c[$2]++; if($3=="rootvg") r++
         s=$4; sub(/MB$/,"",s); if(s ~ /GB$/){sub(/GB$/,"",s); s=s*1024}; tot+=s+0
       }
       END{ dup=0; for(k in c) if(c[k]>1) dup=1; printf "%d %d %d %d", n+0, dup, (n>0 && r==n)?1:0, tot+0 }')
-    PLNPS=${1:-0}; PLDUP=${2:-0}; PLROOT=${3:-0}; PLTOTMB=${4:-0}
-    PLNOTE=""
-    [ "${REALMB:-0}" -gt 0 ] && [ "$PLTOTMB" -gt 0 ] && PLNOTE=" Total paging ${PLTOTMB}MB vs ${REALMB}MB RAM."
-    if [ "$PLDUP" -eq 1 ]; then
-      add storage paging_layout "Paging space layout" WARN med "$PLNPS paging space(s), more than one on a single disk$PLNOTE" \
-          "More than one paging space sits on the same physical volume — they cannot page in parallel because they contend for the one disk, so the second space buys capacity but no throughput. Paging is exactly when you want parallel spindles." \
-          "put each paging space on a separate physical volume: remove the extra ('swapoff' then 'rmps'), recreate it on another PV with 'mkps -a <vg> <hdisk>'." "ffiec:II.C.11"
-    elif [ "$PLROOT" -eq 1 ] && [ "${NVG:-1}" -gt 1 ]; then
-      add storage paging_layout "Paging space layout" WARN low "all $PLNPS paging space(s) in rootvg while another VG is online$PLNOTE" \
-          "All paging space is in rootvg even though another volume group is online — paging then competes with OS and filesystem I/O on the rootvg disks. Moving paging onto a data VG's spindles keeps a paging burst from starving the OS." \
-          "add a paging space on another VG's disk ('mkps -a <datavg> <hdisk>') and shrink or remove the rootvg one once the new space is active." "ffiec:II.C.11"
+    PLSTAT_RC=$?
+    if [ "$PLSTAT_RC" -ne 0 ] || [ -z "$PLSTAT" ]; then
+      add storage paging_layout "Paging space layout" NOT_ASSESSED low \
+          "not assessed — lsps -a placement scan failed (rc=$PLSTAT_RC)" \
+          "Paging-space placement could not be assessed because the validated lsps -a evidence could not be scanned for disk and volume-group placement." \
+          "make the lsps -a placement scan complete successfully, then rerun AIXray before treating paging-space placement as healthy." "ffiec:II.C.11"
     else
-      add storage paging_layout "Paging space layout" PASS low "$PLNPS paging space(s), no single-disk contention$PLNOTE" \
-          "Paging-space placement is fine — no two paging spaces share a disk, and there is no cross-VG contention to relieve. (Utilisation is checked separately under Paging space.)" "n/a"
+      set -- $PLSTAT
+      PLNPS=${1:-0}; PLDUP=${2:-0}; PLROOT=${3:-0}; PLTOTMB=${4:-0}
+      PLNOTE=""
+      [ "${REALMB:-0}" -gt 0 ] && [ "$PLTOTMB" -gt 0 ] && PLNOTE=" Total paging ${PLTOTMB}MB vs ${REALMB}MB RAM."
+      if [ "$PLDUP" -eq 1 ]; then
+        add storage paging_layout "Paging space layout" WARN med "$PLNPS paging space(s), more than one on a single disk$PLNOTE" \
+            "More than one paging space sits on the same physical volume — they cannot page in parallel because they contend for the one disk, so the second space buys capacity but no throughput. Paging is exactly when you want parallel spindles." \
+            "put each paging space on a separate physical volume: remove the extra ('swapoff' then 'rmps'), recreate it on another PV with 'mkps -a <vg> <hdisk>'." "ffiec:II.C.11"
+      elif [ "$PLROOT" -eq 1 ] && [ "${NVG:-1}" -gt 1 ]; then
+        add storage paging_layout "Paging space layout" WARN low "all $PLNPS paging space(s) in rootvg while another VG is online$PLNOTE" \
+            "All paging space is in rootvg even though another volume group is online — paging then competes with OS and filesystem I/O on the rootvg disks. Moving paging onto a data VG's spindles keeps a paging burst from starving the OS." \
+            "add a paging space on another VG's disk ('mkps -a <datavg> <hdisk>') and shrink or remove the rootvg one once the new space is active." "ffiec:II.C.11"
+      else
+        add storage paging_layout "Paging space layout" PASS low "$PLNPS paging space(s), no single-disk contention$PLNOTE" \
+            "Paging-space placement is fine — no two paging spaces share a disk, and there is no cross-VG contention to relieve. (Utilisation is checked separately under Paging space.)" "n/a"
+      fi
     fi
   fi
 }

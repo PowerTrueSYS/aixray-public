@@ -1,0 +1,20 @@
+{
+  "id": "ck-sudo-version",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "sudo_version"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "ls -ld /usr/bin/sudo",
+    "/usr/bin/sudo --version"
+  ],
+  "tags": [
+    "cis-l2"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-sudo-version/ck-sudo-version.ksh"
+}

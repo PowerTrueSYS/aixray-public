@@ -1,0 +1,20 @@
+{
+  "id": "ck-fileperm-smitlog-mode",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "fileperm_smitlog_mode"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "lsuser -a home root",
+    "ls -ln /smit.log"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-fileperm-smitlog-mode/ck-fileperm-smitlog-mode.ksh"
+}

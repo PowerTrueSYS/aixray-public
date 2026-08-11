@@ -1,0 +1,19 @@
+{
+  "id": "ck-fileperm-cronlog-owner",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "fileperm_cronlog_owner"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "ls -ln /var/adm/cron/log"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-fileperm-cronlog-owner/ck-fileperm-cronlog-owner.ksh"
+}

@@ -1,0 +1,19 @@
+{
+  "id": "ck-fileperm-sendmailcf",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "fileperm_sendmailcf"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "ls -l /etc/mail/sendmail.cf"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-fileperm-sendmailcf/ck-fileperm-sendmailcf.ksh"
+}

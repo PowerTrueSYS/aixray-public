@@ -9,6 +9,7 @@
   "requires_root": false,
   "read_only": true,
   "commands": [
+    "test -e /etc/exports",
     "cat /etc/exports",
     "exportfs"
   ],

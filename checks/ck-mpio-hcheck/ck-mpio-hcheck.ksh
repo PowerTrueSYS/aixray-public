@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="0.1.0"
+AIXRAY_STANDALONE_VERSION="1.0.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -26,6 +26,49 @@ function aix {
     return 127
   fi
   "$@" 2>/dev/null
+}
+
+# aixv preserves stderr as evidence, for read-only commands that write their
+# version banner or diagnostics there rather than to stdout. (Deliberately no
+# example command name here: this comment is copied into all 324 standalone
+# tools, and tools/ci/egress-lint.sh reads a banned network command name in a
+# comment as a violation just as it would in a command position.)
+function aixv {
+  typeset key rc
+  key=$1
+  shift
+  if [ -n "${AIXRAY_FIXTURES:-}" ]; then
+    if [ -r "$AIXRAY_FIXTURES/$key.out" ] || [ -r "$AIXRAY_FIXTURES/$key.err" ]; then
+      [ -r "$AIXRAY_FIXTURES/$key.out" ] && cat "$AIXRAY_FIXTURES/$key.out"
+      [ -r "$AIXRAY_FIXTURES/$key.err" ] && cat "$AIXRAY_FIXTURES/$key.err"
+      rc=0
+      [ -r "$AIXRAY_FIXTURES/$key.rc" ] && read rc < "$AIXRAY_FIXTURES/$key.rc"
+      return $rc
+    fi
+    return 127
+  fi
+  "$@" 2>&1
+}
+
+# aix_capture_missing <key> — fixture-replay helper: true (rc=0) iff no capture
+# exists for <key> at all, i.e. the rc a probe just received was the "no
+# capture" default and not a genuine command status. aix()/aixv() return 127 for
+# BOTH a missing capture and a genuinely absent command, so a module that wants
+# to claim "the command is not installed" must first rule out "nobody captured
+# it". Live mode returns false (rc=1): a real box has no concept of a missing
+# fixture, and rc=127 there genuinely means the command was not found. Must be
+# called in the PARENT shell after the probe, not inside the $(aix ...)
+# substitution. Byte-for-byte the monolith's semantics (src/aixray-aix.sh.in);
+# without it here, an undefined-command rc of 127 makes the guard read false and
+# the caller launders a missing capture into NOT_APPLICABLE.
+function aix_capture_missing {
+  if [ -n "${AIXRAY_FIXTURES:-}" ]; then
+    if [ -r "$AIXRAY_FIXTURES/$1.out" ] || [ -r "$AIXRAY_FIXTURES/$1.err" ]; then
+      return 1
+    fi
+    return 0
+  fi
+  return 1
 }
 
 function jesc {
@@ -61,7 +104,13 @@ function add {
     *) echo "$AIXRAY_TOOL: internal error: unknown category '$1'" >&2; exit 1;;
   esac
   case "$4" in
-    PASS|WARN|FAIL|NOT_ASSESSED) ;;
+    # NOT_APPLICABLE is a verdict, not a refusal: the control constrains a
+    # property of a thing that need not exist. It is already a first-class
+    # status in the monolith (vios_level on a plain AIX LPAR) and in the
+    # contract schema (STATUSES, pipeline/contract_v2/schema.py), but was
+    # missing here, so any standalone tool reaching that branch aborted with
+    # an internal error instead of emitting its envelope.
+    PASS|WARN|FAIL|NOT_ASSESSED|NOT_APPLICABLE) ;;
     *) echo "$AIXRAY_TOOL: internal error: unknown status '$4'" >&2; exit 1;;
   esac
   F_CAT[$NFIND]=$1
@@ -299,21 +348,47 @@ AIXRAY_TOOL=ck-mpio-hcheck
 
 
 function standalone_check {
+_AIXRAY_SESSION_KEYS=""
 
   # MPIO path health-check policy. Reuse ck-mpio-paths' lspath capture in the
   # monolith; a standalone S1 artifact takes the same read when no shared
   # capture has been populated.
+  typeset HCK_LSP_OK HCK_LSPWHY HCK_ATTR_PARSE
   if [ "${LSP+set}" = set ]; then
     HCK_LSP=$LSP
     HCK_LSP_RC=${RC:-0}
+    HCK_LSP_OK=${LSP_OK:-0}
+    HCK_LSPWHY=${LSPWHY:-not assessed — lspath capture unavailable}
   else
     HCK_LSP=$(aix lspath lspath)
     HCK_LSP_RC=$?
+    HCK_LSP_OK=0
+    HCK_LSPWHY=""
+    if [ "$HCK_LSP_RC" -ne 0 ]; then
+      HCK_LSPWHY="not assessed — lspath capture failed (rc=$HCK_LSP_RC)"
+    elif [ -z "$HCK_LSP" ]; then
+      HCK_LSPWHY="not assessed — lspath capture empty (rc=0)"
+    elif printf '%s\n' "$HCK_LSP" | awk '
+        NF {
+          rows++
+          if (NF != 3 ||
+              $1 !~ /^(Enabled|Disabled|Failed|Missing|Defined)$/ ||
+              $2 !~ /^[A-Za-z0-9_.-][A-Za-z0-9_.-]*$/ ||
+              $3 !~ /^[A-Za-z0-9_.-][A-Za-z0-9_.-]*$/) bad=1
+        }
+        END { if (rows == 0 || bad) exit 1 }
+      '
+    then
+      HCK_LSP_OK=1
+    else
+      HCK_LSPWHY="not assessed — lspath capture unparseable (rc=0)"
+    fi
+    [ "$HCK_LSP_OK" -eq 1 ] || HCK_LSP=""
   fi
 
-  if [ "$HCK_LSP_RC" -ne 0 ]; then
+  if [ "$HCK_LSP_OK" -ne 1 ]; then
     add storage mpio_hcheck "MPIO health-check probing" NOT_ASSESSED high \
-        "not assessed — lspath capture failed (rc=$HCK_LSP_RC)" \
+        "$HCK_LSPWHY" \
         "MPIO disks could not be identified from a successful lspath read, so no health-check policy claim is made." \
         "resolve the lspath read failure and rerun the diagnostic."
   else
@@ -335,64 +410,78 @@ function standalone_check {
     HCK_APPLICABLE=0
     HCK_NOT_APPLICABLE=0
     HCK_UNREADABLE=0
-    HCK_STATUS=PASS
-    HCK_SEVERITY=low
+    HCK_DISABLED=0
+    HCK_SLOW=0
     HCK_TABLE="disk interval mode"
 
     for HCK_DISK in $HCK_DISKS; do
       HCK_ATTR=$(aix "lsattr_hcheck_$HCK_DISK" lsattr -El "$HCK_DISK" \
         -a hcheck_interval -a hcheck_mode)
       HCK_ATTR_RC=$?
-      HCK_INTERVAL=$(printf '%s\n' "$HCK_ATTR" | \
-        awk '$1 == "hcheck_interval" {print $2; exit}')
-      HCK_MODE_VALUE=$(printf '%s\n' "$HCK_ATTR" | \
-        awk '$1 == "hcheck_mode" {print $2; exit}')
-      HCK_MODE=$HCK_MODE_VALUE
-      [ -n "$HCK_MODE" ] || HCK_MODE=not-reported
-
-      if [ -z "$HCK_INTERVAL" ] && [ "$HCK_ATTR_RC" -ne 0 ] && \
-          [ -z "$HCK_MODE_VALUE" ]; then
+      HCK_ATTR_PARSE=""
+      if [ "$HCK_ATTR_RC" -ne 0 ]; then
         HCK_UNREADABLE=$((HCK_UNREADABLE + 1))
-        HCK_ROW="$HCK_DISK unreadable (lsattr rc=$HCK_ATTR_RC) $HCK_MODE"
-        if [ "$HCK_STATUS" = PASS ]; then
-          HCK_STATUS=NOT_ASSESSED
-          HCK_SEVERITY=high
+        HCK_ROW="$HCK_DISK unreadable (lsattr rc=$HCK_ATTR_RC) not-reported"
+      elif [ -z "$HCK_ATTR" ]; then
+        HCK_UNREADABLE=$((HCK_UNREADABLE + 1))
+        HCK_ROW="$HCK_DISK unreadable (lsattr empty rc=0) not-reported"
+      elif HCK_ATTR_PARSE=$(printf '%s\n' "$HCK_ATTR" | awk '
+          NF {
+            if ($1 == "hcheck_interval") {
+              interval_count++
+              interval=$2
+              if (NF < 2) bad=1
+            } else if ($1 == "hcheck_mode") {
+              mode_count++
+              mode=$2
+              if (NF < 2 ||
+                  mode !~ /^[A-Za-z0-9_.-][A-Za-z0-9_.-]*$/) bad=1
+            } else {
+              bad=1
+            }
+          }
+          END {
+            if (bad || interval_count > 1 || mode_count != 1) exit 1
+            if (interval_count == 0) print "NA", mode
+            else print interval, mode
+          }
+        ')
+      then
+        set -- $HCK_ATTR_PARSE
+        HCK_INTERVAL=$1
+        HCK_MODE_VALUE=$2
+        HCK_MODE=$HCK_MODE_VALUE
+        if [ "$HCK_INTERVAL" = NA ]; then
+          HCK_NOT_APPLICABLE=$((HCK_NOT_APPLICABLE + 1))
+          HCK_ROW="$HCK_DISK n/a $HCK_MODE (attribute not applicable)"
+        else
+          HCK_APPLICABLE=$((HCK_APPLICABLE + 1))
+          case "$HCK_INTERVAL" in
+            ''|*[!0-9]*)
+              HCK_UNREADABLE=$((HCK_UNREADABLE + 1))
+              HCK_ROW="$HCK_DISK unreadable $HCK_MODE"
+              ;;
+            *)
+              HCK_ROW="$HCK_DISK $HCK_INTERVAL $HCK_MODE"
+              HCK_INTERVAL_CLASS=$(awk -v interval="$HCK_INTERVAL" 'BEGIN {
+                if (interval + 0 == 0) print "disabled"
+                else if (interval + 0 > 300) print "slow"
+                else print "sane"
+              }')
+              case "$HCK_INTERVAL_CLASS" in
+                disabled)
+                  HCK_DISABLED=$((HCK_DISABLED + 1))
+                  ;;
+                slow)
+                  HCK_SLOW=$((HCK_SLOW + 1))
+                  ;;
+              esac
+              ;;
+          esac
         fi
-      elif [ -z "$HCK_INTERVAL" ]; then
-        HCK_NOT_APPLICABLE=$((HCK_NOT_APPLICABLE + 1))
-        HCK_ROW="$HCK_DISK n/a $HCK_MODE (attribute not applicable)"
       else
-        HCK_APPLICABLE=$((HCK_APPLICABLE + 1))
-        case "$HCK_INTERVAL" in
-          *[!0-9]*)
-            HCK_UNREADABLE=$((HCK_UNREADABLE + 1))
-            HCK_ROW="$HCK_DISK unreadable $HCK_MODE"
-            if [ "$HCK_STATUS" = PASS ]; then
-              HCK_STATUS=NOT_ASSESSED
-              HCK_SEVERITY=high
-            fi
-            ;;
-          *)
-            HCK_ROW="$HCK_DISK $HCK_INTERVAL $HCK_MODE"
-            HCK_INTERVAL_CLASS=$(awk -v interval="$HCK_INTERVAL" 'BEGIN {
-              if (interval + 0 == 0) print "disabled"
-              else if (interval + 0 > 300) print "slow"
-              else print "sane"
-            }')
-            case "$HCK_INTERVAL_CLASS" in
-              disabled)
-                HCK_STATUS=FAIL
-                HCK_SEVERITY=high
-                ;;
-              slow)
-                if [ "$HCK_STATUS" != FAIL ]; then
-                  HCK_STATUS=WARN
-                  HCK_SEVERITY=low
-                fi
-                ;;
-            esac
-            ;;
-        esac
+        HCK_UNREADABLE=$((HCK_UNREADABLE + 1))
+        HCK_ROW="$HCK_DISK unreadable (lsattr unparseable rc=0) not-reported"
       fi
 
       if [ "$HCK_SHOWN" -lt 50 ]; then
@@ -400,6 +489,23 @@ function standalone_check {
         HCK_SHOWN=$((HCK_SHOWN + 1))
       fi
     done
+
+    # Compute aggregate precedence once, after every member has been read.
+    # A proven disabled policy remains FAIL; otherwise any evidence gap prevents
+    # a survivor-only WARN/PASS, regardless of disk enumeration order.
+    if [ "$HCK_DISABLED" -gt 0 ]; then
+      HCK_STATUS=FAIL
+      HCK_SEVERITY=high
+    elif [ "$HCK_UNREADABLE" -gt 0 ]; then
+      HCK_STATUS=NOT_ASSESSED
+      HCK_SEVERITY=high
+    elif [ "$HCK_SLOW" -gt 0 ]; then
+      HCK_STATUS=WARN
+      HCK_SEVERITY=low
+    else
+      HCK_STATUS=PASS
+      HCK_SEVERITY=low
+    fi
 
     HCK_OBSERVED="MPIO disks=$HCK_TOTAL; showing $HCK_SHOWN of $HCK_TOTAL; applicable=$HCK_APPLICABLE; attribute not applicable=$HCK_NOT_APPLICABLE; unreadable=$HCK_UNREADABLE; table: $HCK_TABLE"
     HCK_OMITTED=$((HCK_TOTAL - HCK_SHOWN))

@@ -1,0 +1,19 @@
+{
+  "id": "ck-shell-timeout",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "shell_timeout"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "grep -E 'TMOUT|TIMEOUT' /etc/profile /etc/environment"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-shell-timeout/ck-shell-timeout.ksh"
+}

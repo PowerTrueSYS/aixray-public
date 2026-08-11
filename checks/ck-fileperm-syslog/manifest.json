@@ -1,0 +1,19 @@
+{
+  "id": "ck-fileperm-syslog",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "fileperm_syslog_owner"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "ls -ldn /etc/syslog.conf"
+  ],
+  "tags": [
+    "stig:V-245561"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-fileperm-syslog/ck-fileperm-syslog.ksh"
+}

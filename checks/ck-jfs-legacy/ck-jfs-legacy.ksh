@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="0.1.0"
+AIXRAY_STANDALONE_VERSION="1.0.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -26,6 +26,49 @@ function aix {
     return 127
   fi
   "$@" 2>/dev/null
+}
+
+# aixv preserves stderr as evidence, for read-only commands that write their
+# version banner or diagnostics there rather than to stdout. (Deliberately no
+# example command name here: this comment is copied into all 324 standalone
+# tools, and tools/ci/egress-lint.sh reads a banned network command name in a
+# comment as a violation just as it would in a command position.)
+function aixv {
+  typeset key rc
+  key=$1
+  shift
+  if [ -n "${AIXRAY_FIXTURES:-}" ]; then
+    if [ -r "$AIXRAY_FIXTURES/$key.out" ] || [ -r "$AIXRAY_FIXTURES/$key.err" ]; then
+      [ -r "$AIXRAY_FIXTURES/$key.out" ] && cat "$AIXRAY_FIXTURES/$key.out"
+      [ -r "$AIXRAY_FIXTURES/$key.err" ] && cat "$AIXRAY_FIXTURES/$key.err"
+      rc=0
+      [ -r "$AIXRAY_FIXTURES/$key.rc" ] && read rc < "$AIXRAY_FIXTURES/$key.rc"
+      return $rc
+    fi
+    return 127
+  fi
+  "$@" 2>&1
+}
+
+# aix_capture_missing <key> — fixture-replay helper: true (rc=0) iff no capture
+# exists for <key> at all, i.e. the rc a probe just received was the "no
+# capture" default and not a genuine command status. aix()/aixv() return 127 for
+# BOTH a missing capture and a genuinely absent command, so a module that wants
+# to claim "the command is not installed" must first rule out "nobody captured
+# it". Live mode returns false (rc=1): a real box has no concept of a missing
+# fixture, and rc=127 there genuinely means the command was not found. Must be
+# called in the PARENT shell after the probe, not inside the $(aix ...)
+# substitution. Byte-for-byte the monolith's semantics (src/aixray-aix.sh.in);
+# without it here, an undefined-command rc of 127 makes the guard read false and
+# the caller launders a missing capture into NOT_APPLICABLE.
+function aix_capture_missing {
+  if [ -n "${AIXRAY_FIXTURES:-}" ]; then
+    if [ -r "$AIXRAY_FIXTURES/$1.out" ] || [ -r "$AIXRAY_FIXTURES/$1.err" ]; then
+      return 1
+    fi
+    return 0
+  fi
+  return 1
 }
 
 function jesc {
@@ -61,7 +104,13 @@ function add {
     *) echo "$AIXRAY_TOOL: internal error: unknown category '$1'" >&2; exit 1;;
   esac
   case "$4" in
-    PASS|WARN|FAIL|NOT_ASSESSED) ;;
+    # NOT_APPLICABLE is a verdict, not a refusal: the control constrains a
+    # property of a thing that need not exist. It is already a first-class
+    # status in the monolith (vios_level on a plain AIX LPAR) and in the
+    # contract schema (STATUSES, pipeline/contract_v2/schema.py), but was
+    # missing here, so any standalone tool reaching that branch aborted with
+    # an internal error instead of emitting its envelope.
+    PASS|WARN|FAIL|NOT_ASSESSED|NOT_APPLICABLE) ;;
     *) echo "$AIXRAY_TOOL: internal error: unknown status '$4'" >&2; exit 1;;
   esac
   F_CAT[$NFIND]=$1
@@ -300,22 +349,95 @@ AIXRAY_TOOL=ck-jfs-legacy
 # Shared filesystem-detail capture used by standalone JFS checks.
 function capture_cap_lsfs_q {
   LSFSQ=$(aix lsfs_q lsfs -q); LSFSQ_RC=$?
+  LSFSQ_OK=0; LSFSQWHY=""
+  if [ "$LSFSQ_RC" -ne 0 ]; then
+    LSFSQWHY="not assessed — lsfs -q capture failed (rc=$LSFSQ_RC)"
+  elif [ -z "$LSFSQ" ]; then
+    LSFSQWHY="not assessed — lsfs -q capture empty (rc=0)"
+  elif printf '%s\n' "$LSFSQ" | awk '
+      NR == 1 {
+        if (NF != 9 || $1 != "Name" || $2 != "Nodename" ||
+            $3 != "Mount" || $4 != "Pt" || $5 != "VFS" ||
+            $6 != "Size" || $7 != "Options" || $8 != "Auto" ||
+            $9 != "Accounting") bad=1
+        next
+      }
+      /^[^ 	]/ {
+        if (need_detail) bad=1
+        rows++
+        if (NF != 8 || $3 !~ /^\// ||
+            $4 !~ /^[A-Za-z][A-Za-z0-9_.-]*$/ ||
+            ($5 !~ /^[0-9][0-9]*$/ && $5 != "--") ||
+            $6 !~ /^(--|[A-Za-z][A-Za-z0-9_,.-]*)$/ ||
+            $7 !~ /^(yes|no)$/ || $8 !~ /^(yes|no)$/ ||
+            seen_mount[$3]++) bad=1
+        if ($1 ~ /^\/dev\// && ($4 == "jfs" || $4 == "jfs2")) {
+          if ($5 !~ /^[0-9][0-9]*$/ || $5 == 0) bad=1
+          need_detail=1
+        }
+        next
+      }
+      /^[ \t]*\(lv size:/ {
+        if (!need_detail) bad=1
+        s=$0
+        gsub(/[(),:]/, " ", s)
+        n=split(s, a, " ")
+        lv_count=0; fs_count=0; lv=""; fs=""
+        for (i=1; i<n; i++) {
+          if (a[i]=="lv" && a[i+1]=="size") {
+            lv_count++
+            lv=a[i+2]
+          }
+          if (a[i]=="fs" && a[i+1]=="size") {
+            fs_count++
+            fs=a[i+2]
+          }
+        }
+        if (lv_count != 1 || fs_count != 1 ||
+            lv !~ /^[0-9][0-9]*$/ || fs !~ /^[0-9][0-9]*$/ ||
+            lv == 0 || fs == 0 || fs + 0 > lv + 0) bad=1
+        need_detail=0
+        next
+      }
+      NF { bad=1 }
+      END { if (rows == 0 || need_detail || bad) exit 1 }
+    '
+  then
+    LSFSQ_OK=1
+  else
+    LSFSQWHY="not assessed — lsfs -q capture unparseable (rc=0)"
+  fi
+  [ "$LSFSQ_OK" -eq 1 ] || LSFSQ=""
 }
 
 
 function standalone_check {
+_AIXRAY_SESSION_KEYS=""
 
   # jfs_legacy — any pre-JFS2 (vfs "jfs") filesystems still in use (lsfs -q vfs column).
   # Veteran signal: JFS predates JFS2 — no filesystems over 2 TB, no online shrink, weaker
   # concurrency and no inline log; a JFS mount on a modern box is technical debt to migrate.
-  JFSLEG=$(printf '%s\n' "$LSFSQ" | awk '$1 ~ /^\/dev\// && NF>=5 && $4=="jfs" {printf "%s%s",(n++?", ":""),$3}')
-  if [ -n "$JFSLEG" ]; then
-    add storage jfs_legacy "Legacy JFS filesystems" WARN low "jfs (not jfs2): $JFSLEG" \
-        "One or more filesystems are still legacy JFS, not JFS2 — JFS caps at 2 TB, has no online shrink, weaker concurrency and no inline log. It still works, but it is a dead-end filesystem type on current AIX." \
-        "plan a migration to JFS2 (create a JFS2 filesystem and copy the data, e.g. with 'cplv'/backup-restore during a window); there is no in-place JFS-to-JFS2 conversion." "ffiec:II.C.11"
+  if [ "${LSFSQ_OK:-0}" -ne 1 ]; then
+    add storage jfs_legacy "Legacy JFS filesystems" NOT_ASSESSED low \
+        "${LSFSQWHY:-not assessed — lsfs -q capture unavailable}" \
+        "Legacy-JFS use could not be assessed because lsfs -q failed, returned no evidence, or did not contain complete filesystem/detail row pairs." \
+        "run 'lsfs -q' manually, then rerun AIXray before treating every filesystem as JFS2." "ffiec:II.C.11"
   else
-    add storage jfs_legacy "Legacy JFS filesystems" PASS low "all filesystems are JFS2" \
-        "No legacy JFS filesystems — everything is JFS2, the current AIX filesystem." "n/a"
+    JFSLEG=$(printf '%s\n' "$LSFSQ" | awk '$1 ~ /^\/dev\// && NF>=5 && $4=="jfs" {printf "%s%s",(n++?", ":""),$3}')
+    JFSLEG_RC=$?
+    if [ "$JFSLEG_RC" -ne 0 ]; then
+      add storage jfs_legacy "Legacy JFS filesystems" NOT_ASSESSED low \
+          "not assessed — lsfs -q vfs-column scan failed (rc=$JFSLEG_RC)" \
+          "Legacy-JFS use could not be assessed because the validated lsfs -q evidence could not be scanned for legacy jfs rows." \
+          "make the lsfs -q vfs-column scan complete successfully, then rerun AIXray before treating every filesystem as JFS2." "ffiec:II.C.11"
+    elif [ -n "$JFSLEG" ]; then
+      add storage jfs_legacy "Legacy JFS filesystems" WARN low "jfs (not jfs2): $JFSLEG" \
+          "One or more filesystems are still legacy JFS, not JFS2 — JFS caps at 2 TB, has no online shrink, weaker concurrency and no inline log. It still works, but it is a dead-end filesystem type on current AIX." \
+          "plan a migration to JFS2 (create a JFS2 filesystem and copy the data, e.g. with 'cplv'/backup-restore during a window); there is no in-place JFS-to-JFS2 conversion." "ffiec:II.C.11"
+    else
+      add storage jfs_legacy "Legacy JFS filesystems" PASS low "all filesystems are JFS2" \
+          "No legacy JFS filesystems — everything is JFS2, the current AIX filesystem." "n/a"
+    fi
   fi
 }
 

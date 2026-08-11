@@ -1,0 +1,19 @@
+{
+  "id": "ck-cde-installed",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "cde_filesets"
+  ],
+  "captures": [],
+  "requires_root": true,
+  "read_only": true,
+  "commands": [
+    "lslpp -qcL 'X11.Dt*'"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-cde-installed/ck-cde-installed.ksh"
+}

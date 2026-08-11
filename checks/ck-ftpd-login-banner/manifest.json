@@ -1,0 +1,21 @@
+{
+  "id": "ck-ftpd-login-banner",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "ftpd_login_banner"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "grep '^ftp[[:blank:]]' /etc/inetd.conf",
+    "lslpp -L \"bos.msg.en_US.net.tcp.client\"",
+    "dspcat /usr/lib/nls/msg/en_US/ftpd.cat 1 9"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-ftpd-login-banner/ck-ftpd-login-banner.ksh"
+}

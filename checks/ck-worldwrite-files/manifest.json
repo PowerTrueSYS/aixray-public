@@ -1,0 +1,19 @@
+{
+  "id": "ck-worldwrite-files",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "worldwrite_files"
+  ],
+  "captures": [],
+  "requires_root": true,
+  "read_only": true,
+  "commands": [
+    "find / \\( -fstype jfs -o -fstype jfs2 \\) -type f -perm -o+w -ls"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-worldwrite-files/ck-worldwrite-files.ksh"
+}

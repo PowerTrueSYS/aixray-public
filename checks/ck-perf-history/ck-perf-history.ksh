@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="0.1.0"
+AIXRAY_STANDALONE_VERSION="1.0.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -26,6 +26,49 @@ function aix {
     return 127
   fi
   "$@" 2>/dev/null
+}
+
+# aixv preserves stderr as evidence, for read-only commands that write their
+# version banner or diagnostics there rather than to stdout. (Deliberately no
+# example command name here: this comment is copied into all 324 standalone
+# tools, and tools/ci/egress-lint.sh reads a banned network command name in a
+# comment as a violation just as it would in a command position.)
+function aixv {
+  typeset key rc
+  key=$1
+  shift
+  if [ -n "${AIXRAY_FIXTURES:-}" ]; then
+    if [ -r "$AIXRAY_FIXTURES/$key.out" ] || [ -r "$AIXRAY_FIXTURES/$key.err" ]; then
+      [ -r "$AIXRAY_FIXTURES/$key.out" ] && cat "$AIXRAY_FIXTURES/$key.out"
+      [ -r "$AIXRAY_FIXTURES/$key.err" ] && cat "$AIXRAY_FIXTURES/$key.err"
+      rc=0
+      [ -r "$AIXRAY_FIXTURES/$key.rc" ] && read rc < "$AIXRAY_FIXTURES/$key.rc"
+      return $rc
+    fi
+    return 127
+  fi
+  "$@" 2>&1
+}
+
+# aix_capture_missing <key> — fixture-replay helper: true (rc=0) iff no capture
+# exists for <key> at all, i.e. the rc a probe just received was the "no
+# capture" default and not a genuine command status. aix()/aixv() return 127 for
+# BOTH a missing capture and a genuinely absent command, so a module that wants
+# to claim "the command is not installed" must first rule out "nobody captured
+# it". Live mode returns false (rc=1): a real box has no concept of a missing
+# fixture, and rc=127 there genuinely means the command was not found. Must be
+# called in the PARENT shell after the probe, not inside the $(aix ...)
+# substitution. Byte-for-byte the monolith's semantics (src/aixray-aix.sh.in);
+# without it here, an undefined-command rc of 127 makes the guard read false and
+# the caller launders a missing capture into NOT_APPLICABLE.
+function aix_capture_missing {
+  if [ -n "${AIXRAY_FIXTURES:-}" ]; then
+    if [ -r "$AIXRAY_FIXTURES/$1.out" ] || [ -r "$AIXRAY_FIXTURES/$1.err" ]; then
+      return 1
+    fi
+    return 0
+  fi
+  return 1
 }
 
 function jesc {
@@ -61,7 +104,13 @@ function add {
     *) echo "$AIXRAY_TOOL: internal error: unknown category '$1'" >&2; exit 1;;
   esac
   case "$4" in
-    PASS|WARN|FAIL|NOT_ASSESSED) ;;
+    # NOT_APPLICABLE is a verdict, not a refusal: the control constrains a
+    # property of a thing that need not exist. It is already a first-class
+    # status in the monolith (vios_level on a plain AIX LPAR) and in the
+    # contract schema (STATUSES, pipeline/contract_v2/schema.py), but was
+    # missing here, so any standalone tool reaching that branch aborted with
+    # an internal error instead of emitting its envelope.
+    PASS|WARN|FAIL|NOT_ASSESSED|NOT_APPLICABLE) ;;
     *) echo "$AIXRAY_TOOL: internal error: unknown status '$4'" >&2; exit 1;;
   esac
   F_CAT[$NFIND]=$1
@@ -300,25 +349,63 @@ AIXRAY_TOOL=ck-perf-history
 # Shared process-list capture used by standalone monitoring checks.
 function capture_cap_ps_e {
   PSE=$(aix ps_e ps -e -o comm); PSERC=$?
+  return "$PSERC"
 }
 
 
 function standalone_check {
+_AIXRAY_SESSION_KEYS=""
 
   # perf_history — reuse ps_e
-  PH=$(printf '%s\n' "$PSE" | grep -E 'topasrec|xmwlm|nmon' | awk 'NR==1{print}')
-  if [ -n "$PH" ]; then
-    add monitoring perf_history "Performance history" PASS low "collector running" \
-        "A performance-history collector is running — sizing and incident forensics have data to work from." "n/a"
+  PERF_COLLECTOR_ALLOWLIST_RE='^(topasrec|xmwlm|nmon|topas_nmon|njmon|njmon_aix[0-9][0-9]*_v[0-9][0-9]*)$'
+  PERF_COLLECTOR_ALLOWLIST='topasrec, xmwlm, nmon, topas_nmon, njmon, njmon_aix<digits>_v<digits>'
+  typeset PSE_OK PSEWHY PSE_SHAPE_RC
+  PSE_OK=0; PSEWHY=""
+  if [ "$PSERC" -ne 0 ]; then
+    PSEWHY="not assessed — ps -e -o comm capture failed (rc=$PSERC)"
+  elif [ -z "$PSE" ]; then
+    PSEWHY="not assessed — ps -e -o comm capture empty (rc=0)"
   else
-    add monitoring perf_history "Performance history" WARN low "none running" \
-        "No performance-history collection — sizing and incident forensics become guesswork." \
-        "enable topas recording ('topasrec'/xmwlm) so history exists when you need it."
+    printf '%s\n' "$PSE" | awk '
+      NR == 1 {
+        if (NF != 1 || $1 != "COMMAND") bad=1
+        next
+      }
+      NF {
+        rows++
+        if (NF != 1) bad=1
+      }
+      END { if (rows == 0 || bad) exit 1 }
+    '
+    PSE_SHAPE_RC=$?
+    if [ "$PSE_SHAPE_RC" -eq 0 ]; then
+      PSE_OK=1
+    else
+      PSEWHY="not assessed — ps -e -o comm capture unparseable (rc=0)"
+    fi
+  fi
+
+  if [ "$PSE_OK" -ne 1 ]; then
+    add monitoring perf_history "Performance history" NOT_ASSESSED low "$PSEWHY" \
+        "AIXray could not validate the process list, so it cannot determine whether a performance-history collector is running." \
+        "make 'ps -e -o comm' return a complete process list, then re-run AIXray."
+  else
+    PH=$(printf '%s\n' "$PSE" | grep -E "$PERF_COLLECTOR_ALLOWLIST_RE" | awk 'NR==1{print $1}')
+    if [ -n "$PH" ]; then
+      add monitoring perf_history "Performance history" PASS low \
+          "collector $PH running (checked exact commands: $PERF_COLLECTOR_ALLOWLIST)" \
+          "A performance-history collector is running — sizing and incident forensics have data to work from." "n/a"
+    else
+      add monitoring perf_history "Performance history" WARN low \
+          "none running (checked exact commands: $PERF_COLLECTOR_ALLOWLIST)" \
+          "No performance-history collection — sizing and incident forensics become guesswork." \
+          "enable one of the accepted collector commands ($PERF_COLLECTOR_ALLOWLIST) so history exists when you need it."
+    fi
   fi
 }
 
 function standalone_run {
-  capture_cap_ps_e || return 1
+  capture_cap_ps_e || :
   standalone_check
 }
 

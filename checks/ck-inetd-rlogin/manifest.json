@@ -1,0 +1,19 @@
+{
+  "id": "ck-inetd-rlogin",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "inetd_rlogin"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "grep -E '^[\t ]*login[\t ]' /etc/inetd.conf"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-inetd-rlogin/ck-inetd-rlogin.ksh"
+}

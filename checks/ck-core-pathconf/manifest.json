@@ -1,0 +1,17 @@
+{
+  "id": "ck-core-pathconf",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "core_pathconf"
+  ],
+  "captures": [],
+  "requires_root": true,
+  "read_only": true,
+  "commands": [
+    "lscore -d"
+  ],
+  "tags": [],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-core-pathconf/ck-core-pathconf.ksh"
+}

@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="0.1.0"
+AIXRAY_STANDALONE_VERSION="1.0.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -26,6 +26,49 @@ function aix {
     return 127
   fi
   "$@" 2>/dev/null
+}
+
+# aixv preserves stderr as evidence, for read-only commands that write their
+# version banner or diagnostics there rather than to stdout. (Deliberately no
+# example command name here: this comment is copied into all 324 standalone
+# tools, and tools/ci/egress-lint.sh reads a banned network command name in a
+# comment as a violation just as it would in a command position.)
+function aixv {
+  typeset key rc
+  key=$1
+  shift
+  if [ -n "${AIXRAY_FIXTURES:-}" ]; then
+    if [ -r "$AIXRAY_FIXTURES/$key.out" ] || [ -r "$AIXRAY_FIXTURES/$key.err" ]; then
+      [ -r "$AIXRAY_FIXTURES/$key.out" ] && cat "$AIXRAY_FIXTURES/$key.out"
+      [ -r "$AIXRAY_FIXTURES/$key.err" ] && cat "$AIXRAY_FIXTURES/$key.err"
+      rc=0
+      [ -r "$AIXRAY_FIXTURES/$key.rc" ] && read rc < "$AIXRAY_FIXTURES/$key.rc"
+      return $rc
+    fi
+    return 127
+  fi
+  "$@" 2>&1
+}
+
+# aix_capture_missing <key> — fixture-replay helper: true (rc=0) iff no capture
+# exists for <key> at all, i.e. the rc a probe just received was the "no
+# capture" default and not a genuine command status. aix()/aixv() return 127 for
+# BOTH a missing capture and a genuinely absent command, so a module that wants
+# to claim "the command is not installed" must first rule out "nobody captured
+# it". Live mode returns false (rc=1): a real box has no concept of a missing
+# fixture, and rc=127 there genuinely means the command was not found. Must be
+# called in the PARENT shell after the probe, not inside the $(aix ...)
+# substitution. Byte-for-byte the monolith's semantics (src/aixray-aix.sh.in);
+# without it here, an undefined-command rc of 127 makes the guard read false and
+# the caller launders a missing capture into NOT_APPLICABLE.
+function aix_capture_missing {
+  if [ -n "${AIXRAY_FIXTURES:-}" ]; then
+    if [ -r "$AIXRAY_FIXTURES/$1.out" ] || [ -r "$AIXRAY_FIXTURES/$1.err" ]; then
+      return 1
+    fi
+    return 0
+  fi
+  return 1
 }
 
 function jesc {
@@ -61,7 +104,13 @@ function add {
     *) echo "$AIXRAY_TOOL: internal error: unknown category '$1'" >&2; exit 1;;
   esac
   case "$4" in
-    PASS|WARN|FAIL|NOT_ASSESSED) ;;
+    # NOT_APPLICABLE is a verdict, not a refusal: the control constrains a
+    # property of a thing that need not exist. It is already a first-class
+    # status in the monolith (vios_level on a plain AIX LPAR) and in the
+    # contract schema (STATUSES, pipeline/contract_v2/schema.py), but was
+    # missing here, so any standalone tool reaching that branch aborted with
+    # an internal error instead of emitting its envelope.
+    PASS|WARN|FAIL|NOT_ASSESSED|NOT_APPLICABLE) ;;
     *) echo "$AIXRAY_TOOL: internal error: unknown status '$4'" >&2; exit 1;;
   esac
   F_CAT[$NFIND]=$1
@@ -327,36 +376,87 @@ function capture_cap_lsvg_o {
 
 
 function standalone_check {
+_AIXRAY_SESSION_KEYS=""
 
   # vg_capacity — free PPs headroom per online VG
+  typeset VGBADWHY VGSTAT
   WORSTP=101; LOWVG=""; ANYLOW=0; FACTVGBAD=0; FACTVGSEEN=0
-  [ "$VGLRC" -ne 0 ] && FACTVGBAD=1
-  for VG in $VGL; do
-    VGO=$(aix "lsvg_$VG" lsvg "$VG"); VGORC=$?
-    TOT=$(printf '%s\n' "$VGO" | awk '{for(i=1;i<NF;i++)if($i=="TOTAL"&&$(i+1)=="PPs:")print $(i+2)}')
-    FRE=$(printf '%s\n' "$VGO" | awk '{for(i=1;i<NF;i++)if($i=="FREE"&&$(i+1)=="PPs:")print $(i+2)}')
-    if [ "$VGORC" -ne 0 ]; then FACTVGBAD=1; fi
-    case "$TOT" in ''|*[!0-9]*) FACTVGBAD=1; continue;; esac
-    case "$FRE" in ''|*[!0-9]*) FACTVGBAD=1; continue;; esac
-    if [ "$TOT" -eq 0 ]; then FACTVGBAD=1; continue; fi
-    FACTVGSEEN=1
-    P=$(( FRE * 100 / TOT ))
-    if [ "$P" -lt "$WORSTP" ]; then WORSTP=$P; LOWVG=$VG; fi
-    [ "$P" -lt 5 ] && ANYLOW=1
-  done
-  if [ "$WORSTP" -le 100 ]; then
-    if [ "$VGLRC" -eq 0 ] && [ "$FACTVGBAD" -eq 0 ] && [ "$FACTVGSEEN" -eq 1 ] &&
-       valid_json_number "$WORSTP"; then
+  VGBADWHY=""
+  if [ "${VGL_OK:-0}" -ne 1 ]; then
+    add storage vg_capacity "Volume group free space" NOT_ASSESSED med \
+        "${VGLWHY:-not assessed — lsvg -o capture unavailable}" \
+        "Volume-group free-space headroom could not be assessed because the online VG inventory was unavailable or unparseable." \
+        "run 'lsvg -o' manually, then rerun AIXray before treating every online VG as having growth headroom."
+  else
+    for VG in $VGL; do
+      VGO=$(aix "lsvg_$VG" lsvg "$VG"); VGORC=$?
+      VGSTAT=""
+      if [ "$VGORC" -ne 0 ]; then
+        FACTVGBAD=1
+        VGBADWHY="${VGBADWHY}${VGBADWHY:+; }$VG lsvg capture failed (rc=$VGORC)"
+        continue
+      elif [ -z "$VGO" ]; then
+        FACTVGBAD=1
+        VGBADWHY="${VGBADWHY}${VGBADWHY:+; }$VG lsvg capture empty (rc=0)"
+        continue
+      elif VGSTAT=$(printf '%s\n' "$VGO" | awk -v vg="$VG" '
+          /^[ 	]*#/ {
+            bad=1
+            next
+          }
+          {
+            if ($1=="VOLUME" && $2=="GROUP:") {
+              name_count++
+              if ($3 != vg) bad=1
+            }
+            if ($4=="TOTAL" && $5=="PPs:") {
+              total_count++
+              total=$6
+              if (total !~ /^[0-9][0-9]*$/) bad=1
+            }
+            if ($4=="FREE" && $5=="PPs:") {
+              free_count++
+              free=$6
+              if (free !~ /^[0-9][0-9]*$/) bad=1
+            }
+          }
+          END {
+            if (name_count != 1 || total_count != 1 || free_count != 1 || bad ||
+                total == 0 || free + 0 > total + 0) exit 1
+            print total, free
+          }
+        ')
+      then
+        set -- $VGSTAT
+        TOT=$1; FRE=$2
+      else
+        FACTVGBAD=1
+        VGBADWHY="${VGBADWHY}${VGBADWHY:+; }$VG lsvg capture unparseable (rc=0)"
+        continue
+      fi
+      FACTVGSEEN=1
+      P=$(( FRE * 100 / TOT ))
+      if [ "$P" -lt "$WORSTP" ]; then WORSTP=$P; LOWVG=$VG; fi
+      [ "$P" -lt 5 ] && ANYLOW=1
+    done
+    if [ "$FACTVGBAD" -ne 0 ] || [ "$FACTVGSEEN" -ne 1 ]; then
+      add storage vg_capacity "Volume group free space" NOT_ASSESSED med \
+          "not assessed — online VG detail capture incomplete: ${VGBADWHY:-no readable VG detail rows}" \
+          "At least one online volume group could not be read completely, so a survivor-only result cannot support the claim that every VG has filesystem-growth headroom." \
+          "rerun 'lsvg <vg>' for each named volume group and resolve failed, empty, or malformed output before relying on VG capacity."
+    else
+      if valid_json_number "$WORSTP"; then
       FACT_STORAGE_WORST_VG_PCT="$WORSTP"
       FACT_STORAGE_WORST_VG="$LOWVG"
-    fi
-    if [ "$ANYLOW" -eq 1 ]; then
-      add storage vg_capacity "Volume group free space" WARN med "$LOWVG ${WORSTP}% free" \
-          "A volume group is under 5% free — no headroom to extend a filesystem in an emergency." \
-          "free space or add a PV to the tight VG (extendvg <vg> hdiskN) before you need to grow a filesystem."
-    else
-      add storage vg_capacity "Volume group free space" PASS low "worst: $LOWVG ${WORSTP}% free" \
-          "Every online volume group has room to extend a filesystem." "n/a"
+      fi
+      if [ "$ANYLOW" -eq 1 ]; then
+        add storage vg_capacity "Volume group free space" WARN med "$LOWVG ${WORSTP}% free" \
+            "A volume group is under 5% free — no headroom to extend a filesystem in an emergency." \
+            "free space or add a PV to the tight VG (extendvg <vg> hdiskN) before you need to grow a filesystem."
+      else
+        add storage vg_capacity "Volume group free space" PASS low "worst: $LOWVG ${WORSTP}% free" \
+            "Every online volume group has room to extend a filesystem." "n/a"
+      fi
     fi
   fi
 }

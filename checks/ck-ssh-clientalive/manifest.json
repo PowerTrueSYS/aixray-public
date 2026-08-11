@@ -1,0 +1,19 @@
+{
+  "id": "ck-ssh-clientalive",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "ssh_clientalive"
+  ],
+  "captures": [],
+  "requires_root": true,
+  "read_only": true,
+  "commands": [
+    "sshd -T"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-ssh-clientalive/ck-ssh-clientalive.ksh"
+}
