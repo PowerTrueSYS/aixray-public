@@ -1,5 +1,59 @@
 # Release notes
 
+## v1.1.0
+
+A defect-fix release. Zero new checks: the check-module count stays 324,
+unchanged from v1.0.0. If you downloaded v1.0.0, download v1.1.0, verify it
+against `SHA256SUMS`, and run it again.
+
+### SRC parser fixes
+
+The parser fixes are all in the shared SRC (`lssrc -a`) capture fragment consumed
+by the 16 SRC/rctcpip service checks — writesrv, dt, piobe, qdaemon, and the 12
+rc.tcpip subserver checks. Two parser defects are closed:
+
+**Right-anchored SRC status parse.** The v1.0.0 parser accepted only two exact
+`lssrc -a` row shapes: a four-field row ending in `active` and a three-field row
+ending in `inoperative`. Subsystem rows without a group column — present in real
+inventories, proven by live captures from two AIX boxes — fit neither shape, and
+the parser fails closed: a single rejected row discarded the entire SRC
+inventory, so the affected checks refused with `NOT_ASSESSED` rather than assess.
+No wrong verdict was emitted. The status field is now right-anchored against the
+known status vocabulary, and groupless rows are retained.
+
+**Open SRC status vocabulary.** Transitional states `stopping` and `starting` now
+classify as running; previously an unrecognized state — `stopping` was captured
+live — discarded the whole inventory the same way, withholding SRC evidence from
+all 16 checks.
+
+In practical terms for a v1.0.0 operator: on systems whose `lssrc -a` inventory
+contains a groupless or transitional-state row, the affected service checks
+reported `NOT_ASSESSED`; v1.1.0 assesses them.
+
+### Review-copy pseudonymizer fix
+
+The `discover_after` extractor could not match identity labels ending in `=`;
+the fail-closed layers held — no observed leak in eight probes, not an
+exhaustive proof — and the fix restores the intended coverage.
+
+### Reference data
+
+The reference-data `as_of` advances to 2026-08-11 after a live-feed curation
+review. Table content (lifecycle rows, security-advisory rows, the embedded
+strict-seed APAR catalogue) is unchanged. Two post-vintage IBM security
+advisories — for curl (maximum CVSS 9.8, eight CVEs) and for BIND (CVSS 7.5) —
+remain documented gaps: IBM publishes no AIX Level→APAR table for either, so
+both stay on the operator-supplied FLRTVC path, same as in v1.0.0.
+
+### What did not change
+
+**No remediation of findings, no configuration change.** AIXray reads and
+reports; it does not remediate a host or alter its configuration.
+
+**Zero network calls during assessment execution.** The assessment logic and
+reference data are local to the script. Reports stay local unless the operator
+transfers them. Obtaining the script is, as always, a separate download.
+
 ## v1.0.0
 
 The first stable release. `catalog.json` declares `tool_version` `1.0.0` and
