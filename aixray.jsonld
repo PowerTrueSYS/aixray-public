@@ -8,7 +8,7 @@
   "url": "https://powertruesystems.com/aixray",
   "codeRepository": "https://github.com/PowerTrueSYS/aixray-public",
   "downloadUrl": "https://powertruesystems.com/aixray/",
-  "softwareVersion": "1.0.0",
+  "softwareVersion": "1.1.0",
   "applicationCategory": "System administration and security assessment",
   "applicationSubCategory": "IBM AIX health check and VIOS posture assessment",
   "operatingSystem": [
