@@ -37,7 +37,7 @@ export PATH
 # is C-locale by contract, so pin the locale.
 LC_ALL=C; export LC_ALL
 
-VERSION="1.0.0"
+VERSION="1.1.0"
 DATA_VINTAGE="unknown"
 DATA_VINTAGE_H="unknown"
 
@@ -440,7 +440,7 @@ set -A CR_REQUIRED '1' '1' '1' '1' '1' '1' '1' '1'
 set -A CR_LOADED '1' '1' '0' '0' '0' '0' '1' '1'
 set -A CR_VERSION 'sha256:873e9c063efad9c0dea20923ca4b9fb11112e6a07914008a98d183e51b358862' 'sha256:df4aaf9526cb8219a47308aefd25a82d6a6a2f8f1f8ba8f33eef074c0c8b7342' 'unknown' 'unknown' 'unknown' 'unknown' 'v1.2.0' 'V3R3'
 set -A CR_VERSION_BASIS 'content-sha256' 'content-sha256' 'unknown' 'unknown' 'unknown' 'unknown' 'publisher-version' 'publisher-version'
-set -A CR_AS_OF '2026-07-14' '2026-07-23' 'unknown' 'unknown' 'unknown' 'unknown' '2026-07-27' '2026-06-15'
+set -A CR_AS_OF '2026-08-11' '2026-08-11' 'unknown' 'unknown' 'unknown' 'unknown' '2026-07-27' '2026-06-15'
 set -A CR_AS_OF_BASIS 'curator-verified' 'curator-review' 'unknown' 'unknown' 'unknown' 'unknown' 'curator-verified' 'publisher-benchmark-date'
 set -A CR_SHA256 'sha256:873e9c063efad9c0dea20923ca4b9fb11112e6a07914008a98d183e51b358862' 'sha256:df4aaf9526cb8219a47308aefd25a82d6a6a2f8f1f8ba8f33eef074c0c8b7342' 'unknown' 'unknown' 'unknown' 'unknown' 'sha256:3645a841eb8f05078a8c0a043f62ed200bd7483a578c615ea652c7f15f68bd3b' 'sha256:e4109ceb3a15beddbf1e84e29e593cd18cc260e9be1789429554b9d66e2cfeb9'
 set -A CR_LOCATOR 'embedded lifecycle tables' 'embedded SEC_APARS table' 'operator-supplied local CISA KEV JSON' 'operator-supplied local apar.csv or provenanced FLRTVC report' 'operator-supplied pinned flrtvc.ksh or provenanced report' 'operator-supplied local IBM FLRT fetch envelope' 'embedded numeric-only CIS L1 crosswalk' 'embedded R_FILEPERM/R_SECATTR/R_NETTUNE/R_SVCOFF tables'
@@ -914,7 +914,7 @@ HW_GEN="
 # This is a refresh target in operator prose, not a claim about any unlisted MTM's EOS.
 CURRENT_POWER_GEN="IBM Power11"
 # security APAR | applies to TL | CVE | short title
-# SEC_APARS curation review through 2026-07-23 — FLRT feed vintage 2026-07-23.
+# SEC_APARS curation review through 2026-08-11 — FLRT feed vintage 2026-08-06.
 # Reviewed gaps that cannot become strict APAR|TL|CVE|title seed rows:
 # - openssl_advisory48.asc (CVSS 9.1 max; ten CVEs): openssl.base
 #   3.0.0.0-3.0.16.1000; named fix openssl-3.0.21.1000.tar.Z. The bulletin
@@ -932,7 +932,7 @@ CURRENT_POWER_GEN="IBM Power11"
 #   IJ57303, IJ59342, and IJ57855, with fixing levels 7300-04-01, 7300-03-03,
 #   N/A, and 7200-05-12 plus same-location iFixes. IBM publishes no CVE, so
 #   the mandatory CVE field cannot be sourced.
-# Later bulletin documented without advancing the 2026-07-23 review vintage:
+# Bulletins first reviewed in the 2026-08-11 review round:
 # - curl_advisory11.asc (2026-07-28; CVSS 9.8 max; eight CVEs):
 #   oss.lib.libcurl 7.79.1.0, 8.1.2.0, and 8.5.0.0-8.5.0.2. Named AIX 7.3
 #   interim fix is 10536ma.260722.epkg.Z. The bulletin publishes no AIX Level
@@ -14744,18 +14744,38 @@ _AIXRAY_SESSION_KEYS=""
       # real box, while the hand-authored fixture -- which happened to give every
       # subsystem a group -- parsed cleanly. Read positionally from the RIGHT, where
       # the layout is stable, and keep the shape strict so garbage still refuses.
+      # Status vocabulary (R6.2): /usr/include/spc.h (the "Valid SRC status
+      # ids" block, read on the AIX 7.2 lab LPAR, 2026-08-11) closes the
+      # documented code set at 16. Only active, stopping and starting are
+      # classified in_use here: active and stopping have been observed in
+      # real subsystem rows holding a numeric PID, and starting is the
+      # documented start-side twin of stopping in the same lifecycle. All
+      # three are in_use for the CIS 4.3.1.x/4.3.2.x "ensure the service is
+      # not in use" controls: a daemon that is starting or stopping is still
+      # a running process in the scan window, and SRC itself refuses to start
+      # a `stopping` subsystem with 0513-029 "already active". `inoperative`
+      # is the only documented no-process rest state ever observed and stays
+      # not_in_use. Every other token still discards the whole inventory: the
+      # remaining documented codes have never been observed in a subsystem
+      # row (several are multi-word and cannot survive this
+      # whitespace-tokenized table), so classifying them would mean guessing
+      # a shape never seen, and an inventory holding an unrecognised status
+      # is not trustworthy evidence. No consumer may be handed a fabricated
+      # PASS.
       NF {
         rows++
         name = $1
         state = $NF
-        if (state == "active") {
-          # an active subsystem always reports a numeric PID immediately before it
+        running = (state == "active" || state == "stopping" || state == "starting")
+        if (running) {
+          # a running or transitional subsystem always reports a numeric PID
+          # immediately before its status word
           if (NF < 3 || $(NF - 1) !~ /^[0-9][0-9]*$/) bad = 1
         } else if (state == "inoperative") {
           if (NF < 2 || NF > 3) bad = 1
         } else bad = 1
         if (!bad) {
-          if (state == "active") normalized = "in_use"
+          if (running) normalized = "in_use"
           else normalized = "not_in_use"
           print name "|" normalized
         }

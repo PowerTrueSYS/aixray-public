@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="1.0.0"
+AIXRAY_STANDALONE_VERSION="1.1.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {

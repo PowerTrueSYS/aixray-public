@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="1.0.0"
+AIXRAY_STANDALONE_VERSION="1.1.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -378,18 +378,38 @@ _AIXRAY_SESSION_KEYS=""
       # real box, while the hand-authored fixture -- which happened to give every
       # subsystem a group -- parsed cleanly. Read positionally from the RIGHT, where
       # the layout is stable, and keep the shape strict so garbage still refuses.
+      # Status vocabulary (R6.2): /usr/include/spc.h (the "Valid SRC status
+      # ids" block, read on the AIX 7.2 lab LPAR, 2026-08-11) closes the
+      # documented code set at 16. Only active, stopping and starting are
+      # classified in_use here: active and stopping have been observed in
+      # real subsystem rows holding a numeric PID, and starting is the
+      # documented start-side twin of stopping in the same lifecycle. All
+      # three are in_use for the CIS 4.3.1.x/4.3.2.x "ensure the service is
+      # not in use" controls: a daemon that is starting or stopping is still
+      # a running process in the scan window, and SRC itself refuses to start
+      # a `stopping` subsystem with 0513-029 "already active". `inoperative`
+      # is the only documented no-process rest state ever observed and stays
+      # not_in_use. Every other token still discards the whole inventory: the
+      # remaining documented codes have never been observed in a subsystem
+      # row (several are multi-word and cannot survive this
+      # whitespace-tokenized table), so classifying them would mean guessing
+      # a shape never seen, and an inventory holding an unrecognised status
+      # is not trustworthy evidence. No consumer may be handed a fabricated
+      # PASS.
       NF {
         rows++
         name = $1
         state = $NF
-        if (state == "active") {
-          # an active subsystem always reports a numeric PID immediately before it
+        running = (state == "active" || state == "stopping" || state == "starting")
+        if (running) {
+          # a running or transitional subsystem always reports a numeric PID
+          # immediately before its status word
           if (NF < 3 || $(NF - 1) !~ /^[0-9][0-9]*$/) bad = 1
         } else if (state == "inoperative") {
           if (NF < 2 || NF > 3) bad = 1
         } else bad = 1
         if (!bad) {
-          if (state == "active") normalized = "in_use"
+          if (running) normalized = "in_use"
           else normalized = "not_in_use"
           print name "|" normalized
         }
