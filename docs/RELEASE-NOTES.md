@@ -3,9 +3,10 @@
 ## v1.2.0
 
 A reference-data and inventory release. The standalone check-module count grows
-from 324 to 387; the public package is the assembled monolith plus those 387
-modules — 390 build outputs in all. If you downloaded v1.1.0, download v1.2.0,
-verify it against `SHA256SUMS`, and run it again.
+from 324 to 387; the public package is the assembled monolith, the two
+review-pack helpers, and those 387 modules — 390 build outputs in all. If you
+downloaded v1.1.0, download v1.2.0, verify it against `SHA256SUMS`, and run it
+again.
 
 ### Security APAR seed
 
@@ -39,13 +40,13 @@ inspectable script you read before it runs, with the standalone tools published
 alongside it.
 
 CIS Level 1 demonstrated coverage is unchanged from v1.1.0 at 208 of 212
-mapped-and-rendered controls (209 mapped); `4.1.1.19` remains mapped but has
+controls (209 mapped); `4.1.1.19` remains mapped but has
 never rendered a determinate verdict on a committed fixture. The CIS Level 2
 surface and the published count basis are otherwise unchanged.
 
 ### Reference data
 
-Curator-verified `as_of` dates advance to 2026-08-18 for the IBM AIX lifecycle,
+Reference-data `as_of` dates advance to 2026-08-18 for the IBM AIX lifecycle,
 IBM security advisory, and CIS IBM AIX reference sources. The DISA STIG for IBM
 AIX source stays at 2026-06-15 — that is DISA's publisher benchmark date, not a
 curator stamp.
@@ -73,7 +74,7 @@ transfer them. Obtaining the script is, as always, a separate download.
 
 ### Known limitations
 
-The v1.0.0 and v1.1.0 known limitations all still apply:
+AIXray v1's known limitations, unchanged since v1.0.0:
 
 - Run as root for the intended coverage. A non-root run is supported but
   incomplete, because several patch, dump, boot, account, audit, SSH and
