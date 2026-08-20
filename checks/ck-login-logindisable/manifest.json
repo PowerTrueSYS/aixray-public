@@ -12,6 +12,7 @@
     "lssec -f /etc/security/login.cfg -s default -a logindisable"
   ],
   "tags": [],
+  "blurb": "This control checks the logindisable setting in the AIX login configuration, which limits how many failed login attempts a physical terminal or console port allows before it locks. If the setting is missing, zero, or set too high, a terminal never locks and an attacker sitting at a console or serial port can guess passwords without limit, making repeated guessing a realistic path to system access.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-login-logindisable/ck-login-logindisable.ksh"
 }

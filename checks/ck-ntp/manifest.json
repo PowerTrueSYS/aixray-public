@@ -1,0 +1,22 @@
+{
+  "id": "ck-ntp",
+  "pillar": "operational-readiness",
+  "category": "config",
+  "finding_ids": [
+    "ntp"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "lssrc -s xntpd",
+    "grep ^server /etc/ntp.conf"
+  ],
+  "tags": [
+    "stig:V-215208",
+    "cis-l1"
+  ],
+  "blurb": "This control checks that the host keeps its clock synchronized using the Network Time Protocol (NTP). A compliant host has the NTP daemon running and at least one time server to synchronize against. When time sync is missing or the clock drifts, log timestamps become unreliable and time-sensitive security features such as Kerberos and TLS can fail.",
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-ntp/ck-ntp.ksh"
+}

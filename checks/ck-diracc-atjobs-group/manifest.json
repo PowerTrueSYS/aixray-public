@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This check verifies that the directory where the at scheduler queues one-time jobs, /var/spool/cron/atjobs, belongs to the cron group. The at service stores pending jobs there and runs them later under the account of the user who submitted them. If a different group owns that directory, members of that group could read or alter the queued jobs and change what commands run automatically on the system.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-diracc-atjobs-group/ck-diracc-atjobs-group.ksh"
 }

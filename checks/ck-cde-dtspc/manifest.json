@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks whether the CDE subprocess control service (dtspcd) has an active entry in the /etc/inetd.conf network configuration file. That service listens on the network and has a history of buffer overflow vulnerabilities that let a remote attacker gain root access to the system. If the check fails, an unnecessary and dangerous network service is left running and reachable.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-cde-dtspc/ck-cde-dtspc.ksh"
 }

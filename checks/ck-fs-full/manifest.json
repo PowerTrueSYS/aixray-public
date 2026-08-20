@@ -16,6 +16,7 @@
     "df -g"
   ],
   "tags": [],
+  "blurb": "This check measures how full every filesystem is, including the root, /var, and /tmp mounts and all other storage volumes, and how much capacity is left for new files. A filesystem that fills up can no longer write logs, spool jobs, or complete user logins, and any service that needs to write to it stops. A near-full filesystem is an early warning that an outage is about to happen.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-fs-full/ck-fs-full.ksh"
 }

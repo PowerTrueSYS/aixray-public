@@ -15,6 +15,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "Trusted Execution enforces that only programs approved in the system trust database are allowed to run, so a modified or planted executable is blocked before it starts. This check also confirms that the system records those enforcement events in its syslog. If it fails, tampered or malicious code can run, and the log of what was blocked or allowed is lost.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-trustchk-chkexec/ck-trustchk-chkexec.ksh"
 }

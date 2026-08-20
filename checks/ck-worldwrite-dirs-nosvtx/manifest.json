@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This check finds shared directories that every user can write to but that are missing the sticky bit, the setting that keeps users from deleting or renaming files they do not own. Without that protection, any local user can remove or replace files belonging to other users, which can disrupt running services and may be used to run a program as another account.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-worldwrite-dirs-nosvtx/ck-worldwrite-dirs-nosvtx.ksh"
 }

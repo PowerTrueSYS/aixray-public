@@ -14,6 +14,7 @@
     "lscfg -vpl <device>"
   ],
   "tags": [],
+  "blurb": "This control reports the firmware, also called microcode, running on the physical adapters that connect the system to storage and the network, and whether those levels have been compared with current vendor guidance. If an adapter runs out-of-date firmware or its level cannot be confirmed, it may carry known bugs or security flaws that cause it to hang, drop connections, corrupt data, or be exploited, which can bring down storage or network access without warning.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-adapter-microcode/ck-adapter-microcode.ksh"
 }

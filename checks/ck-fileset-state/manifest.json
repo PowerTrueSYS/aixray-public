@@ -1,0 +1,18 @@
+{
+  "id": "ck-fileset-state",
+  "pillar": "currency",
+  "category": "patch",
+  "finding_ids": [
+    "fileset_state"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "lslpp -qcL"
+  ],
+  "tags": [],
+  "blurb": "AIX installs software as packages called filesets, and each fileset carries an install state such as committed or applied. This check reads the full fileset inventory and reports any fileset left in a broken state. A broken fileset can block future security and maintenance updates, and the affected software may misbehave.",
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-fileset-state/ck-fileset-state.ksh"
+}

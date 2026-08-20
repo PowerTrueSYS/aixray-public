@@ -15,6 +15,7 @@
   "tags": [
     "cis-l2"
   ],
+  "blurb": "This check looks for the CLiC cryptographic package in the installed software listing and confirms that its clickext kernel extension is loaded. CLiC supplies cryptography that AIX relies on for services such as the stronger password hashing algorithms. When the package is absent or the extension is not loaded, anything depending on it cannot run, so the system may be left protecting credentials and data with weaker methods than the security policy assumes.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-clic-installed/ck-clic-installed.ksh"
 }

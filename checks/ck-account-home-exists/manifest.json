@@ -15,6 +15,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This check confirms that every active local user account has a home directory that actually exists on disk. If an account is missing its home directory, the person may be unable to log in, or programs running under that account may write files into an unexpected location such as a shared or system-owned directory. That can break services and expose or corrupt data.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-account-home-exists/ck-account-home-exists.ksh"
 }

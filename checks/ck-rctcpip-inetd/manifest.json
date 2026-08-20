@@ -18,6 +18,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "The internet super-server (inetd) is a legacy daemon that listens on many network ports and starts older services such as telnet, FTP, and remote shell on demand. This check identifies systems where inetd is still started at boot from /etc/rc.tcpip or running as an active subsystem. Leaving it enabled when no inetd-managed service is actually required keeps unused ports listening and can let an attacker reach older, unencrypted services that bypass normal access controls.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-rctcpip-inetd/ck-rctcpip-inetd.ksh"
 }

@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "SSH MaxAuthTries limits how many login attempts a single SSH connection is allowed before the server closes it, and this check confirms that limit is four or fewer. If the limit is set higher, an attacker who reaches the SSH service can make many password guesses per connection before being cut off, which makes brute-force password guessing faster and more likely to succeed.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-ssh-maxauthtries/ck-ssh-maxauthtries.ksh"
 }

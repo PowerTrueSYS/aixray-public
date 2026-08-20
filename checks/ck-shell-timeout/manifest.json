@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "An interactive shell session can keep running until someone closes it. This check verifies that a timeout is set in the system login files /etc/profile and /etc/environment so an idle session logs itself out. Without it, an unattended session stays open and anyone who reaches it can act with the full privileges of that account.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-shell-timeout/ck-shell-timeout.ksh"
 }

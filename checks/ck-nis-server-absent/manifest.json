@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks whether the NIS server software package bos.net.nis.server is installed on the system. NIS is a legacy network authentication service that stores account names and password hashes and answers queries from other machines, and a modern system rarely needs one. If the package is present, a NIS server could be answering those queries over the network, letting an attacker harvest usernames and password hashes or feed false data to systems that trust the server.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-nis-server-absent/ck-nis-server-absent.ksh"
 }

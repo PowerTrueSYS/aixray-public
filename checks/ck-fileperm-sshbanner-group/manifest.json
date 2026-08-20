@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control confirms that the OpenSSH login banner file, /etc/ssh/ssh_banner, is owned by the system group. If it belongs to some other group, members of that group could change the message shown to everyone who connects over SSH, replacing the required warning with misleading or deceptive text.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-fileperm-sshbanner-group/ck-fileperm-sshbanner-group.ksh"
 }

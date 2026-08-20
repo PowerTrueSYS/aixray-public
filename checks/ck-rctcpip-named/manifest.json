@@ -18,6 +18,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This check verifies that the named DNS server service is not running on the server. It checks whether named is set to start from the boot configuration file /etc/rc.tcpip or is already active as a system service. If named runs on a server that is not meant to be a DNS server, it leaves an unmanaged DNS service answering queries on the network, which attackers can abuse to reflect and amplify traffic or probe for a way in.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-rctcpip-named/ck-rctcpip-named.ksh"
 }

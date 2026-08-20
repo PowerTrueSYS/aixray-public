@@ -16,6 +16,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "The sys account is a built-in AIX system account that owns system files and is not meant for anyone to sign in to. This check confirms the account is absent, or that it is locked with its local login, remote login, and login shell all disabled. If any of those login paths is left open, an attacker who obtains the account gains an interactive foothold on the system and access to the files that identity owns.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-system-account-sys/ck-system-account-sys.ksh"
 }

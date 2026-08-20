@@ -12,6 +12,7 @@
     "lssec -f /etc/security/user -s default -a maxulogs"
   ],
   "tags": [],
+  "blurb": "This control checks the default maxulogs setting in /etc/security/user, which limits how many login sessions a single account may hold open at the same time. If that limit is missing or set above ten, one account can be signed in from many places at once, so a stolen password could be used in parallel without the real user being logged out. Session records then cannot show how many people are actually sharing the account.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-pw-maxulogs/ck-pw-maxulogs.ksh"
 }

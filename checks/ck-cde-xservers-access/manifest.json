@@ -15,6 +15,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks the CDE Xservers configuration file, which the login manager uses to start the local X display server, to confirm it is owned by root and cannot be changed by other users. If a non-root user can modify this file, they could alter how the X server launches, possibly running their own commands with the server privileges or tampering with the login screen. This check applies only when the CDE desktop environment is installed.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-cde-xservers-access/ck-cde-xservers-access.ksh"
 }

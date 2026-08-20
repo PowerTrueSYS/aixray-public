@@ -13,6 +13,7 @@
     "errpt -s <cutoff>"
   ],
   "tags": [],
+  "blurb": "This control reviews the AIX error log and counts the non-informational error entries recorded in the last seven days. Hardware faults such as a failing disk or power supply, and software failures, announce themselves in this log before they cause an outage. A system with many recent errors is actively misbehaving and is at risk of an unplanned failure or data loss.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-errpt-recent/ck-errpt-recent.ksh"
 }

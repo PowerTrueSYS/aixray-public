@@ -18,6 +18,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks whether the gated routing service is set to start at boot in /etc/rc.tcpip or is currently running as a system service. The gated service provides legacy network routing protocols (RIP, OSPF, and BGP) and has no legitimate purpose on a server that is not a network router. If it is running where it should not be, it can advertise or redirect routes on the network, hijacking or disrupting traffic, and it exposes an unneeded legacy service to attack.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-rctcpip-gated/ck-rctcpip-gated.ksh"
 }

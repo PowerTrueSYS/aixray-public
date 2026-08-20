@@ -12,6 +12,7 @@
     "lssec -f /etc/security/login.cfg -s default -a loginreenable"
   ],
   "tags": [],
+  "blurb": "This control checks the loginreenable setting in the file /etc/security/login.cfg. That setting controls how many minutes a locked terminal or console port stays locked before AIX unlocks it automatically. If the delay is too short, an attacker can resume password guessing at that terminal sooner, making brute-force login attacks easier.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-login-loginreenable/ck-login-loginreenable.ksh"
 }

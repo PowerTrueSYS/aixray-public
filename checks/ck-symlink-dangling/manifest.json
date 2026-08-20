@@ -1,6 +1,6 @@
 {
   "id": "ck-symlink-dangling",
-  "pillar": "filesystem",
+  "pillar": "stability",
   "category": "security",
   "finding_ids": [
     "dangling_symlink"
@@ -12,6 +12,7 @@
     "find -L / \\( -fstype jfs -o -fstype jfs2 \\) -type l -ls 2> /dev/null"
   ],
   "tags": [],
+  "blurb": "This control scans for symbolic links that point to files or directories that no longer exist on local JFS/JFS2 filesystems. A dangling link is not harmless leftover clutter: the empty path it names can later be claimed by another user or program, so anything that follows the link can be silently redirected to unexpected content. If this control fails, a link that used to point at a trusted file could be made to point at something an attacker placed there.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-symlink-dangling/ck-symlink-dangling.ksh"
 }

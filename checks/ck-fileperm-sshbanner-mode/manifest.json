@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks the permission settings on /etc/ssh/ssh_banner, the file whose text Secure Shell shows to anyone connecting before they log in. The file must not be writable by anyone other than its owner. If it is writable by others, any unprivileged user could replace that text with a false or misleading message, so everyone who connects would see a banner that no longer reflects an approved notice.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-fileperm-sshbanner-mode/ck-fileperm-sshbanner-mode.ksh"
 }

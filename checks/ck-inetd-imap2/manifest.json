@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks the internet services configuration file /etc/inetd.conf to confirm the legacy imap2 email service is not enabled. imap2 is an obsolete mail service that transmits messages and login credentials in clear text, so an active entry exposes an unencrypted mail channel that an attacker on the network could read or use as an entry point into the system.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-inetd-imap2/ck-inetd-imap2.ksh"
 }

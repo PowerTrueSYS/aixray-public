@@ -16,6 +16,7 @@
     "cat /etc/resolv.conf"
   ],
   "tags": [],
+  "blurb": "This control inventories the network configuration of the server: which interfaces exist, the IP addresses assigned to them, the default route used to reach other networks, and the DNS name servers the system queries. It reports an inventory rather than a pass or fail, and without a site-approved baseline it is recorded as not assessed. If this information cannot be collected or compared against an expected state, a missing, unexpected, or wrongly configured interface, route, or resolver could go unnoticed and traffic or name lookups could be misdirected.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-network-inventory/ck-network-inventory.ksh"
 }

@@ -15,6 +15,7 @@
     "mount"
   ],
   "tags": [],
+  "blurb": "This check looks for a standby copy of the operating system left behind by a previous multibos or alternate-disk operation, detected as bos_-prefixed logical volumes or a mounted /bos_inst filesystem. If that standby copy remains, an AIX migration can be blocked or forced onto an unexpected sequence, risking a failed or delayed upgrade and a wasted maintenance window.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-multibos-residue/ck-multibos-residue.ksh"
 }

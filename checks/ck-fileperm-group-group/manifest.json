@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This check confirms that /etc/group, the file that records which users belong to which groups, is owned by the correct trusted system group. If a different group owns it, the members of that group could change group memberships and grant themselves access to protected systems and data.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-fileperm-group-group/ck-fileperm-group-group.ksh"
 }

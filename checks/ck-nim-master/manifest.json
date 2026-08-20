@@ -16,6 +16,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks whether the Network Installation Management (NIM) master software package is installed on the system. A NIM master is a privileged server that can push operating system installs and run commands on the other AIX systems it manages. If one is present where it is not intended, taking over that system gives an attacker a ready-made way to control every machine it manages.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-nim-master/ck-nim-master.ksh"
 }

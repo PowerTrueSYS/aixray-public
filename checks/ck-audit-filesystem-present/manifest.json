@@ -18,6 +18,7 @@
   "tags": [
     "cis-l2"
   ],
+  "blurb": "The AIX audit subsystem records security-relevant activity such as logins and administrative changes. This control confirms that the subsystem is actually present and switched on: the dedicated /audit filesystem is mounted, the audit configuration file exists, auditing is turned on for new user accounts, log rotation is scheduled, and the audit daemon is set to start at boot. If any of these are missing, that activity may go unrecorded, so a breach or misuse could leave no trail to detect or investigate.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-audit-filesystem-present/ck-audit-filesystem-present.ksh"
 }

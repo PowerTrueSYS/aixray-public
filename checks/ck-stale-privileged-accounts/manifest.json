@@ -1,0 +1,21 @@
+{
+  "id": "ck-stale-privileged-accounts",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "stale_privileged_accounts"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "lsuser -a admin maxage account_locked time_last_login ALL"
+  ],
+  "tags": [
+    "cis-l1",
+    "ffiec:II.C.7"
+  ],
+  "blurb": "This check finds privileged accounts, meaning root and any account marked as an administrator, that have not been used in more than 90 days or have never logged in while their password never expires. A dormant account that still holds high privilege is an ideal target for an attacker, because no one notices when a forgotten account gets used, and a password that never expires outlives the person who set it.",
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-stale-privileged-accounts/ck-stale-privileged-accounts.ksh"
+}

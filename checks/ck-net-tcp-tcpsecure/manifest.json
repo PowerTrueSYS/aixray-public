@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks that the AIX tcp_tcpsecure network setting is fully turned on. When enabled, the setting blocks forged TCP packets from resetting or hijacking a connection that is already in progress. If it is off, an attacker could send a forged packet to knock a live session offline or inject data into it, causing outages and tampering with in-flight traffic.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-net-tcp-tcpsecure/ck-net-tcp-tcpsecure.ksh"
 }

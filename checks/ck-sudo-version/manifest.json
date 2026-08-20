@@ -15,6 +15,7 @@
   "tags": [
     "cis-l2"
   ],
+  "blurb": "This check confirms that the sudo command installed on the host reports a release at or above the required patched baseline. An older release may still carry published security flaws, which can allow an attacker to escalate from a limited account to full administrator control of the system.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-sudo-version/ck-sudo-version.ksh"
 }

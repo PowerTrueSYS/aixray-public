@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks the default password maximum age setting in the /etc/security/user file and requires it to be between 1 and 52 weeks. A setting of zero disables password expiry, so a stolen or guessed password remains usable indefinitely. A value above 52 weeks keeps passwords valid for more than a year, giving an attacker that much longer to use a compromised account.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-pw-maxage-cis/ck-pw-maxage-cis.ksh"
 }

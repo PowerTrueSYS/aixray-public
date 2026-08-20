@@ -1,0 +1,20 @@
+{
+  "id": "ck-bootlist",
+  "pillar": "backup",
+  "category": "resilience",
+  "finding_ids": [
+    "bootlist"
+  ],
+  "captures": [],
+  "requires_root": true,
+  "read_only": true,
+  "commands": [
+    "lsvg -p rootvg",
+    "lsvg -l rootvg",
+    "bootlist -m normal -o"
+  ],
+  "tags": [],
+  "blurb": "This check confirms that a fully-mirrored rootvg lists at least two normal-mode boot devices, so the box can still boot from the surviving mirror copy after a disk is lost. It only applies when rootvg is fully mirrored across two or more disks \u2014 on an unmirrored box it reports not-applicable, and when the boot list cannot be read (for example when not running as root) it warns. A rootvg whose layout probes fail to return a readable layout is not assessed.",
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-bootlist/ck-bootlist.ksh"
+}

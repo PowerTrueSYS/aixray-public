@@ -15,6 +15,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This check confirms the SSH file-transfer subsystem is configured to create uploaded files with a restrictive permission mask and to record transfer activity in the system log. If it is not, files a user uploads can be created with permissions that let other local users read or change them, and file transfers can go unrecorded, leaving misuse undetected.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-ssh-sftp-args/ck-ssh-sftp-args.ksh"
 }

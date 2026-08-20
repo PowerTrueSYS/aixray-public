@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control verifies that the AIX audit configuration directory, /etc/security/audit, is owned by the root account. If a non-root user owns this directory, that user could change or remove the settings that record security events, so tampering with the system could go unlogged and unnoticed.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-diracc-secaudit-owner/ck-diracc-secaudit-owner.ksh"
 }

@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This check confirms that the directory /var/adm/sa is owned by the adm account. That directory stores the activity data used to review what the machine has been doing. If another account owns it, that account could alter or erase those records and hide evidence of activity on the system.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-diracc-varadmsa-owner/ck-diracc-varadmsa-owner.ksh"
 }

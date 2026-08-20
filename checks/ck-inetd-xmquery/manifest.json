@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This check verifies that the legacy xmquery network service is not enabled in the inetd configuration file /etc/inetd.conf. xmquery is an obsolete clear-text service that almost no environment needs, so leaving it active gives attackers an extra remote service to probe and possibly abuse as a foothold or an amplification relay.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-inetd-xmquery/ck-inetd-xmquery.ksh"
 }

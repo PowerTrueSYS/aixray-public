@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks that AIX is configured so NFS clients use privileged reserved ports when they connect to NFS servers. NFS servers treat the source port as a weak form of authentication, so a client connecting from an ordinary unprivileged port is easier to impersonate. If the setting is off, NFS clients may use unprivileged ports, letting an attacker spoof NFS traffic that a server may wrongly trust.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-net-nfs-use-reserved-ports/ck-net-nfs-use-reserved-ports.ksh"
 }

@@ -17,6 +17,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks whether the DHCP client service is running on the server or set to start at boot. Servers should hold a fixed address, but a running DHCP client accepts its IP address, gateway, and name servers from any DHCP server that responds on the network. If this fails, an attacker who places a rogue DHCP server on the network could point the system at hostile settings and redirect its traffic, or the address could change and break connectivity.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-rctcpip-dhcpcd/ck-rctcpip-dhcpcd.ksh"
 }

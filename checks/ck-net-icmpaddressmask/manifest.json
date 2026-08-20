@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks whether the server answers ICMP address mask requests, which reveal the subnet mask of its local network to anyone who asks. A server that sends these replies makes it easier for an attacker to map the network and plan further attacks. Leaving this enabled exposes network structure that should stay private.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-net-icmpaddressmask/ck-net-icmpaddressmask.ksh"
 }

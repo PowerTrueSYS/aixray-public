@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "The /audit directory is where the AIX audit subsystem writes its trail and bin files, the raw record of security-relevant activity on the machine. This control verifies that the directory is assigned to the audit group. If it belongs to some other group, members of that group could alter or erase the audit trail and hide evidence of unauthorized activity.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-diracc-audit-group/ck-diracc-audit-group.ksh"
 }

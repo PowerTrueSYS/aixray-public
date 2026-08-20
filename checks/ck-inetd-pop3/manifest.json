@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This check looks for an active POP3 mail-retrieval service in the system network service configuration file /etc/inetd.conf. POP3 is a legacy protocol that sends account names and passwords in clear text, so an active entry means the system is configured to accept remote connections to an outdated service. If the check fails, anyone who can reach that port can read credentials off the network or attack the aging service as a foothold into the system.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-inetd-pop3/ck-inetd-pop3.ksh"
 }

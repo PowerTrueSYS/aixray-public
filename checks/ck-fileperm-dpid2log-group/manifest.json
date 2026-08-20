@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks that the system log file /var/tmp/dpid2.log is owned by the system group rather than an ordinary user group. If a non-system group owns the file, members of that group can read or alter the log, which lets them tamper with records or see detail meant only for system administration.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-fileperm-dpid2log-group/ck-fileperm-dpid2log-group.ksh"
 }

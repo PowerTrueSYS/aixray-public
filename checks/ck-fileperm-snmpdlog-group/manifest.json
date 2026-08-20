@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This check confirms that the SNMP daemon log file /var/tmp/snmpd.log belongs to the system group. If a different group owns the file, members of that group can alter or replace the log, so the record of SNMP activity can no longer be trusted.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-fileperm-snmpdlog-group/ck-fileperm-snmpdlog-group.ksh"
 }

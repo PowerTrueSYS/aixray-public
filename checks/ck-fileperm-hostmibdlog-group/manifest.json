@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks that /var/tmp/hostmibd.log, the log written by the daemon that reports the hardware and software inventory of the system, belongs to the system group (group ID 0). If a different group owns the log, members of that group could read the host details recorded in it or change the log to hide or falsify activity.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-fileperm-hostmibdlog-group/ck-fileperm-hostmibdlog-group.ksh"
 }

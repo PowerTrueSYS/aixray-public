@@ -1,0 +1,21 @@
+{
+  "id": "ck-ssh-ciphers",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "ssh_ciphers"
+  ],
+  "captures": [],
+  "requires_root": true,
+  "read_only": true,
+  "commands": [
+    "sshd -T"
+  ],
+  "tags": [
+    "stig:V-215402",
+    "cis-l1"
+  ],
+  "blurb": "This check reads the effective SSH cipher list and confirms the server offers only strong, modern ciphers. If the server still offers broken or deprecated ciphers such as CBC, arcfour, 3DES, or Blowfish, an attacker watching the connection may be able to downgrade the session to a weak cipher and decrypt traffic that looked secure.",
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-ssh-ciphers/ck-ssh-ciphers.ksh"
+}

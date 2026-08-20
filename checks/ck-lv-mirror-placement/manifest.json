@@ -22,6 +22,7 @@
   "tags": [
     "ffiec:II.C.11"
   ],
+  "blurb": "Mirroring keeps a second copy of data so that if one disk fails the system can keep running from the other. This control checks that mirrored copies are actually stored on separate physical disks rather than stacked on the same disk. If both copies sit on one disk, a single disk failure destroys both, so the mirror offers no real protection.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-lv-mirror-placement/ck-lv-mirror-placement.ksh"
 }

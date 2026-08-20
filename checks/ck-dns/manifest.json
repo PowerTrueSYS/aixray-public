@@ -1,0 +1,18 @@
+{
+  "id": "ck-dns",
+  "pillar": "operational-readiness",
+  "category": "config",
+  "finding_ids": [
+    "dns"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "grep nameserver /etc/resolv.conf"
+  ],
+  "tags": [],
+  "blurb": "Checks that the AIX system has at least one DNS nameserver configured in /etc/resolv.conf. If no nameserver is present, the system cannot translate hostnames into network addresses, which can break backups, software updates, authentication, and any other service that relies on name resolution.",
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-dns/ck-dns.ksh"
+}

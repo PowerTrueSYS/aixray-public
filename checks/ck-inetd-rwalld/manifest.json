@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks whether the legacy rwalld service is still enabled in the /etc/inetd.conf file. rwalld lets a remote computer broadcast a text message to the terminal of every user logged in on the system, with no login or authentication. If it is left on, anyone who can reach the machine over the network can flood or spoof messages on every screen, disrupting work or tricking users with fake alerts.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-inetd-rwalld/ck-inetd-rwalld.ksh"
 }

@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks that /var/spool/cron/crontabs, the directory that holds scheduled-job definitions, is owned by its intended trusted system account. Cron runs those jobs automatically, often with high privileges. If a different account owns the directory, it can rewrite those jobs to run its own commands on schedule, giving an attacker persistent privileged access or a way to disrupt critical scheduled work.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-diracc-crontabs-owner/ck-diracc-crontabs-owner.ksh"
 }

@@ -15,6 +15,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This check confirms the root account has a dedicated home directory (/root) that is owned by root and locked so only root can read or change it. That directory holds the startup files that run every time the root account logs in. If it is missing, owned by someone else, world-accessible, or replaced with the whole filesystem, another user could alter those startup files to steal secrets or sneak commands into the root login and take control of the system.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-diracc-roothome/ck-diracc-roothome.ksh"
 }

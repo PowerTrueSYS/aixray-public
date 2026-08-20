@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control verifies that the log file /var/ct/RMstart.log is owned by the root account. If another user owns it, that user can modify or replace the file, so the record of system startup it contains can no longer be trusted.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-fileperm-rmstartlog-owner/ck-fileperm-rmstartlog-owner.ksh"
 }

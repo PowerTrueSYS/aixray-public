@@ -14,6 +14,7 @@
   "tags": [
     "ffiec:II.C.11"
   ],
+  "blurb": "This control checks that the /tmp directory is a separate filesystem and that every JFS2 filesystem has a log device. If /tmp shares space with the root filesystem, a process that fills /tmp can also fill root, stopping logins and logging across the whole system. A JFS2 filesystem with no log device takes longer to recover and is more likely to lose or corrupt data after a crash.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-mount-options/ck-mount-options.ksh"
 }

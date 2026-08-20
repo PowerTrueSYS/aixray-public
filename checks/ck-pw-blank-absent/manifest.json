@@ -15,6 +15,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This check confirms that no account in the system password file (/etc/security/passwd) has a blank password. An account with a blank password lets anyone sign in to it without entering a credential. If the check fails, an attacker who can reach the system login can take over that account and everything it is allowed to do.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-pw-blank-absent/ck-pw-blank-absent.ksh"
 }

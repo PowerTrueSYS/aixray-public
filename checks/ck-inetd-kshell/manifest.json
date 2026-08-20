@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This check verifies that the legacy kshell remote-shell service is not enabled in the inetd configuration file /etc/inetd.conf. kshell lets a remote client run commands on the system over an unencrypted, weakly authenticated connection that predates modern security controls. If it is enabled, an attacker who can reach the host can try to execute commands remotely, and everything sent over the connection travels in clear text where it can be intercepted.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-inetd-kshell/ck-inetd-kshell.ksh"
 }

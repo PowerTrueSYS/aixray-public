@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks whether the host ignores ICMP redirect messages rather than using them to update its routing table. If the host accepts these messages, an attacker who can send one can silently rewrite the routing table and steer traffic to a machine they control, enabling interception or denial of service.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-net-ipignoreredirects/ck-net-ipignoreredirects.ksh"
 }

@@ -16,6 +16,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This check confirms that no host-based trust files named .rhosts, .shosts, or .netrc exist anywhere on the local filesystems. Files like .rhosts and .shosts can let a remote user log in without ever supplying a password, and .netrc can hold plain-text login credentials. If any of these files are present, an attacker who can reach the host could sign in as an existing user without knowing the password for that account, or read stored credentials and reuse them elsewhere.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-rhost-dotfiles-absent/ck-rhost-dotfiles-absent.ksh"
 }

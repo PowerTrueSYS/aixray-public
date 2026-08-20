@@ -37,7 +37,7 @@ export PATH
 # is C-locale by contract, so pin the locale.
 LC_ALL=C; export LC_ALL
 
-VERSION="1.1.0"
+VERSION="1.2.0"
 DATA_VINTAGE="unknown"
 DATA_VINTAGE_H="unknown"
 
@@ -438,11 +438,11 @@ set -A CR_LABEL 'IBM AIX lifecycle reference data' 'IBM security advisory seed' 
 set -A CR_CLASS 'advisory' 'advisory' 'cve' 'apar' 'flrt' 'flrt' 'benchmark' 'benchmark'
 set -A CR_REQUIRED '1' '1' '1' '1' '1' '1' '1' '1'
 set -A CR_LOADED '1' '1' '0' '0' '0' '0' '1' '1'
-set -A CR_VERSION 'sha256:873e9c063efad9c0dea20923ca4b9fb11112e6a07914008a98d183e51b358862' 'sha256:df4aaf9526cb8219a47308aefd25a82d6a6a2f8f1f8ba8f33eef074c0c8b7342' 'unknown' 'unknown' 'unknown' 'unknown' 'v1.2.0' 'V3R3'
+set -A CR_VERSION 'sha256:ac3ee68c3f9369632bcd9c01241a9fa993ece950c133af7e3e5ada2a25a48d93' 'sha256:ab3c95ca7fdc47ad68978930afcfd70d42eed0ea9580926ab44a0a775b30caed' 'unknown' 'unknown' 'unknown' 'unknown' 'v1.2.0' 'V3R3'
 set -A CR_VERSION_BASIS 'content-sha256' 'content-sha256' 'unknown' 'unknown' 'unknown' 'unknown' 'publisher-version' 'publisher-version'
-set -A CR_AS_OF '2026-08-11' '2026-08-11' 'unknown' 'unknown' 'unknown' 'unknown' '2026-07-27' '2026-06-15'
+set -A CR_AS_OF '2026-08-18' '2026-08-18' 'unknown' 'unknown' 'unknown' 'unknown' '2026-08-18' '2026-06-15'
 set -A CR_AS_OF_BASIS 'curator-verified' 'curator-review' 'unknown' 'unknown' 'unknown' 'unknown' 'curator-verified' 'publisher-benchmark-date'
-set -A CR_SHA256 'sha256:873e9c063efad9c0dea20923ca4b9fb11112e6a07914008a98d183e51b358862' 'sha256:df4aaf9526cb8219a47308aefd25a82d6a6a2f8f1f8ba8f33eef074c0c8b7342' 'unknown' 'unknown' 'unknown' 'unknown' 'sha256:3645a841eb8f05078a8c0a043f62ed200bd7483a578c615ea652c7f15f68bd3b' 'sha256:e4109ceb3a15beddbf1e84e29e593cd18cc260e9be1789429554b9d66e2cfeb9'
+set -A CR_SHA256 'sha256:ac3ee68c3f9369632bcd9c01241a9fa993ece950c133af7e3e5ada2a25a48d93' 'sha256:ab3c95ca7fdc47ad68978930afcfd70d42eed0ea9580926ab44a0a775b30caed' 'unknown' 'unknown' 'unknown' 'unknown' 'sha256:3645a841eb8f05078a8c0a043f62ed200bd7483a578c615ea652c7f15f68bd3b' 'sha256:e4109ceb3a15beddbf1e84e29e593cd18cc260e9be1789429554b9d66e2cfeb9'
 set -A CR_LOCATOR 'embedded lifecycle tables' 'embedded SEC_APARS table' 'operator-supplied local CISA KEV JSON' 'operator-supplied local apar.csv or provenanced FLRTVC report' 'operator-supplied pinned flrtvc.ksh or provenanced report' 'operator-supplied local IBM FLRT fetch envelope' 'embedded numeric-only CIS L1 crosswalk' 'embedded R_FILEPERM/R_SECATTR/R_NETTUNE/R_SVCOFF tables'
 set -A CR_THRESHOLD '30' '30' '30' '30' '30' '30' '180' '180'
 set -A CR_INTEGRITY 'verified' 'verified' 'unknown' 'unknown' 'unknown' 'unknown' 'verified' 'verified'
@@ -914,7 +914,7 @@ HW_GEN="
 # This is a refresh target in operator prose, not a claim about any unlisted MTM's EOS.
 CURRENT_POWER_GEN="IBM Power11"
 # security APAR | applies to TL | CVE | short title
-# SEC_APARS curation review through 2026-08-11 — FLRT feed vintage 2026-08-06.
+# SEC_APARS curation review through 2026-08-18 — FLRT feed vintage 2026-08-16.
 # Reviewed gaps that cannot become strict APAR|TL|CVE|title seed rows:
 # - openssl_advisory48.asc (CVSS 9.1 max; ten CVEs): openssl.base
 #   3.0.0.0-3.0.16.1000; named fix openssl-3.0.21.1000.tar.Z. The bulletin
@@ -925,19 +925,12 @@ CURRENT_POWER_GEN="IBM Power11"
 #   rpm.rte.4.15.1.1020, rpm.rte.4.15.1.2016, rpm.rte.4.18.1.2009, and
 #   rpm.rte.4.20.1.2002 by AIX level. The bulletin publishes no AIX Level ->
 #   APAR table.
-# - node/7278066 (HIPER; no CVE/CVSS): devices.pciex.7710612214105006.com
-#   7.3.4.0 (7300-04), 7.3.3.0-7.3.3.2 (7300-03),
-#   7.3.2.0-7.3.2.3 (7300-02), and 7.2.5.0-7.2.5.206 (7200-05).
-#   IBM's live Level -> APAR table (modified 2026-07-29) names IJ57378,
-#   IJ57303, IJ59342, and IJ57855, with fixing levels 7300-04-01, 7300-03-03,
-#   N/A, and 7200-05-12 plus same-location iFixes. IBM publishes no CVE, so
-#   the mandatory CVE field cannot be sourced.
-# Bulletins first reviewed in the 2026-08-11 review round:
+# Bulletins first reviewed in the 2026-08-11 review round, reconfirmed 2026-08-18:
 # - curl_advisory11.asc (2026-07-28; CVSS 9.8 max; eight CVEs):
 #   oss.lib.libcurl 7.79.1.0, 8.1.2.0, and 8.5.0.0-8.5.0.2. Named AIX 7.3
 #   interim fix is 10536ma.260722.epkg.Z. The bulletin publishes no AIX Level
 #   -> APAR table.
-# Prior fileset-only gaps were reconfirmed during this review:
+# Prior fileset-only gaps were reconfirmed during the 2026-08-18 review:
 # - python_advisory20.asc: python3.9.base 3.9.0.0-3.9.24.0 (3.9 is EOL; no
 #   3.9 fix named) and python3.11.base 3.11.0.0-3.11.15.0; named 7.3/VIOS 4.1
 #   fix is python-3.11.15.1. The bulletin publishes no AIX Level -> APAR table.
@@ -948,12 +941,43 @@ CURRENT_POWER_GEN="IBM Power11"
 #   AIX Level -> APAR table. The current apar.csv still ends the 918 ranges at 2802.
 # Policy: no IJ identifiers or fixed levels are inferred. These advisories remain on the
 # IBM flrtvc path until IBM publishes the mappings this four-field seed requires.
-# Seed set: IBM security bulletin 2025-11-13 (NIM nimesis/nimsh RCE, CVSS 10.0).
+# Row provenance — folded 2026-08-18 from the live feeds:
+#   aix_vios_advisory.asc (First Issued 2026-08-14; retrieved 2026-08-18)
+#   https://aix.software.ibm.com/aix/efixes/security/aix_vios_advisory.asc
+#   adds IJ59563 (7300-04), IJ59564 (7300-03), IJ59565 (7300-02),
+#   IJ59566 (7200-05), all carrying CVE-2026-16923 in the single-CVE field.
+#   The bulletin remediates 191 CVEs under a single Level -> APAR table: one
+#   VULNERABILITY DETAILS block (191 CVEIDs), one AFFECTED PRODUCTS fileset
+#   table (bos.mp64), and one Level -> APAR table — there is no per-CVE
+#   section. The single-CVE field carries CVE-2026-16923 because it is the
+#   CVEID of the bos.mp64 local privilege escalation that this Level -> APAR
+#   table fixes (all four APARs are the fix for that one vulnerability), not
+#   the bulletin's first-listed CVE. CVE-2026-16923 is not the bulletin's
+#   maximum severity (bulletin max 9.9; CVE-2026-16923 is 7.0), so the
+#   rendered finding is a per-APAR exposure marker, not the full exposure.
+# Row provenance — HIPER node 7278066
+#   https://www.ibm.com/support/pages/node/7278066
+#   curator-verified 2026-08-11; attempted retrieval 2026-08-18 → 403.
+#   HIPER (no CVE/CVSS published), component devices.pciex.7710612214105006.com.
+#   Level -> APAR table names IJ57378 (7300-04, fixing 7300-04-01),
+#   IJ57303 (7300-03, fixing 7300-03-03), and IJ57855 (7200-05, fixing
+#   7200-05-12), each with a same-location iFix. IBM publishes no CVE for
+#   this node; the display-only CVE field carries the non-CVE token
+#   HIPER-7278066 (regex ^HIPER-\d{6,9}$). Excluded: IJ59342 (7300-02) —
+#   IBM publishes fixing level N/A for this node at that TL, so no row.
+# Seed set: IBM security bulletin 2026-08-14 (NIM nimesis RCE 2025-11-13; aix_vios bos.mp64 LPE, CVE-2026-16923).
 SEC_APARS="
 IJ55897|7300-03|CVE-2025-36250|NIM nimesis remote command execution
 IJ56113|7300-02|CVE-2025-36250|NIM nimesis remote command execution
 IJ56230|7300-01|CVE-2025-36250|NIM nimesis remote command execution
 IJ55968|7200-05|CVE-2025-36250|NIM nimesis remote command execution
+IJ59563|7300-04|CVE-2026-16923|AIX bos.mp64 local privilege escalation
+IJ59564|7300-03|CVE-2026-16923|AIX bos.mp64 local privilege escalation
+IJ59565|7300-02|CVE-2026-16923|AIX bos.mp64 local privilege escalation
+IJ59566|7200-05|CVE-2026-16923|AIX bos.mp64 local privilege escalation
+IJ57378|7300-04|HIPER-7278066|HIPER fix for devices.pciex.7710612214105006.com
+IJ57303|7300-03|HIPER-7278066|HIPER fix for devices.pciex.7710612214105006.com
+IJ57855|7200-05|HIPER-7278066|HIPER fix for devices.pciex.7710612214105006.com
 "
 # AIX release (from-level) | documented upgrade method for a non-current level.
 # Verified against IBM AIX migration methods: update_all applies TL/SP fixes WITHIN a
@@ -963,13 +987,25 @@ UPGRADE_PATH="
 7200|nimadm (alternate disk migration) migrates a copy of rootvg to AIX 7.3 TL4 on a spare disk; the original rootvg stays bootable as the rollback. A conventional migration install has no such rollback — take a mksysb first. Check IBM FLRT for firmware/VIOS prerequisites before either
 7300|smitty update_all to 7300-04 from a downloaded lpp_source; check IBM FLRT for firmware/VIOS prerequisites first
 "
-# machine type prefix | current firmware family | vintage note
-# Verified against IBM Power system firmware fix-history pages (families as of 2026-06):
-# 9105 (Power10) current family FW1060; 9009 (Power9) current family FW950. Point-level
-# tails move ~monthly — FLRT/Fix Central is the source of truth for the exact SP.
+# machine type-model glob | current firmware family | vintage note
+# Verified 2026-08-15 against IBM FLRT Power Code Matrix:
+#   https://esupport.ibm.com/customercare/flrt/matrix?domain=mtm=9080-HEX&pkey=pwr
+#     newest MH1060 (MH1060_180) -> FW1060
+#   https://esupport.ibm.com/customercare/flrt/matrix?domain=mtm=9080-M9S&pkey=pwr
+#     newest VH950 (VH950_222) -> FW950
+#   https://esupport.ibm.com/customercare/flrt/matrix?domain=mtm=9043-MRX&pkey=pwr
+#     E1050 families MM1020/MM1030/MM1050/MM1060; newest MM1060 (MM1060_185) -> FW1060
+#   https://esupport.ibm.com/customercare/flrt/matrix?domain=mtm=9105-22A&pkey=pwr
+#     newest ML1060 (ML1060_185) — 9105-*|FW1060 still current
+#   https://esupport.ibm.com/customercare/flrt/matrix?domain=mtm=9009-42A&pkey=pwr
+#     newest VL950 (VL950_222) — 9009-*|FW950 still current
+# Point-level tails move ~monthly — FLRT/Fix Central is the source of truth for the exact SP.
 FW_MIN="
-9105|FW1060|Power10 scale-out current firmware family
-9009|FW950|Power9 scale-out current firmware family
+9080-M9S|FW950|Power9 E980 current firmware family
+9080-HEX|FW1060|Power10 E1080 current firmware family
+9105-*|FW1060|Power10 scale-out current firmware family
+9043-*|FW1060|Power10 E1050 midrange current firmware family
+9009-*|FW950|Power9 scale-out current firmware family
 "
 
 # ======================= STIG rule tables (refresh: spec 03) ==========================
@@ -4226,8 +4262,8 @@ function checks_lifecycle {
     fi
   fi
   FWFAM=$(printf '%s\n' "$PRTCONF" | awk '/^Firmware Version:/{n=index($0,"FW"); if(n>0){s=substr($0,n+2); sub(/[^0-9].*$/,"",s); if(s!="")print "FW" s; exit}}')
-  FWMT=$(printf '%s\n' "$PRTCONF" | awk -F': *' '/^System Model:/{m=$2; sub(/^IBM,/,"",m); sub(/-.*/,"",m); print m; exit}')
-  FWROW=$(printf '%s\n' "$FW_MIN" | awk -F'|' -v mt="$FWMT" '$1==mt{print; exit}')
+  FWMT=$(printf '%s\n' "$PRTCONF" | awk -F': *' '/^System Model:/{m=$2; sub(/^IBM,/,"",m); print m; exit}')
+  FWROW=$(printf '%s\n' "$FW_MIN" | awk -F'|' -v mt="$FWMT" 'NF>=3 {p=$1; gsub(/\./,"\\.",p); gsub(/\*/,".*",p); if (mt ~ "^"p"$") {print; exit}}')
   CURFAM=$(printf '%s' "$FWROW" | awk -F'|' '{print $2}')
   CURN=${CURFAM#FW}; BOXN=${FWFAM#FW}
   case "$CURN" in ''|*[!0-9]*) CURN="";; esac
@@ -5860,7 +5896,7 @@ SEC_APARS_EOF
           nrow++
           if(NF<13){ nmalformed++; next }
           fileset=$1; installed=$2; type=$3; efixinst=$4
-          unsafever=$6; aparsfield=$7; bulletin=$8; cvssfield=$10; reboot=$11; fixedin=$13
+          unsafever=$6; aparsfield=$7; bulletin=$8; cvssfield=$10; reboot=$11; fixedin=$13; abstract=$5
           if(fileset=="" || aparsfield==""){ nmalformed++; next }
           # apars: ALL non-CVE tokens from the row (not just the first — a prior version
           # kept only aa[1], silently dropping additional ifix/APAR identifiers when a row
@@ -5932,7 +5968,7 @@ SEC_APARS_EOF
               }
               if(matches==1 && cvss!="")cvss_known=1
             }
-            printf "%s\t%d\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%d\t%d\n", clean(cve), (type=="hiper"?1:0), clean(fileset), clean(installed), clean(unsafever), clean(fx), clean(apars), clean(efixinst), clean(bulletin), cvss, rb, cvss_known, map_complete
+            printf "%s\t%d\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%d\t%d\t%s\n", clean(cve), (type=="hiper"?1:0), clean(fileset), clean(installed), clean(unsafever), clean(fx), clean(apars), clean(efixinst), clean(bulletin), cvss, rb, cvss_known, map_complete, clean(abstract)
           }
         }
         END{
@@ -45925,7 +45961,7 @@ if [ "$FORMAT" = "json" ]; then
           return out "]"
         }
         BEGIN{printf "["}
-        NF>=11{ printf "%s{ \"cve\": \"%s\", \"hiper\": %s, \"fileset\": \"%s\", \"installed\": \"%s\", \"vulnerable_range\": \"%s\", \"fixed_at_or_above\": %s, \"apars\": %s, \"ifix\": \"%s\", \"bulletin\": \"%s\", \"cvss\": %s, \"reboot\": \"%s\" }", (n++?", ":""), jescape($1), ($2=="1"?"true":"false"), jescape($3), jescape($4), jescape($5), ($6==""?"null":"\"" jescape($6) "\""), apars_json($7), jescape($8), jescape($9), ($10==""?"null":$10), jescape($11) }
+        NF>=14{ printf "%s{ \"cve\": \"%s\", \"hiper\": %s, \"fileset\": \"%s\", \"installed\": \"%s\", \"vulnerable_range\": \"%s\", \"fixed_at_or_above\": %s, \"apars\": %s, \"ifix\": \"%s\", \"bulletin\": \"%s\", \"cvss\": %s, \"reboot\": \"%s\", \"abstract\": %s }", (n++?", ":""), jescape($1), ($2=="1"?"true":"false"), jescape($3), jescape($4), jescape($5), ($6==""?"null":"\"" jescape($6) "\""), apars_json($7), jescape($8), jescape($9), ($10==""?"null":$10), jescape($11), ($14==""?"null":"\"" jescape($14) "\"") }
         END{printf "]"}')
       EXPSUF=", \"exposures\": $EJ"
     fi

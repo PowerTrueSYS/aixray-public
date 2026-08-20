@@ -12,6 +12,7 @@
     "sshd -T"
   ],
   "tags": [],
+  "blurb": "This control checks that the SSH server is set to verify the ownership and permissions of each user home directory and SSH key files before allowing sign-in. When enabled, the server refuses login for any account whose files are writable by other users. If disabled, someone with access to the server could plant a key in another user account and sign in as that user.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-ssh-strictmodes/ck-ssh-strictmodes.ksh"
 }

@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This check verifies that the legacy uucp service is disabled in /etc/inetd.conf, the file that controls which network services the system listens for. uucp is an obsolete file-transfer and messaging service that sends data without encryption. If it is left enabled, the system listens for connections on a service modern servers rarely need, giving attackers one more clear-text entry point to probe or exploit.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-inetd-uucp/ck-inetd-uucp.ksh"
 }

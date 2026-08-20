@@ -15,6 +15,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks the permissions on personal configuration files (dotfiles such as .profile and .kshrc) kept in home directories. It fails if any of these files can be written by other users or by the group. When that happens, another account can rewrite a startup or login file and use it to take over a session or capture stored credentials.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-home-config-file-perms/ck-home-config-file-perms.ksh"
 }

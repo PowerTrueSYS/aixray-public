@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This check confirms that the /var/spool/cron/atjobs directory, which holds queued one-time scheduled jobs, is owned by the bin system account. If any other account owns this directory, that account could add, alter, or delete scheduled jobs and run commands under root or another user when those jobs execute.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-diracc-atjobs-owner/ck-diracc-atjobs-owner.ksh"
 }

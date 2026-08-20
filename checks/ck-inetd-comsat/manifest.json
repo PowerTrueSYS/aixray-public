@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This check confirms that the legacy comsat mail-notification service is disabled in /etc/inetd.conf. Comsat is an obsolete service that inetd starts to announce incoming mail to logged-in users, and it accepts unauthenticated, unencrypted messages from the network. A failing result means the host exposes an unnecessary, unmaintained remote service that an attacker can reach to spoof notifications on user terminals or probe for a way in.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-inetd-comsat/ck-inetd-comsat.ksh"
 }

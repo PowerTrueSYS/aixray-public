@@ -14,6 +14,7 @@
   "tags": [
     "cis-l2"
   ],
+  "blurb": "This control checks that idle shell sessions on the system are configured to log themselves out automatically. It confirms the /etc/profile startup file sets both TMOUT and TIMEOUT to a value between 1 and 900 seconds and marks them readonly, so a user cannot change or remove the timeout. If these settings are missing or can be edited, a session left open at an unattended terminal stays logged in indefinitely, letting anyone with access to the screen or the machine take over an already-authenticated login.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-shell-timeout-readonly/ck-shell-timeout-readonly.ksh"
 }

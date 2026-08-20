@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This check confirms that the legacy sprayd network service is not enabled in /etc/inetd.conf. When sprayd is active, the system exposes an unauthenticated clear-text service that attackers can abuse to amplify network traffic or use as a foothold for further attacks, which adds avoidable remote attack surface.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-inetd-sprayd/ck-inetd-sprayd.ksh"
 }

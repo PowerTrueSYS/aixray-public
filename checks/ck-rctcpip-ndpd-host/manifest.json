@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This check confirms that the IPv6 Neighbor Discovery daemon, ndpd-host, is set to start at boot by looking for its start entry in the /etc/rc.tcpip startup file. ndpd-host plays the role for IPv6 that ARP plays for IPv4: it finds neighboring devices, keeps the neighbor cache current, and learns about local routers. If the start entry is missing, the daemon does not run after a reboot, and IPv6 traffic can fail because the host cannot reach neighbors or find a route off its own network.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-rctcpip-ndpd-host/ck-rctcpip-ndpd-host.ksh"
 }

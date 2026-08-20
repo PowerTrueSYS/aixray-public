@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks that the SSH client configuration file (/etc/ssh/ssh_config) belongs to the system group. If a different group owns it, members of that group could edit the file to change how SSH connections from the system behave, weakening security or redirecting traffic without needing system-level access.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-fileperm-sshconfig-group/ck-fileperm-sshconfig-group.ksh"
 }

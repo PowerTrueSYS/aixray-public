@@ -13,6 +13,7 @@
     "lsattr -El hdiskN -a hcheck_interval -a hcheck_mode 2>/dev/null"
   ],
   "tags": [],
+  "blurb": "This control checks that each multipath disk actively probes the health of its redundant storage paths, so a failed path is found quickly. When path health checks are disabled or run too slowly, a dead path can go unnoticed until live traffic hits it, causing I/O errors or an outage even though a healthy redundant path was available.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-mpio-hcheck/ck-mpio-hcheck.ksh"
 }

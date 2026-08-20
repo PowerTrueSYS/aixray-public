@@ -12,6 +12,7 @@
     "sysdumpdev -l"
   ],
   "tags": [],
+  "blurb": "This control verifies that the server has a real system dump device configured so that a crash can be captured for later diagnosis. If the primary dump device is unset or disabled, a system panic produces no dump at all, and the cause of the outage must be guessed rather than determined from evidence.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-sysdump/ck-sysdump.ksh"
 }

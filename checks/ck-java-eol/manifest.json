@@ -1,0 +1,21 @@
+{
+  "id": "ck-java-eol",
+  "pillar": "currency",
+  "category": "patch",
+  "finding_ids": [
+    "java_eol"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "lslpp -qcL Java*",
+    "ls /usr/ios/cli/ioscli"
+  ],
+  "tags": [
+    "eol"
+  ],
+  "blurb": "This control checks the version of IBM SDK Java installed on an AIX or VIOS system. IBM no longer ships security fixes for Java 7 and earlier, which reached end of service in 2022. A system still running Java 7 or earlier carries an unpatched runtime that exposes applications to vulnerabilities with no fix available.",
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-java-eol/ck-java-eol.ksh"
+}

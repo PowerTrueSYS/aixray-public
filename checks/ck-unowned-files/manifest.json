@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This check scans local filesystems for files and folders whose owner or group no longer matches any known user or group, often left behind after an account was removed. Those files have no one accountable for them and escape normal access review and cleanup. If the check fails, sensitive files or a planted backdoor can go unmanaged, and a new account that later reuses the same ID number would silently take ownership of them.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-unowned-files/ck-unowned-files.ksh"
 }

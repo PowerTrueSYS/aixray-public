@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This check reads the inetd service configuration to see whether the legacy rquotad daemon is still enabled. rquotad is an outdated, unencrypted network service that reports disk-quota information to remote systems and is rarely needed today. Leaving it enabled gives attackers an extra clear-text service to probe or exploit as a foothold.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-inetd-rquotad/ck-inetd-rquotad.ksh"
 }

@@ -1,0 +1,21 @@
+{
+  "id": "ck-uid0-accounts",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "uid0_accounts"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "awk -F: '$3==0 {print $1}' /etc/passwd"
+  ],
+  "tags": [
+    "cis-l1",
+    "ffiec:II.C.7"
+  ],
+  "blurb": "This control checks that root is the only account with UID 0, the special number that gives an account full control over the machine. If any other account also has UID 0, every one of those accounts can act as the administrator. That means a single compromised password among them lets an attacker take over the whole system.",
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-uid0-accounts/ck-uid0-accounts.ksh"
+}

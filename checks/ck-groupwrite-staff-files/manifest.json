@@ -12,6 +12,7 @@
     "find / \\( -fstype jfs -o -fstype jfs2 \\) -type f -perm -g+w -group staff -ls"
   ],
   "tags": [],
+  "blurb": "This control looks for regular files on JFS and JFS2 file systems that are owned by the staff group and writable by that group. On AIX the staff group includes many ordinary users by default, so any one of them can modify or replace those files. If the check fails, unprivileged users could tamper with or overwrite files the system or its administrators rely on.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-groupwrite-staff-files/ck-groupwrite-staff-files.ksh"
 }

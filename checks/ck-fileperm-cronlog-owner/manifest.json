@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This check confirms the AIX cron log file (/var/adm/cron/log) is owned by the system bin account (UID 2). If another account owns the log, it can rewrite or erase the record of scheduled jobs, so evidence of unauthorized cron activity could be hidden or falsified.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-fileperm-cronlog-owner/ck-fileperm-cronlog-owner.ksh"
 }

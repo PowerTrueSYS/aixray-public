@@ -14,6 +14,7 @@
     "ps -e -o comm"
   ],
   "tags": [],
+  "blurb": "AIX records system performance over time using a background collector such as topasrec, nmon, or njmon. This check confirms that at least one of those collectors is actively running. If none is running, no performance history is being saved, leaving capacity planning and the investigation of past slowdowns or outages to guesswork.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-perf-history/ck-perf-history.ksh"
 }

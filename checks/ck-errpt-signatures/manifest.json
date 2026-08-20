@@ -14,6 +14,7 @@
     "errpt -a -s <cutoff>"
   ],
   "tags": [],
+  "blurb": "This check scans the recent system error log for early warning signs that a hardware component is failing, such as disk errors, SAN or SCSI path faults, power or thermal events, memory errors, lost logical volumes, adapter resets, and dump-device faults. These are the patterns that show a part is wearing out before it fails completely. If they go undetected, a disk, memory module, or storage path can fail without warning and take the system down in an unplanned outage.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-errpt-signatures/ck-errpt-signatures.ksh"
 }

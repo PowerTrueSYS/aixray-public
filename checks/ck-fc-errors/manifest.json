@@ -13,6 +13,7 @@
     "fcstat <adapter>"
   ],
   "tags": [],
+  "blurb": "This check reads the error counters on each Fibre Channel storage adapter, counting CRC errors, link failures, and loss-of-sync events recorded since the last boot. Rising counts point to failing cabling, optics, or a switch port, which can corrupt or stall the storage traffic the server depends on. If it fails, storage access can slow, drop, or go down entirely, and data in transit may be lost.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-fc-errors/ck-fc-errors.ksh"
 }

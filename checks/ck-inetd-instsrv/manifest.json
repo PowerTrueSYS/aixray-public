@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This check verifies that the legacy instsrv network-install service is not enabled in the inetd configuration file. If instsrv is enabled, the host answers unauthenticated, unencrypted install requests from anywhere on the network, giving attackers an extra remote entry point to probe and abuse.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-inetd-instsrv/ck-inetd-instsrv.ksh"
 }

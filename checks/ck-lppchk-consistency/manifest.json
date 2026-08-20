@@ -1,0 +1,20 @@
+{
+  "id": "ck-lppchk-consistency",
+  "pillar": "currency",
+  "category": "patch",
+  "finding_ids": [
+    "lppchk_consistency"
+  ],
+  "captures": [],
+  "requires_root": true,
+  "read_only": true,
+  "commands": [
+    "lslpp -qcL",
+    "lppchk -v",
+    "lppchk -m3 -v"
+  ],
+  "tags": [],
+  "blurb": "This check confirms that an AIX system has a consistent set of installed fileset requisites and dependencies. lppchk -v verifies that every installed fileset has all prerequisites present and matching, corroborated by an independent lppchk -m3 -v escalation and a real lslpp -qcL fileset inventory. A fileset with missing or mismatched prerequisites can block update_all and install_all_updates the same way a BROKEN state does, even when the recorded state of the fileset itself looks fine. The check only runs read-only lppchk and lslpp commands; it never writes anything.",
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-lppchk-consistency/ck-lppchk-consistency.ksh"
+}

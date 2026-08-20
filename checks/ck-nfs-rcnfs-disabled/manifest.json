@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks the rcnfs boot entry that controls whether the NFS file-sharing service starts automatically when the system boots. A machine that does not need to share files should not be running NFS; if this entry is left active, the system boots into a file-sharing service that an attacker can probe and, where its settings are weak, use to reach files on the host. The check fails when the rcnfs entry is present and its action is not set to off, meaning NFS starts at every boot.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-nfs-rcnfs-disabled/ck-nfs-rcnfs-disabled.ksh"
 }

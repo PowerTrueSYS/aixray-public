@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control verifies that the system account file /etc/passwd is owned by root (user ID 0). If any other account owns it, that account could add users, change user IDs, or modify the root entry to gain access or full control of the system.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-fileperm-passwd-owner/ck-fileperm-passwd-owner.ksh"
 }

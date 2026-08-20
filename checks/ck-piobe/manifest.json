@@ -16,6 +16,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This check looks at the running service inventory to see whether the piobe print subsystem is active. piobe is the AIX print job backend and is often left running on servers that never print. Any subsystem left active is more privileged code running, more to patch and monitor, and more attack surface than the business asked for on a machine with no printing role.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-piobe/ck-piobe.ksh"
 }

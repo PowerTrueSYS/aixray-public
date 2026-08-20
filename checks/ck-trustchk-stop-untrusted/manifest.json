@@ -14,6 +14,7 @@
   "tags": [
     "cis-l2"
   ],
+  "blurb": "This control verifies that Trusted Execution is configured to block programs that have not been approved. If these settings are off, the system will run executables that were never validated, so an attacker who places an unapproved program on the server could run it and execute malware or unauthorized code.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-trustchk-stop-untrusted/ck-trustchk-stop-untrusted.ksh"
 }

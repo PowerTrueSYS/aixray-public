@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control verifies that the file /etc/passwd, which defines the accounts on the system, belongs to group 7, the security administration group. If a different group owns it, members of that group could edit the file to add or change accounts and gain unauthorized access to the system.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-fileperm-passwd-group/ck-fileperm-passwd-group.ksh"
 }

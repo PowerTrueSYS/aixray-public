@@ -1,0 +1,18 @@
+{
+  "id": "ck-vmm-tuning",
+  "pillar": "stability",
+  "category": "performance",
+  "finding_ids": [
+    "vmm_tuning"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "vmstat -v"
+  ],
+  "tags": [],
+  "blurb": "Checks that the AIX Virtual Memory Manager file-cache thresholds (minperm, maxperm and maxclient) are at their default values and that the file cache is not pinned at its ceiling. When these thresholds are wrong for the workload, the partition either re-reads the same data from disk repeatedly, or cached files evict the pages running programs need, making the system slower than it should be.",
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-vmm-tuning/ck-vmm-tuning.ksh"
+}

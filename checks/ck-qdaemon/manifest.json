@@ -16,6 +16,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks whether the qdaemon print spooler service is active on the system. qdaemon processes queued print jobs, and running it when printing is not needed leaves an unnecessary service live that adds to the code an attacker can target. If the check fails, that avoidable service exposure is present without a business need to offset it.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-qdaemon/ck-qdaemon.ksh"
 }

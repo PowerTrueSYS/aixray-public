@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This check confirms which group owns the /etc/security directory, the folder where AIX keeps its account, password, and login settings. If a group other than the dedicated security group owns it, members of that group could alter those settings to add privileged users, weaken password rules, or lock administrators out of the system.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-fileperm-etcsecurity-group/ck-fileperm-etcsecurity-group.ksh"
 }

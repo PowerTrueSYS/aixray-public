@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This check verifies that the SNMP daemon log file /var/tmp/snmpd.log grants no more access than mode 0640, so only its owner can write it and only its group can read it. If the permissions are looser, unprivileged users could read the SNMP activity the log records or alter its contents. A log that others can change stops being trustworthy and could hide SNMP activity or mislead an investigation.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-fileperm-snmpdlog-mode/ck-fileperm-snmpdlog-mode.ksh"
 }

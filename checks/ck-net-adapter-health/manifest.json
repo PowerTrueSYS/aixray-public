@@ -1,0 +1,19 @@
+{
+  "id": "ck-net-adapter-health",
+  "pillar": "stability",
+  "category": "performance",
+  "finding_ids": [
+    "net_adapter_health"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "ifconfig -a",
+    "entstat -d <if>"
+  ],
+  "tags": [],
+  "blurb": "Checks every ethernet adapter for down or non-operational links and for transmit, receive, CRC, and buffer-exhaustion error counters. A down link means traffic is already failing or has failed over to another path, and climbing error counts point to a degrading cable, switch port, or virtual network path. Left unchecked, these faults cause silent packet loss, slow transfers, and application outages.",
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-net-adapter-health/ck-net-adapter-health.ksh"
+}

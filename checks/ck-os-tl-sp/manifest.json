@@ -1,0 +1,21 @@
+{
+  "id": "ck-os-tl-sp",
+  "pillar": "currency",
+  "category": "lifecycle",
+  "finding_ids": [
+    "os_tl_sp"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "oslevel -s",
+    "ls /usr/ios/cli/ioscli"
+  ],
+  "tags": [
+    "ffiec:II.C.11"
+  ],
+  "blurb": "This check confirms the AIX (or VIOS) Technology Level is current for its release and still inside its service-pack fix-support window. A box that lags the release latest Technology Level, or whose TL has passed its fix-support end date, is no longer receiving the defect and security fixes IBM publishes for the current TL, so newly disclosed CVEs can remain open. On a VIOS the underlying AIX level is a secondary signal behind the VIOS level.",
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-os-tl-sp/ck-os-tl-sp.ksh"
+}

@@ -1,0 +1,20 @@
+{
+  "id": "ck-host-resolves",
+  "pillar": "operational-readiness",
+  "category": "config",
+  "finding_ids": [
+    "host_resolves"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "hostname",
+    "cat /etc/netsvc.conf",
+    "cat /etc/hosts"
+  ],
+  "tags": [],
+  "blurb": "This check verifies that the system can find its own hostname in its local hosts file. When the system has no valid local entry for its own name, applications and security certificates may misbehave or refuse to work. That leaves the machine with incomplete local host configuration and no reliable way to address itself by name.",
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-host-resolves/ck-host-resolves.ksh"
+}

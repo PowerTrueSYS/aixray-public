@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks the system-wide password policy that sets a minimum length for every new password. It reads that setting for the default account in the file /etc/security/user and expects at least 14 characters. If it fails, users who inherit the default policy can pick very short or empty passwords, which are easy to guess or crack and let an attacker sign in as that user.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-pw-minlen/ck-pw-minlen.ksh"
 }

@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This check looks for the FTP file-transfer service running through inetd on the system. FTP sends login names, passwords, and files across the network in plain text, so a failed check means FTP is active and anyone able to watch that traffic can steal credentials or read the data being transferred.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-inetd-ftpd/ck-inetd-ftpd.ksh"
 }

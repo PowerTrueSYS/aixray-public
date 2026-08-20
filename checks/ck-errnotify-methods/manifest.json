@@ -14,6 +14,7 @@
     "odmget errnotify"
   ],
   "tags": [],
+  "blurb": "This check reads the AIX error-notification database and reports what happens when the system logs a hardware or disk error. It distinguishes alerts that page or email an on-call responder from errors that only reach the built-in call-home path or that go nowhere. If no alert method is configured, a failing disk or other critical error is logged but never reaches a person, so a serious problem can go unnoticed until it causes an outage.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-errnotify-methods/ck-errnotify-methods.ksh"
 }

@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks the root account to confirm that no one can sign into it directly from the console or over the network, and that switching to root with the su command is not left open to every user group. If it fails, the root password can be used to enter the system with no record of which person did so, or any ordinary account can attempt to become root, opening a wider route to full control of the machine.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-login-root-su-restrict/ck-login-root-su-restrict.ksh"
 }

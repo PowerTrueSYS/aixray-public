@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This check scans the /etc/passwd account file for entries that share the same user ID number or the same login name. When two logins share a user ID, the system treats them as the same account, so one can access the files and privileges of the other and no one can tell which login took an action. A duplicate login name can also let the wrong account be authorized or audited.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-account-uid-duplicate/ck-account-uid-duplicate.ksh"
 }

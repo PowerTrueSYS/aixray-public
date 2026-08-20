@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks the permissions on /var/ct/RMstart.log, the startup log for AIX resource monitoring, and requires that only its owning account can write to it, with read access limited to the owner and the owner group. If the permissions are looser, an unauthorized local user could alter or erase the log to hide or falsify monitoring records, or read information they should not see.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-fileperm-rmstartlog-mode/ck-fileperm-rmstartlog-mode.ksh"
 }

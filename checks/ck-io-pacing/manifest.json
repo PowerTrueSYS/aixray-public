@@ -1,0 +1,18 @@
+{
+  "id": "ck-io-pacing",
+  "pillar": "stability",
+  "category": "performance",
+  "finding_ids": [
+    "io_pacing"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "lsattr -El sys0"
+  ],
+  "tags": [],
+  "blurb": "Checks whether AIX system-wide I/O pacing is enabled on sys0. I/O pacing caps how much pending write data any single file can queue, so one large write cannot monopolize a disk. If pacing is off, a backup or large copy can fill the disk write queue and make the whole box feel frozen for interactive users.",
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-io-pacing/ck-io-pacing.ksh"
+}

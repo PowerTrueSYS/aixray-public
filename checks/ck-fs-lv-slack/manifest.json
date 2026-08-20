@@ -14,6 +14,7 @@
   "tags": [
     "ffiec:II.C.11"
   ],
+  "blurb": "This check compares each JFS/JFS2 filesystem with the logical volume that holds it and flags filesystems that do not fill their allocated volume. When a filesystem stops short of its logical volume, the leftover space is reserved but unusable, so a filesystem can run out of space and stop applications even though capacity was already allocated to it.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-fs-lv-slack/ck-fs-lv-slack.ksh"
 }

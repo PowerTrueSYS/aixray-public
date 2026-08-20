@@ -12,6 +12,7 @@
     "errpt -d H -T PERM -s <cutoff>"
   ],
   "tags": [],
+  "blurb": "This control reviews the system hardware error log for permanent failures recorded over the last 30 days. A permanent hardware error means a component such as memory, a disk, or a processor has already begun to fail and will not recover on its own. If these signs go unmonitored, the failing part can take the system down or corrupt data without warning.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-errpt-hw/ck-errpt-hw.ksh"
 }

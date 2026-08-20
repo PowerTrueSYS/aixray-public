@@ -1,0 +1,21 @@
+{
+  "id": "ck-audit-active",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "audit_active"
+  ],
+  "captures": [],
+  "requires_root": true,
+  "read_only": true,
+  "commands": [
+    "audit query"
+  ],
+  "tags": [
+    "cis-l1",
+    "ffiec:II.C.22"
+  ],
+  "blurb": "This check verifies that the AIX audit subsystem is running. The audit subsystem keeps a record of user and account activity. If auditing is off, an incident leaves no trail and you cannot reconstruct who did what afterward.",
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-audit-active/ck-audit-active.ksh"
+}

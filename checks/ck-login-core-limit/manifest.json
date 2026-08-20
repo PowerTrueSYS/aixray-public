@@ -15,6 +15,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control confirms the system is configured not to write core dump files when a program crashes, by checking that the default core file size limits in /etc/security/limits are set to zero and that fullcore is off. A core dump is a copy of the memory of a crashed program, which can contain passwords, encryption keys, and other sensitive data. If these dumps are enabled, anyone with access to the system could read the files and recover that information.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-login-core-limit/ck-login-core-limit.ksh"
 }

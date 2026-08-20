@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks the SSH server setting PermitUserEnvironment, which decides whether users may bring their own environment variables into a login session. When enabled, a user can supply environment values that the server then applies to programs run in that session. A compromised account could use these values to bypass restrictions in environment-sensitive programs, gaining access or actions the system should not allow.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-ssh-permituserenv/ck-ssh-permituserenv.ksh"
 }

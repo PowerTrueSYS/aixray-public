@@ -22,6 +22,7 @@
     "lspv -M <pv>"
   ],
   "tags": [],
+  "blurb": "This control checks the health of the AIX boot disk: that the boot logical volume hd5 is large enough to hold a rebuilt boot image, that its partitions sit in one contiguous run, and that the volume group mirror copies are in sync with no disks missing. If it fails, the next operating-system update can try to rebuild the boot image into a volume too small or too fragmented to hold it, leaving the server unable to start, or a disk failure can go unnoticed because a mirror copy is already out of date.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-hd5-sizing/ck-hd5-sizing.ksh"
 }

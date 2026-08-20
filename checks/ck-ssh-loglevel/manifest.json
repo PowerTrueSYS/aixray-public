@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks the logging level of SSH, the service that allows remote login to the system. SSH must be set to INFO or VERBOSE so that login attempts and authentication failures are written to the security log. If the level is set too low, break-in attempts go unrecorded and an attacker leaves no trace; if it is set to DEBUG, the logs can fill with sensitive detail about accounts and sessions that should not be exposed.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-ssh-loglevel/ck-ssh-loglevel.ksh"
 }

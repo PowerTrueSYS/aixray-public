@@ -15,6 +15,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "The dt Xconfig file controls how the CDE graphical login screen behaves, including the programs it runs at login. This control checks that the file is owned by root and cannot be written by ordinary users. If a regular user could edit it, they could make the login program run commands with root privileges and take control of the system.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-cde-xconfig-access/ck-cde-xconfig-access.ksh"
 }

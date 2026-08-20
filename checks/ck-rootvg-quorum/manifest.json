@@ -1,0 +1,20 @@
+{
+  "id": "ck-rootvg-quorum",
+  "pillar": "backup",
+  "category": "resilience",
+  "finding_ids": [
+    "rootvg_quorum"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "lsvg -p rootvg",
+    "lsvg -l rootvg",
+    "lsvg rootvg"
+  ],
+  "tags": [],
+  "blurb": "This check confirms whether quorum is enabled on a fully-mirrored rootvg. On a 2-disk mirror, QUORUM=2 can keep the surviving disk from varying on at boot after a disk failure, so most shops disable it (chvg -Qn rootvg). Reports PASS when quorum is disabled, WARN when it is enabled, and NOT_APPLICABLE when rootvg is not a full mirror.",
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-rootvg-quorum/ck-rootvg-quorum.ksh"
+}

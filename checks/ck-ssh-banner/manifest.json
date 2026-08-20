@@ -15,6 +15,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks that the SSH service is set to display a warning message before anyone can log in, and that the message file actually exists. If no banner is shown, people connecting over SSH get no advance notice that the system is monitored and restricted to authorized use, which removes a simple deterrent and weakens the legal footing for holding an intruder accountable.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-ssh-banner/ck-ssh-banner.ksh"
 }

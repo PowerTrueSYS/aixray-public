@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks that the inetd configuration file is owned by group 0, the AIX system group. inetd is the service that listens on network ports and starts the right program when a connection arrives. If another group owns this file, any user in that group could alter which programs the network launches, opening the system to unauthorized access.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-fileperm-inetd-group/ck-fileperm-inetd-group.ksh"
 }

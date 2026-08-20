@@ -1,0 +1,18 @@
+{
+  "id": "ck-vscsi-maps",
+  "pillar": "resiliency",
+  "category": "storage",
+  "finding_ids": [
+    "vscsi_maps"
+  ],
+  "captures": [],
+  "requires_root": true,
+  "read_only": true,
+  "commands": [
+    "ioscli lsmap -all"
+  ],
+  "tags": [],
+  "blurb": "This check verifies that every virtual SCSI host adapter (vhost) on a VIOS has a live backing device, so the client LPARs mapped to them are actually being served their vSCSI disks. A vhost with no virtual target device, or a target left 'Status Defined' (offline), means a client's disk is not being served \u2014 usually left behind by a rebuild or a failed backing hdisk.",
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-vscsi-maps/ck-vscsi-maps.ksh"
+}

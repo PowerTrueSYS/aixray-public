@@ -14,6 +14,7 @@
   "tags": [
     "stig:V-245568"
   ],
+  "blurb": "This control checks the permissions on the directory that holds at-jobs, the commands scheduled to run later, and confirms that ordinary users cannot read, write, or browse inside it. Jobs in that directory run with the privileges of whoever submitted them. If the directory were left open to everyone, any local user could read or alter a pending job so that it runs with the privileges of someone else, effectively taking over that account.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-fileperm-atjobs-mode/ck-fileperm-atjobs-mode.ksh"
 }

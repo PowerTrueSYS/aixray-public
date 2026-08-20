@@ -16,6 +16,7 @@
     "cis-l1",
     "ffiec:II.C.15"
   ],
+  "blurb": "This control checks that the AIX default password policy prevents users from reusing recent passwords. It reads the password history setting in the /etc/security/user file, which must keep the last 20 to 50 passwords out of reuse. If that history is missing, too small, or switched off, a user can cycle back to a password that was already exposed, so forced password changes give no real protection.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-pw-histsize/ck-pw-histsize.ksh"
 }

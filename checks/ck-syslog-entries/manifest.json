@@ -15,6 +15,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This check confirms that the syslog configuration has at least one active logging rule and that the log files it is expected to write to exist on disk. If it fails, the system may not be recording events at all. An attacker could then act without leaving a trace of failed logins or other suspicious activity, and operators would have no log trail to investigate a breach or diagnose an outage.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-syslog-entries/ck-syslog-entries.ksh"
 }

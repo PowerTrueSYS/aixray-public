@@ -1,0 +1,22 @@
+{
+  "id": "ck-sec-apars",
+  "pillar": "currency",
+  "category": "patch",
+  "finding_ids": [
+    "sec_apars"
+  ],
+  "captures": [],
+  "requires_root": true,
+  "read_only": true,
+  "commands": [
+    "oslevel -s",
+    "emgr -lv3",
+    "instfix -ik <APAR>"
+  ],
+  "tags": [
+    "ffiec:II.C.10"
+  ],
+  "blurb": "This check confirms that the tracked security APARs for the technology level are installed, credited either to a Service Pack (instfix -ik) or to an installed interim fix (emgr -lv3). A tracked APAR missing from both means the box is still exposed to a published, fixed vulnerability (CVE-2025-36250, NIM nimesis remote command execution) whose fix is available but not applied.",
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-sec-apars/ck-sec-apars.ksh"
+}

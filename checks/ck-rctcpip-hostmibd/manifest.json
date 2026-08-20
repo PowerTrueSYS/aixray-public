@@ -18,6 +18,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks whether the hostmibd service is enabled at boot or running now. hostmibd is a helper that answers SNMP queries about the hardware and software of the machine, and most systems never use it. When it is left on unnecessarily, it is an extra network service an attacker could query for details about the host or probe for weaknesses.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-rctcpip-hostmibd/ck-rctcpip-hostmibd.ksh"
 }

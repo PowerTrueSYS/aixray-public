@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks that the file /var/adm/cron/log belongs to the cron group, numeric group ID 8. That file holds the record of jobs the system runs automatically on a schedule. If a different group owns it, an unintended identity could read or alter that log, hiding or tampering with the record of scheduled activity.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-fileperm-cronlog-group/ck-fileperm-cronlog-group.ksh"
 }

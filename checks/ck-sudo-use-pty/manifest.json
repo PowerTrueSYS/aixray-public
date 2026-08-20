@@ -15,6 +15,7 @@
   "tags": [
     "cis-l2"
   ],
+  "blurb": "This check verifies that sudo is configured with the use_pty option, which makes every command run through sudo execute inside its own separate terminal. When that option is missing or explicitly disabled, a program run through sudo shares the terminal of the user who launched it and can inject keystrokes into that session, allowing a compromised program to take over an administrator session.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-sudo-use-pty/ck-sudo-use-pty.ksh"
 }

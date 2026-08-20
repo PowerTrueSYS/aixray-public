@@ -1,0 +1,18 @@
+{
+  "id": "ck-ifixes",
+  "pillar": "currency",
+  "category": "patch",
+  "finding_ids": [
+    "ifixes"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "emgr -l"
+  ],
+  "tags": [],
+  "blurb": "This check reports whether the system has any interim fixes installed. Interim fixes are temporary patches shipped ahead of a formal operating system update. An interim fix left in place can block the next operating system update from installing cleanly.",
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-ifixes/ck-ifixes.ksh"
+}

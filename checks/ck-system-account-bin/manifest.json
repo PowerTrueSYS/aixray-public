@@ -16,6 +16,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This check confirms the built-in bin account cannot be used to sign in to the system. It passes when the account is absent or locked, with local login, remote login, and command-shell access all turned off. If the account stays open, bin owns many trusted system programs, so an attacker who logs in as bin gains an interactive shell and a direct way to alter those files.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-system-account-bin/ck-system-account-bin.ksh"
 }

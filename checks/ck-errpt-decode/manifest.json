@@ -12,6 +12,7 @@
     "errpt -a -s <cutoff>"
   ],
   "tags": [],
+  "blurb": "This control reads the last seven days of the AIX error log and decodes the error labels against a table of known-critical hardware and storage labels. It flags any disk or logical-volume subsystem that is failing repeatedly or permanently. If it fails, a degrading disk or storage component keeps logging errors until it fails outright, turning a repairable fault into an unplanned outage.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-errpt-decode/ck-errpt-decode.ksh"
 }

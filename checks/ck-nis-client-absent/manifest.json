@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control confirms that the Network Information Service (NIS) client software is not installed on the system. NIS is a legacy directory service that shares account and password information across the network with little protection, so a system running the NIS client can have its login credentials exposed or be made to trust a malicious NIS server that an attacker controls.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-nis-client-absent/ck-nis-client-absent.ksh"
 }

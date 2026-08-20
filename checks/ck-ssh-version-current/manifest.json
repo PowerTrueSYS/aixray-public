@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks the version of the SSH server installed on the system and confirms it is OpenSSH major version 9 or newer. Older SSH releases no longer receive current security fixes. A system still running one can be reached by attackers who exploit known weaknesses in that old software to break in or take over the machine.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-ssh-version-current/ck-ssh-version-current.ksh"
 }

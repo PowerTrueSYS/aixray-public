@@ -15,6 +15,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "Every normal user account on the system has a home directory that should be owned by the account itself or by the root administrator. This control confirms that each active non-system account has a home directory that exists and is owned by the right account. If a home directory is missing or owned by someone else, that other user could plant or alter the login files and keys inside it and take over the account.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-account-home-owner/ck-account-home-owner.ksh"
 }

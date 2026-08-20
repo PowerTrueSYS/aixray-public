@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control verifies that the SNMP service log at /var/tmp/snmpd.log is owned by the root account. The SNMP daemon records its activity in this file, so its contents are relied on as a trustworthy record of what the service did. If another account owns the file, that account can rewrite, erase, or replace the log, letting an attacker hide or falsify SNMP activity and corrupt the record administrators depend on.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-fileperm-snmpdlog-owner/ck-fileperm-snmpdlog-owner.ksh"
 }

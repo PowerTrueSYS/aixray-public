@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks that the /audit directory, where the system keeps its audit records, is owned by the root account. If any other account owns that directory, it could alter or erase the audit records, letting someone hide evidence of unauthorized activity.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-diracc-audit-owner/ck-diracc-audit-owner.ksh"
 }

@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This check confirms that the system password policy requires every new password to contain at least one upper-case letter, using the minupperalpha setting in the default user profile. If that requirement is absent or set to zero, new passwords may contain no upper-case letters at all, making them easier for an attacker to guess or crack.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-pw-minupperalpha/ck-pw-minupperalpha.ksh"
 }

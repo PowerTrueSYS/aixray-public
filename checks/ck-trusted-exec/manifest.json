@@ -1,0 +1,20 @@
+{
+  "id": "ck-trusted-exec",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "trusted_exec"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "trustchk -p TE"
+  ],
+  "tags": [
+    "cis-l2"
+  ],
+  "blurb": "Trusted Execution (TE) makes AIX check the integrity of every program before it runs, so a tampered or malicious binary is refused. When TE is off, the kernel runs any executable without that check, and an attacker who can place a modified binary can run it without detection.",
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-trusted-exec/ck-trusted-exec.ksh"
+}

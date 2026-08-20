@@ -18,6 +18,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control verifies that the legacy r-command filesets bos.net.tcp.rcmd and bos.net.tcp.rcmd_server are either not installed or have every owned file stripped of all read, write, and execute permissions. These r-command tools let one host run commands and copy files on another using host-based trust instead of a user password, and they send all traffic in clear text. If the filesets remain installed and usable, anyone who can reach the network could run commands or copy files on remote systems without credentials, and passwords or data in transit could be captured.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-remote-rcmd-filesets/ck-remote-rcmd-filesets.ksh"
 }

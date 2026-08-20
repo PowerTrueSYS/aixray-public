@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks whether the legacy Common Desktop Environment (CDE) is installed on the server. CDE includes background network services and privileged helper programs that have a long history of exploitable security flaws. If the check fails, that legacy desktop software is present and leaves extra attack surface that an attacker could target, even though no workload on the system needs it.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-cde-installed/ck-cde-installed.ksh"
 }

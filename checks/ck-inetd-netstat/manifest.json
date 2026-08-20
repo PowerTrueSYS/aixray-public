@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks whether the legacy netstat network service is enabled in the inetd configuration file /etc/inetd.conf. If it is running, the system answers unauthenticated requests from the network with clear-text status information, revealing active connections and adding a remote service an attacker can probe or use as a foothold.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-inetd-netstat/ck-inetd-netstat.ksh"
 }

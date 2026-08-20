@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This check confirms that the group database file /etc/group is owned by the root account. If any other account owns this file, that account can rewrite group memberships and add itself to privileged groups, gaining access that is normally restricted.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-fileperm-group-owner/ck-fileperm-group-owner.ksh"
 }

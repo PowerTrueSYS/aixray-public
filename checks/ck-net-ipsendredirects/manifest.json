@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This check verifies that the AIX network option ipsendredirects is turned off so the system does not send ICMP redirect messages that tell other hosts to change their route. Redirect messages should come only from routers; a regular host that emits them leaks its view of the network and can be used to steer traffic toward a machine an attacker controls, allowing traffic to be redirected or intercepted.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-net-ipsendredirects/ck-net-ipsendredirects.ksh"
 }

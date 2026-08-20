@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks that the SSH server configuration file /etc/ssh/sshd_config belongs to the system group, the group with ID 0 on AIX. That file controls how users connect to the system remotely and how they prove their identity. If any other group owns it, members of that group could rewrite the file to weaken login checks or grant themselves access.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-fileperm-sshdconfig-group/ck-fileperm-sshdconfig-group.ksh"
 }

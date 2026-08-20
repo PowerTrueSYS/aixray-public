@@ -12,6 +12,7 @@
     "lssec -f /etc/security/login.cfg -s default -a logininterval"
   ],
   "tags": [],
+  "blurb": "This control verifies that AIX counts repeated failed login attempts at a terminal or the system console within a set number of seconds, so the port can be locked after enough failures. If that counting window is missing, zero, or too long, someone at a console or serial terminal can keep guessing passwords without being locked out.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-login-logininterval/ck-login-logininterval.ksh"
 }

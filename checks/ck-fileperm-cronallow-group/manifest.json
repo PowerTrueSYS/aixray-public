@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks that the group owner of the /var/adm/cron/cron.allow file is the sys group. That file is the list of users allowed to schedule jobs through cron, so it should stay under system control. If a different group owns the file, members of that group could modify it to grant themselves or others the ability to run scheduled jobs they are not authorized to run.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-fileperm-cronallow-group/ck-fileperm-cronallow-group.ksh"
 }

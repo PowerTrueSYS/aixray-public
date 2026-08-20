@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This check verifies that the legacy time service is not enabled in the /etc/inetd.conf configuration file. The time service is an outdated clear-text network service with no modern need. If it is left enabled, it opens an extra port for an attacker to probe and can be abused as a reflection source for denial-of-service traffic.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-inetd-time/ck-inetd-time.ksh"
 }

@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks the permissions on the /etc/motd file, the message shown to users when they log in. If anyone other than the file owner can write to this file, they could replace that message with a fake or misleading notice that every user sees at login.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-fileperm-motd-write/ck-fileperm-motd-write.ksh"
 }

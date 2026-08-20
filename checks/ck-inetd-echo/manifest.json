@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks whether the legacy echo service is active in the file /etc/inetd.conf. The echo service is an old clear-text utility that simply echoes back whatever data it receives and has no modern business purpose. If it is left enabled, an attacker can bounce and amplify traffic against other systems through it, and it gives outsiders one more unneeded way to reach the server.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-inetd-echo/ck-inetd-echo.ksh"
 }

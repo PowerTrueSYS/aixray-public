@@ -8,7 +8,6 @@
   "captures": [],
   "requires_root": true,
   "read_only": true,
-  "blast_radius": "moderate",
   "commands": [
     "lslpp -L openssh.base.server",
     "sshd -T"
@@ -16,6 +15,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks that the SSH service is configured with an allow list or deny list of users or groups (AllowUsers, AllowGroups, DenyUsers, or DenyGroups). When none of these is set, the server accepts remote login attempts for every account that has a working password or key, so a single weak or leaked credential opens a way in.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-ssh-access-lists/ck-ssh-access-lists.ksh"
 }

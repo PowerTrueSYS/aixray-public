@@ -12,6 +12,7 @@
     "sshd -T"
   ],
   "tags": [],
+  "blurb": "This control checks the LoginGraceTime setting on the SSH server, which is the number of seconds an unauthenticated connection may stay open while a user completes login. It passes only when that window is between 1 and 60 seconds. If the window is disabled or too long, an attacker can hold many half-open connections to exhaust the server and block legitimate users from logging in.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-ssh-logingracetime/ck-ssh-logingracetime.ksh"
 }

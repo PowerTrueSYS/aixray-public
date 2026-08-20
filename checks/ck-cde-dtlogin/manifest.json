@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This check reports whether the CDE graphical login service (dtlogin) is set to start automatically at boot through its entry in /etc/inittab. If that entry is present, a server that does not need a desktop login is still running an extra login service that listens for graphical logins, enlarging the surface an attacker can probe and attack.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-cde-dtlogin/ck-cde-dtlogin.ksh"
 }

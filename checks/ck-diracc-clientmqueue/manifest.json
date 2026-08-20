@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks the permissions and ownership of /var/spool/clientmqueue, the directory where locally submitted outbound mail waits to be sent. Only the mail service is supposed to access the directory. If it is left open to other accounts, a local user could read messages waiting in the outbound queue or tamper with them before delivery.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-diracc-clientmqueue/ck-diracc-clientmqueue.ksh"
 }

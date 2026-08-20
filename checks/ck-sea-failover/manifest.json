@@ -1,0 +1,21 @@
+{
+  "id": "ck-sea-failover",
+  "pillar": "backup",
+  "category": "resilience",
+  "finding_ids": [
+    "sea_failover"
+  ],
+  "captures": [],
+  "requires_root": true,
+  "read_only": true,
+  "commands": [
+    "ioscli cluster -status",
+    "ioscli lsdev -type sea",
+    "ioscli lsdev -dev <sea> -attr",
+    "entstat -d <sea>"
+  ],
+  "tags": [],
+  "blurb": "This check verifies that every Shared Ethernet Adapter on a VIOS is configured to fail over to its partner VIOS: ha_mode is auto or standby, a control channel (or a CAA cluster) is in place to arbitrate the primary/backup roles, and each side has a priority. Without that, one VIOS is a single point of failure for every client LPAR bridged through its SEA \u2014 when it goes down, the network goes down with it.",
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-sea-failover/ck-sea-failover.ksh"
+}

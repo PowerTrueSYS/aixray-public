@@ -1,0 +1,22 @@
+{
+  "id": "ck-ssh-rootlogin",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "ssh_rootlogin"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "sshd -T"
+  ],
+  "tags": [
+    "stig:V-215287",
+    "cis-l1",
+    "ffiec:II.C.7"
+  ],
+  "blurb": "This check verifies that direct root login over SSH is disabled on the system. If it is left enabled, the shared root password becomes the single secret an attacker needs for full control, and actions taken as root leave no record of who performed them.",
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-ssh-rootlogin/ck-ssh-rootlogin.ksh"
+}

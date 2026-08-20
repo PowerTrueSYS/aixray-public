@@ -13,6 +13,7 @@
     "lsdev -Cc disk -F name:status:description"
   ],
   "tags": [],
+  "blurb": "This check verifies that disks expected to have redundant paths to their storage actually have more than one working path, so a single cable or adapter failure cannot cut a disk off from its data. It flags a disk that has a failed or disabled path, or that is down to a single working path. If that last path then fails, the disk becomes unavailable and the applications or databases on it stop until a path is restored.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-mpio-paths/ck-mpio-paths.ksh"
 }

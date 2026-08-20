@@ -14,6 +14,7 @@
   "tags": [
     "stig:V-245569"
   ],
+  "blurb": "This control checks that /var/spool/cron/crontabs, the directory holding scheduled cron jobs, is group-owned by the cron group. That ownership limits who can write to the directory, since anyone able to write there can create, change, or delete jobs that later run automatically, including as the root user. If the wrong group owns this directory, its members could plant a job that runs with full privileges and gives an attacker a lasting foothold.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-fileperm-crontabs-group/ck-fileperm-crontabs-group.ksh"
 }

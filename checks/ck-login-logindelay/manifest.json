@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This check reads the logindelay setting in /etc/security/login.cfg, which sets how many seconds the system waits after a failed login before allowing another attempt, growing with each failure. The setting must be at least 10 seconds. If it is missing or set lower, the system does not slow down repeated password guessing, and an attacker can hammer the login prompt at full speed until a password is guessed.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-login-logindelay/ck-login-logindelay.ksh"
 }

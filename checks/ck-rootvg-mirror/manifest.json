@@ -1,0 +1,19 @@
+{
+  "id": "ck-rootvg-mirror",
+  "pillar": "backup",
+  "category": "resilience",
+  "finding_ids": [
+    "rootvg_mirror"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "lsvg -p rootvg",
+    "lsvg -l rootvg"
+  ],
+  "tags": [],
+  "blurb": "rootvg is the volume group that holds the AIX operating system. Mirroring it keeps a second copy of every operating-system file on another disk, so the server keeps running if one disk fails. A rootvg that is unmirrored, partially mirrored, or running with a stale or missing mirror copy is a single disk failure away from a full outage.",
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-rootvg-mirror/ck-rootvg-mirror.ksh"
+}

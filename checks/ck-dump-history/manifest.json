@@ -12,6 +12,7 @@
     "sysdumpdev -L"
   ],
   "tags": [],
+  "blurb": "This control checks the record of past crash dumps to see whether the most recent one completed. When a server crashes, AIX writes a memory dump that support staff use to find out why it went down. If the last dump started but did not finish, the next crash will likely produce no usable dump either, leaving the cause of the outage unexplained.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-dump-history/ck-dump-history.ksh"
 }

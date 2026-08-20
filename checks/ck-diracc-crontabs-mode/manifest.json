@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks the permissions on /var/spool/cron/crontabs, the directory that holds scheduled jobs for the system. The directory must grant access only to its owner and the cron group, with nothing for any other user. If others could reach it, they could read, change, or plant scheduled jobs, and those jobs run under the accounts that own them, potentially giving an attacker elevated control or disrupting important work.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-diracc-crontabs-mode/ck-diracc-crontabs-mode.ksh"
 }

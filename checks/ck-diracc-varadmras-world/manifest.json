@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks that the entries in /var/adm/ras, the AIX directory that holds system error reports and diagnostic logs, are not readable or writable by ordinary users. That directory is where the machine records hardware and software faults and other runtime events. If any entry is left open to world read or write, an attacker could read log detail or alter the records used to detect and investigate incidents, making an intrusion harder to prove.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-diracc-varadmras-world/ck-diracc-varadmras-world.ksh"
 }

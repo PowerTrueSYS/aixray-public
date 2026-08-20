@@ -15,6 +15,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks the Common Desktop Environment (CDE) screensaver lock timing on AIX systems. It verifies that an unattended desktop session blanks and locks itself within ten minutes or less, as set by the saverTimeout and lockTimeout settings in the CDE session configuration. If those settings are missing or set too high, a logged-in desktop left unattended stays unlocked, letting anyone with physical access to the console use the session and everything the signed-in user can reach.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-cde-screensaver/ck-cde-screensaver.ksh"
 }

@@ -1,0 +1,20 @@
+{
+  "id": "ck-pbuf-psbuf-blocking",
+  "pillar": "stability",
+  "category": "performance",
+  "finding_ids": [
+    "pbuf_psbuf_blocking"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "vmstat -v"
+  ],
+  "tags": [
+    "performance"
+  ],
+  "blurb": "This check looks at the running system for signs that the memory buffers AIX uses to move data to disk and paging space have run out since the last boot. When those buffers run dry, disk I/O and paging stall, which can slow every process on the box. A healthy box has never hit these limits; a box that has hit them was under real memory pressure.",
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-pbuf-psbuf-blocking/ck-pbuf-psbuf-blocking.ksh"
+}

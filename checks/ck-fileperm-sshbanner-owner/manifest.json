@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "Secure Shell can display a login banner to anyone connecting to the system, and that text is stored in the file /etc/ssh/ssh_banner. This control checks that the banner file is owned by the root account. If a different account owns it, that account can change the banner text, so the message shown to users is no longer under administrator control and could be altered to mislead people or hide unauthorized tampering.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-fileperm-sshbanner-owner/ck-fileperm-sshbanner-owner.ksh"
 }

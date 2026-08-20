@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This check verifies that the log file /var/tmp/hostmibd.log is owned by root, the privileged account on the system. The file is written by hostmibd, the AIX system monitoring daemon, so if any other account owns it, that account can alter or replace the log to hide activity or insert false entries and the file can no longer be trusted as a record of system events.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-fileperm-hostmibdlog-owner/ck-fileperm-hostmibdlog-owner.ksh"
 }

@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks the permissions on the /etc/security directory, where AIX keeps trusted security settings such as user and group definitions and login policy. The directory must give full access only to root, read and search access to the security group, and no access at all to anyone else, and it must keep the setgid flag that carries the security group onto new files. If the permissions are looser, an ordinary user could read or alter this configuration and weaken or bypass system access controls.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-fileperm-etcsecurity-mode/ck-fileperm-etcsecurity-mode.ksh"
 }

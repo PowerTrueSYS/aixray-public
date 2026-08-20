@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This check confirms that the legacy remote shell service is disabled in the inetd configuration. That service lets a remote computer run commands on the server using weak host-based trust and no encryption. If it is left enabled, an attacker can run commands on the server without a proper login, and anything it sends can be read by others on the network.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-inetd-shell/ck-inetd-shell.ksh"
 }

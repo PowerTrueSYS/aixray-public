@@ -15,6 +15,7 @@
     "cis-l1",
     "ffiec:II.C.15"
   ],
+  "blurb": "This control checks the minother setting in the AIX default password rules, which requires each password to contain a minimum number of non-alphabetic characters such as digits or symbols. It passes when that minimum is between three and eight. If the setting is missing, too low, or outside the valid range, passwords may be made up almost entirely of letters, which attackers can guess or crack much faster.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-pw-minother/ck-pw-minother.ksh"
 }

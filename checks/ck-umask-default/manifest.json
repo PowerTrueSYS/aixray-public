@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks the default umask value in /etc/security/user, the AIX file that holds user settings. That value controls the permissions automatically given to every new file and directory a user creates. If it is missing or too permissive, new files and directories can be created readable or writable by other users on the system, exposing data or letting others change it.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-umask-default/ck-umask-default.ksh"
 }

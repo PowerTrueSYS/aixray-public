@@ -15,6 +15,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This check inspects the PATH line in the file /etc/environment and flags any entry that is a bare dot, an empty slot, or a single relative character. Such entries let an attacker place a look-alike program in a directory that is searched ahead of trusted system commands, so a routine command can silently run the planted program instead.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-login-path-integrity/ck-login-path-integrity.ksh"
 }

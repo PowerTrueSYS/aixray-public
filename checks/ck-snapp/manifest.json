@@ -16,6 +16,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks whether the AIX network analysis package bos.net.snapp is installed on the server. It is a specialized diagnostic tool that most production systems do not need. If it is present, anyone who gains access to the server has a ready-made way to observe network traffic, and the system carries an extra rarely used package that adds attack surface.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-snapp/ck-snapp.ksh"
 }

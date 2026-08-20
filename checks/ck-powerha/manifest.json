@@ -1,0 +1,19 @@
+{
+  "id": "ck-powerha",
+  "pillar": "backup",
+  "category": "resilience",
+  "finding_ids": [
+    "powerha"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "lslpp -L cluster.es.server.rte",
+    "lssrc -ls clstrmgrES"
+  ],
+  "tags": [],
+  "blurb": "This check reports the state of the PowerHA (HACMP) high-availability cluster on an AIX system, but only when the PowerHA cluster filesets are actually installed. A cluster that is not in the ST_STABLE state cannot fail over, so the standby node that is supposed to take over when a node dies will not, and the outage the cluster exists to prevent is exactly what happens.",
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-powerha/ck-powerha.ksh"
+}

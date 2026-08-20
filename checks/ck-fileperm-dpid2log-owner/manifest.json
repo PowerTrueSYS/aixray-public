@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks that the log file /var/tmp/dpid2.log is owned by root, the system administrator account (UID 0). If any other account owns the file, that account can rewrite, replace, or delete it, and so could hide or alter the records the service has written that operations and incident review depend on.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-fileperm-dpid2log-owner/ck-fileperm-dpid2log-owner.ksh"
 }

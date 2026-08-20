@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks that the AIX login prompt closes within 30 seconds if no one finishes typing a password, by reading the logintimeout setting in /etc/security/login.cfg. If the prompt stays open longer, an abandoned login prompt remains live at a terminal, giving someone who walks up more time to attempt a password and leaving the login process tied up.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-login-logintimeout/ck-login-logintimeout.ksh"
 }

@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This check verifies that the legacy rstatd service is not enabled in the /etc/inetd.conf network services file. rstatd is an outdated clear-text service that lets remote machines read the uptime and load statistics of a host over the network. If it is left active, anyone who can reach the server can gather those details, and the old service can be abused as a foothold or to amplify attacks against other systems.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-inetd-rstatd/ck-inetd-rstatd.ksh"
 }

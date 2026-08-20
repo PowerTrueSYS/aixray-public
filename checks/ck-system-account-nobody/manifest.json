@@ -16,6 +16,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "The nobody account is a well-known, built-in account that ships with AIX and is meant to have no way to log in. This control checks that the account is either not present or fully locked down with every login path disabled. If it still allows a login, an attacker can sign in as nobody and use that known account as a foothold to run commands and work toward higher access.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-system-account-nobody/ck-system-account-nobody.ksh"
 }

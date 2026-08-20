@@ -1,0 +1,21 @@
+{
+  "id": "ck-account-hygiene",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "account_hygiene"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "lsuser -a account_locked maxage ALL"
+  ],
+  "tags": [
+    "cis-l1",
+    "ffiec:II.C.7"
+  ],
+  "blurb": "Checks whether any non-system account has password aging turned off, which lets its password last forever. A password that never expires stays usable long after the person who set it has left, and it gives attackers a standing way into the system that nobody is watching.",
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-account-hygiene/ck-account-hygiene.ksh"
+}

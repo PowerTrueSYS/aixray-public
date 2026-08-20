@@ -1,0 +1,23 @@
+{
+  "id": "ck-stig-svcoff",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "stig_svcoff"
+  ],
+  "captures": [],
+  "requires_root": true,
+  "read_only": true,
+  "commands": [
+    "grep -v '^#' /etc/inetd.conf",
+    "lssrc -a",
+    "grep -E '^[\t ]*start ' /etc/rc.tcpip"
+  ],
+  "tags": [
+    "stig",
+    "disa"
+  ],
+  "blurb": "This check confirms that the legacy network services the DISA STIG for IBM AIX 7.x requires disabled are actually off: no inetd service token is left enabled in /etc/inetd.conf, and no daemon is left set to start at boot in /etc/rc.tcpip. Any still-enabled or boot-started service is an unneeded, often unauthenticated, network-facing daemon an auditor will flag.",
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-stig-svcoff/ck-stig-svcoff.ksh"
+}

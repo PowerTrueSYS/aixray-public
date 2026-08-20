@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks the password and group files (/etc/passwd and /etc/group) for any line that begins with a plus sign. A leading plus turns on a legacy network directory feature called NIS, so this machine will accept users and groups served from the network instead of only the ones defined locally. If that entry is present, anyone who can control or impersonate that network directory could add accounts, including privileged ones, and use them to log in to this system.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-nis-passwd-group-plus/ck-nis-passwd-group-plus.ksh"
 }

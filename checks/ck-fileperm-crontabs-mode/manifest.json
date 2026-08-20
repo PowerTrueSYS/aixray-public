@@ -14,6 +14,7 @@
   "tags": [
     "stig:V-245560"
   ],
+  "blurb": "The /var/spool/cron/crontabs directory holds the scheduled jobs that AIX runs automatically, including jobs that run with root privileges. This control checks that ordinary users are given no read, write, or execute access to that directory. If such access is present, any local user could view, alter, or add scheduled jobs and make the system run their commands with root rights.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-fileperm-crontabs-mode/ck-fileperm-crontabs-mode.ksh"
 }

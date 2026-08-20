@@ -16,6 +16,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks that the legacy nuucp system account is either removed or fully locked down by disabling its local login, remote login, and login shell, and by locking the account itself. The nuucp account exists on AIX for the obsolete UUCP file-transfer service, and a well-known default account like this is a common first target for attackers. If the account is left active with a usable login path, an attacker could log in under that identity and use it as a foothold to move deeper into the system.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-system-account-nuucp/ck-system-account-nuucp.ksh"
 }

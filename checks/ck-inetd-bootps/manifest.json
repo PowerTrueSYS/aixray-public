@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks whether the legacy bootps (BOOTP) network service is still enabled in the file /etc/inetd.conf. BOOTP is an old, unauthenticated startup protocol that modern AIX servers do not need, so an enabled entry means the host runs an extra clear-text network service. If it fails, attackers can misuse that service to amplify denial-of-service floods against other systems or probe the server for a way in.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-inetd-bootps/ck-inetd-bootps.ksh"
 }

@@ -1,0 +1,21 @@
+{
+  "id": "ck-os-level",
+  "pillar": "currency",
+  "category": "lifecycle",
+  "finding_ids": [
+    "os_level"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "oslevel -s",
+    "ls /usr/ios/cli/ioscli"
+  ],
+  "tags": [
+    "ffiec:II.C.11"
+  ],
+  "blurb": "This check confirms that the AIX release is still inside the IBM standard support window, so it keeps receiving security fixes. A release past its end-of-support date no longer gets IBM security fixes, leaving newly disclosed CVEs open on the host; the check flags it for upgrade to a supported release, with a Software Support Service Extension only as a bridge. On a VIOS, or when not running as root, the check does not assess and reports NOT_ASSESSED.",
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-os-level/ck-os-level.ksh"
+}

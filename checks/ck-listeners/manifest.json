@@ -1,0 +1,18 @@
+{
+  "id": "ck-listeners",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "listeners"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "netstat -Aan"
+  ],
+  "tags": [],
+  "blurb": "This check counts the network sockets on the system that are listening for incoming connections. Every listener is a door into the machine, so any listener that is not needed gives an intruder more ways in. The check reports the total number so it can be compared against what the system is meant to expose.",
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-listeners/ck-listeners.ksh"
+}

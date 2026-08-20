@@ -1,0 +1,22 @@
+{
+  "id": "ck-dump-sizing",
+  "pillar": "backup",
+  "category": "resilience",
+  "finding_ids": [
+    "dump_sizing"
+  ],
+  "captures": [],
+  "requires_root": true,
+  "read_only": true,
+  "commands": [
+    "sysdumpdev -l",
+    "sysdumpdev -e",
+    "lslv"
+  ],
+  "tags": [
+    "ffiec:II.C.21"
+  ],
+  "blurb": "This control checks that the AIX dump device is large enough to hold a full system dump for the amount of memory the LPAR has. The operating system writes the contents of memory to this device when it crashes, so support staff can diagnose the cause. When the device is too small, a crash dump is cut short and the evidence needed to explain the failure is lost.",
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-dump-sizing/ck-dump-sizing.ksh"
+}

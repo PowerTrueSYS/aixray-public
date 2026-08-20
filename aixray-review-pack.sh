@@ -8,7 +8,7 @@ set -u
 # artifact's version against the release tag; a review pack without this line
 # was silently skipped by that check and v1.0.0 nearly shipped unversioned,
 # a regression from v0.1.0 which carried it.
-AIXRAY_REVIEW_PACK_VERSION="1.1.0"
+AIXRAY_REVIEW_PACK_VERSION="1.2.0"
 
 PATH=/usr/bin:/etc:/usr/sbin:/usr/ucb:/usr/bin/X11:/sbin:${PATH:-}
 export PATH

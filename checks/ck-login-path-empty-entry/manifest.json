@@ -15,6 +15,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks the command search path (PATH), the list of directories the system searches to find programs, and verifies that every entry is a real, absolute directory owned by the system (root or bin) and not writable by other users. If the path holds an empty, missing, relative, or writable entry, a malicious program planted in one of those locations can run in place of a legitimate command. The result is command hijacking, where an attacker can execute arbitrary code when a normal command or login script runs.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-login-path-empty-entry/ck-login-path-empty-entry.ksh"
 }

@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks that /etc/motd, the login message shown to every user, is owned by the trusted system account named bin. Because everyone who signs in treats that message as coming from the system, only a trusted owner should be able to change it. If any other account owns the file, that account could rewrite the banner and present false or misleading text to everyone who logs in.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-fileperm-motd-owner/ck-fileperm-motd-owner.ksh"
 }

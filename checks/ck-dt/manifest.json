@@ -16,6 +16,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks whether the dt subsystem, the CDE graphical desktop, is running on the server. A server has no business need for a graphical desktop. If dt is active, legacy desktop and session services stay exposed where an attacker can target them to break in or disrupt the system.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-dt/ck-dt.ksh"
 }

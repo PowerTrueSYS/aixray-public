@@ -17,6 +17,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks whether the server is configured to mount remote file systems over NFS, as recorded in the /etc/filesystems file. If any such NFS client mount is still configured, the server will connect to a remote system and treat its files as if they were local. An attacker who controls that remote system could use the mount to plant programs that run with administrator privileges, which can lead to full system compromise.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-nfs-client-mounts-disabled/ck-nfs-client-mounts-disabled.ksh"
 }

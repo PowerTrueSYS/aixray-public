@@ -12,6 +12,7 @@
     "ls -ln /etc/ntp.conf"
   ],
   "tags": [],
+  "blurb": "The time-service configuration file /etc/ntp.conf is expected to belong to the system group, the group with ID 0 on AIX. This control checks the numeric group ID on the file. If any other group owns it, those users could change the time synchronization settings, allowing the clock to be steered to a wrong or attacker-controlled time source, which undermines Kerberos authentication, certificate validation, and audit-log timestamps.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-fileperm-ntp-group/ck-fileperm-ntp-group.ksh"
 }

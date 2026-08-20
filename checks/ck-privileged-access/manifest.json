@@ -1,0 +1,21 @@
+{
+  "id": "ck-privileged-access",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "privileged_access"
+  ],
+  "captures": [],
+  "requires_root": true,
+  "read_only": true,
+  "commands": [
+    "lssec -f /etc/security/user -s root -a rlogin -a sugroups -a admin -a expires"
+  ],
+  "tags": [
+    "cis-l1",
+    "ffiec:II.C.7"
+  ],
+  "blurb": "This check confirms that the root account on an AIX system is locked down: root cannot sign in directly over the network, and only a named administrator group may switch to the root user. If either gate is left open, anyone who guesses or steals the root password could take over the entire system, with no record of who did it.",
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-privileged-access/ck-privileged-access.ksh"
+}

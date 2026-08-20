@@ -15,6 +15,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This check confirms that the built-in system accounts, including root, are listed in /etc/ftpusers, the file that blocks those accounts from signing in over FTP. If any of them are missing, an attacker could sign in over FTP as root or another system account on any system where an FTP service is running, and FTP sends passwords in clear text. That could give an attacker full control of the system or a way to act as a trusted service account.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-system-accounts-ftp/ck-system-accounts-ftp.ksh"
 }

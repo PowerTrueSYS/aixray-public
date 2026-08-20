@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks the permission bits on the dpid2 log file /var/tmp/dpid2.log, which must be no more open than owner read and write with group read only (0640). If the file is more permissive, other accounts on the system can read or rewrite the log. That lets someone tamper with or erase the log entries, hiding activity and destroying the evidence that security and operations staff rely on.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-fileperm-dpid2log-mode/ck-fileperm-dpid2log-mode.ksh"
 }

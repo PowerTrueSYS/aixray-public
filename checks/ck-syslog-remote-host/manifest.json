@@ -14,6 +14,7 @@
   "tags": [
     "cis-l2"
   ],
+  "blurb": "This check verifies that the system is configured to forward log entries to a remote log server rather than keeping the record only on the machine itself. If no remote destination is set, an attacker who gains access can delete or rewrite the local logs to erase evidence, and a disk or system failure can destroy the only copy of the record.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-syslog-remote-host/ck-syslog-remote-host.ksh"
 }

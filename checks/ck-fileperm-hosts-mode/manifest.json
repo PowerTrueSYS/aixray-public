@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control verifies that /etc/hosts, the file that maps hostnames to network addresses, is writable only by its owner and readable only by its owner and group. If the file is left more permissive than this, an attacker or a compromised account could add or alter entries to redirect connections for trusted systems to a machine they control, intercepting traffic or disrupting name resolution.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-fileperm-hosts-mode/ck-fileperm-hosts-mode.ksh"
 }

@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control verifies that the system account file /etc/passwd allows write access only to the root owner, with all other users limited to read-only. That file maps account names to user IDs, and it must stay protected so ordinary users cannot change it. If it is writable by anyone else, an attacker could add or alter an account to gain administrator-level access to the system.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-fileperm-passwd-mode/ck-fileperm-passwd-mode.ksh"
 }

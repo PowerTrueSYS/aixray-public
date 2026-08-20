@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This check verifies whether the obsolete chargen (Character Generator) service is enabled in the AIX inetd configuration file. Chargen streams characters to anyone who connects, needs no authentication, and has no business purpose. If it stays enabled, attackers can use it to amplify denial-of-service traffic or as an unneeded entry point for probing the system.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-inetd-chargen/ck-inetd-chargen.ksh"
 }

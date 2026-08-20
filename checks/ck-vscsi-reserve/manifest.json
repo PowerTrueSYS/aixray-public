@@ -1,0 +1,20 @@
+{
+  "id": "ck-vscsi-reserve",
+  "pillar": "resiliency",
+  "category": "storage",
+  "finding_ids": [
+    "vscsi_maps",
+    "vscsi_reserve"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "ioscli lsmap -all",
+    "ioscli lsdev -dev <hdisk> -attr reserve_policy"
+  ],
+  "tags": [],
+  "blurb": "This check confirms every vSCSI backing LUN on a VIOS is free of SCSI reservation (reserve_policy no_reserve), so dual-VIOS vSCSI failover can actually work. A reserved backing LUN fails silently: everything looks mapped and dual, but the partner VIOS cannot open the LUN and the client's disk never comes back on failover.",
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-vscsi-reserve/ck-vscsi-reserve.ksh"
+}

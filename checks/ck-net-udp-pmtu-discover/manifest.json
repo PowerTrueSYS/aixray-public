@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks that the udp_pmtu_discover network setting is turned off (value 0). That setting controls UDP path-MTU discovery, which keeps per-path state driven by ICMP messages. If it is left on, an attacker on an untrusted network can abuse that state to cause a denial of service.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-net-udp-pmtu-discover/ck-net-udp-pmtu-discover.ksh"
 }

@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This check verifies that the SSH server configuration file, /etc/ssh/sshd_config, grants write access only to its owner. If any other user or group can write the file, a non-administrative account could edit the rules that control remote login and then cause the server to load the changed settings. That could let an attacker grant themselves access or weaken the authentication the server enforces.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-fileperm-sshdconfig-mode/ck-fileperm-sshdconfig-mode.ksh"
 }

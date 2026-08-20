@@ -1,0 +1,18 @@
+{
+  "id": "ck-tunables",
+  "pillar": "operational-readiness",
+  "category": "config",
+  "finding_ids": [
+    "tunables"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "cat /etc/tunables/nextboot"
+  ],
+  "tags": [],
+  "blurb": "This check reads the file of kernel settings that AIX will apply at the next reboot. It flags any non-default values so each change can be reviewed and justified. Unreviewed kernel tuning can alter memory, network, or storage behavior in ways that surprise operators or hurt performance.",
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-tunables/ck-tunables.ksh"
+}

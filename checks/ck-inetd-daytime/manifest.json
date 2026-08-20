@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks whether the legacy daytime network service is enabled in the /etc/inetd.conf file on the server. Daytime is an outdated clear-text service that sends the current date and time in response to any connection and has no legitimate purpose on a modern system. When it stays enabled, anyone on the network can query it, and attackers can use it to amplify denial-of-service traffic against other hosts or as a foothold for probing the server.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-inetd-daytime/ck-inetd-daytime.ksh"
 }

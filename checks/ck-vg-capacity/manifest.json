@@ -15,6 +15,7 @@
     "lsvg <vg>"
   ],
   "tags": [],
+  "blurb": "This control measures how much free space is left in each active volume group, the storage pools that filesystems draw from when they need to grow. If any volume group falls below five percent free, there is no headroom to enlarge a filesystem when it fills up, so applications and users can be blocked from writing data at the moment storage is needed most.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-vg-capacity/ck-vg-capacity.ksh"
 }

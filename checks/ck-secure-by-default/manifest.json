@@ -17,6 +17,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This check confirms whether AIX was installed using the Secure by Default option, which installs a minimal software set and leaves out remote-access programs such as telnet and ftp that send passwords across the network as readable text. If that option was not selected at installation, those programs can be present and reachable, so anyone able to read network traffic could capture login passwords, and services such as rsh, rcp and sendmail add extra remote-access points an attacker can probe.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-secure-by-default/ck-secure-by-default.ksh"
 }

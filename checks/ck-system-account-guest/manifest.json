@@ -16,6 +16,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks that the built-in guest account is either absent from the system or fully locked down, with local and remote login disabled, a non-working shell, and the account itself locked. If the guest account can still be used to log in, an attacker gains an easy, well-known foothold on the system from which to explore and escalate.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-system-account-guest/ck-system-account-guest.ksh"
 }

@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control verifies the permissions on /etc/mail/submit.cf, the Sendmail mail submission configuration file, and requires that the file is no more open than writable by its owner and readable by its group, with nothing available to other users. A file left more open than this could be changed by someone who should not control it, letting them tamper with mail submission settings or redirect outbound mail.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-fileperm-submitcf-mode/ck-fileperm-submitcf-mode.ksh"
 }

@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks the AIX password policy setting that decides how many special characters, such as symbols or punctuation, every new password must contain. If the setting is not enforced, users can create passwords made only of letters and numbers, which are much easier for an attacker to guess or crack. That leaves accounts vulnerable to unauthorized access.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-pw-minspecialchar/ck-pw-minspecialchar.ksh"
 }

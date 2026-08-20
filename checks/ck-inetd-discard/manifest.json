@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This check inspects the inetd configuration to see whether the legacy discard service is enabled. Discard is an obsolete network service that silently throws away anything sent to it and has no legitimate use on a modern system. If it is left running, it becomes an unnecessary network entry point that attackers can abuse to tie up system or network resources.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-inetd-discard/ck-inetd-discard.ksh"
 }

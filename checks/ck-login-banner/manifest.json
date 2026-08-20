@@ -1,0 +1,20 @@
+{
+  "id": "ck-login-banner",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "login_banner"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "lssec -f /etc/security/login.cfg -s default -a herald"
+  ],
+  "tags": [
+    "stig:V-215200"
+  ],
+  "blurb": "The login banner is the notice the system shows before anyone signs in, stating that access is monitored and restricted. It supports the legal standing of auditing and deters casual or unauthorized access. When no banner is set, an auditor may flag the system as non-compliant and a casual intruder gets no warning that access is unauthorized.",
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-login-banner/ck-login-banner.ksh"
+}

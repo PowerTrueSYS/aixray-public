@@ -5,10 +5,6 @@
   "finding_ids": [
     "nfs_export_sec"
   ],
-  "control_id": "4.4.1.7",
-  "level": "L2",
-  "severity": "medium",
-  "blast_radius": "moderate",
   "captures": [],
   "requires_root": false,
   "read_only": true,
@@ -18,6 +14,7 @@
   "tags": [
     "cis-l2"
   ],
+  "blurb": "This control checks that every directory this server shares over NFS is configured to require some form of authentication. It flags any share that declares no security setting at all, or one that explicitly allows the no-authentication option known as none. If it fails, someone who can reach the server over the network could mount that shared directory without proving who they are and read or change its contents.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-nfs-export-sec/ck-nfs-export-sec.ksh"
 }

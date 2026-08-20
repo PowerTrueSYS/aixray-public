@@ -1,0 +1,20 @@
+{
+  "id": "ck-rhosts",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "rhosts"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "sh -c"
+  ],
+  "tags": [
+    "stig:V-215432"
+  ],
+  "blurb": "The .rhosts and hosts.equiv files list hosts that are trusted to log in without a password. If either file is present, anyone who compromises one of those hosts can move laterally onto this system with no password check.",
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-rhosts/ck-rhosts.ksh"
+}

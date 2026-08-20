@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This check confirms the writesrv write server is not running. writesrv is a network service that lets someone, including a user on another machine, push a message straight onto the screen of a logged-in user through the write command. If it is left active, that service is an unnecessary opening on the machine, and it can be used to send spam or spoof messages that interrupt a user or trick them into trusting a fake sender.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-writesrv/ck-writesrv.ksh"
 }

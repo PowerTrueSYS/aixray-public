@@ -15,6 +15,7 @@
   "tags": [
     "cis-l2"
   ],
+  "blurb": "This check verifies that the mrouted multicast routing daemon is not enabled, either as a start line in the /etc/rc.tcpip boot file or as a running subsystem. mrouted provides multicast routing that a normal server does not need. If it is left running, the system exposes an extra network service that an attacker can target, widening the ways into the system for no benefit.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-rctcpip-mrouted/ck-rctcpip-mrouted.ksh"
 }

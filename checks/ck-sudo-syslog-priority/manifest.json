@@ -18,6 +18,7 @@
   "tags": [
     "cis-l2"
   ],
+  "blurb": "This control checks where sudo writes a record of the commands it runs. It verifies that sudo is still logging to the system log, or to its own dedicated log file, rather than silently dropping those records. If sudo logging is turned off with no alternate file in place, privileged commands can run with no record left behind, allowing an attacker who has gained access to operate without an audit trail.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-sudo-syslog-priority/ck-sudo-syslog-priority.ksh"
 }

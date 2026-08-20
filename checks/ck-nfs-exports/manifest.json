@@ -16,6 +16,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control reviews the NFS export rules in the /etc/exports file and the list of filesystems currently being exported, looking for exports that give root authority to anonymous or broadly defined clients, or that allow write access without limiting which clients may connect. A failing export lets any client that can reach the NFS service read and change the exported files as root, so an attacker could view or alter data without needing a valid account.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-nfs-exports/ck-nfs-exports.ksh"
 }

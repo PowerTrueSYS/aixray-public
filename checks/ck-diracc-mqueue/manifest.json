@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks that the mail queue directory /var/spool/mqueue exists and is accessible only to the root account. That directory holds outbound messages waiting to be delivered, including their contents. If it is missing or left open to other users, those messages could be read or altered before they are sent, exposing email content and allowing tampering.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-diracc-mqueue/ck-diracc-mqueue.ksh"
 }

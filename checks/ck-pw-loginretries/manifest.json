@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks the failed-login limit in the default AIX account settings, the loginretries attribute in the file /etc/security/user. A low limit locks an account after a few wrong passwords, which stops an attacker from trying thousands of guesses until one works. If the limit is missing or set too high, an attacker can keep guessing a password and eventually take over the account.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-pw-loginretries/ck-pw-loginretries.ksh"
 }

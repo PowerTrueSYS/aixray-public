@@ -1,0 +1,18 @@
+{
+  "id": "ck-fsbuf-blocking",
+  "pillar": "stability",
+  "category": "performance",
+  "finding_ids": [
+    "fsbuf_blocking"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "vmstat -v"
+  ],
+  "tags": [],
+  "blurb": "This check reads the counters for JFS2 filesystem I/O that was blocked waiting for a free filesystem buffer since the system last booted. When that buffer pool runs dry under load, disk reads and writes stall in a way CPU and memory charts never reveal. A healthy system shows zero blocked I/Os, while a climbing count means I/O latency is rising.",
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-fsbuf-blocking/ck-fsbuf-blocking.ksh"
+}

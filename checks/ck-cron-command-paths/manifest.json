@@ -15,6 +15,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control walks the crontab of the account running the scan and checks every command listed by full path, plus each directory above it, for write access beyond root and the bin account. If a cron command or one of its parent directories can be written by other users, someone could swap in their own program that the system then runs automatically on schedule, often with root privileges.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-cron-command-paths/ck-cron-command-paths.ksh"
 }

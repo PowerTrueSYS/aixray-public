@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This check verifies that the /etc/security directory is owned by the root account. That directory holds the trusted security settings for the system, including password rules and login restrictions. If any other account owns it, that account could change those settings and weaken or bypass the protections they are meant to enforce.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-fileperm-etcsecurity-owner/ck-fileperm-etcsecurity-owner.ksh"
 }

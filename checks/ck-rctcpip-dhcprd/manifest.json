@@ -18,6 +18,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This check confirms the DHCP relay service (dhcprd) is not running on the system. dhcprd forwards address requests between networks, so it should only be enabled on a server that is meant to act as a relay. If it runs where it is not needed, an attacker who can reach it could feed clients false network settings, such as a wrong gateway or name server, to redirect their traffic or intercept it.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-rctcpip-dhcprd/ck-rctcpip-dhcprd.ksh"
 }

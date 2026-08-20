@@ -1,0 +1,21 @@
+{
+  "id": "ck-nim-client-state",
+  "pillar": "backup",
+  "category": "resilience",
+  "finding_ids": [
+    "nim_client_state"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "ls /etc/niminfo",
+    "cat /etc/niminfo"
+  ],
+  "tags": [
+    "ffiec:II.C.21"
+  ],
+  "blurb": "Detects whether an AIX box is a NIM client and names its NIM master. On a NIM-managed LPAR the mksysb and lpp_source restore images normally live on the master, so a thin local backup story is expected \u2014 this check confirms the OS restore point is centralized there and tells you which master to verify.",
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-nim-client-state/ck-nim-client-state.ksh"
+}

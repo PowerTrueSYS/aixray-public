@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks that the AIX resource-manager startup log /var/ct/RMstart.log is assigned to the system group, the only group allowed to manage it. That keeps the log a trustworthy record of how the system started. If the file belongs to a different group, members of that group could alter or erase it and hide evidence of tampering.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-fileperm-rmstartlog-group/ck-fileperm-rmstartlog-group.ksh"
 }

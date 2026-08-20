@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks that /etc/inetd.conf, the configuration file for the inetd network services daemon, is owned by the root account. If any other user owns this file, that user could edit it to run attacker-chosen programs or start unwanted network services, opening a backdoor or persistent foothold on the system.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-fileperm-inetd-owner/ck-fileperm-inetd-owner.ksh"
 }

@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks that the cron allow-list file /var/adm/cron/cron.allow is owned by root. That file controls which users may schedule automated jobs through cron. If a non-root account owns it, that account can rewrite the list to grant itself or others cron access, opening a path to running unauthorized scheduled commands on the system.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-fileperm-cronallow-owner/ck-fileperm-cronallow-owner.ksh"
 }

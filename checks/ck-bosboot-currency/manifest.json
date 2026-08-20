@@ -1,0 +1,21 @@
+{
+  "id": "ck-bosboot-currency",
+  "pillar": "backup",
+  "category": "resilience",
+  "finding_ids": [
+    "bosboot_currency"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "lslpp -h bos.mp64",
+    "who -b"
+  ],
+  "tags": [
+    "ffiec:II.C.21"
+  ],
+  "blurb": "This check confirms the boot image on a system is current with the kernel that is installed. After a kernel update, if the boot image was not rebuilt, the machine can start up running the old kernel or fail to start at all. The check flags systems whose kernel is newer than their last boot, which means a reboot is pending and the boot image may be stale.",
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-bosboot-currency/ck-bosboot-currency.ksh"
+}

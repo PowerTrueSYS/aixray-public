@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This check examines the file /etc/inetd.conf to confirm that the obsolete ntalk service, which lets users exchange real-time talk messages over the network, is not enabled. If ntalk is left active, the system answers network talk requests, exposing an old clear-text service that an attacker can reach and misuse. A failure here means the machine is running unnecessary remote attack surface.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-inetd-ntalk/ck-inetd-ntalk.ksh"
 }

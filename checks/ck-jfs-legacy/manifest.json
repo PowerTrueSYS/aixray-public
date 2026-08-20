@@ -16,6 +16,7 @@
   "tags": [
     "ffiec:II.C.11"
   ],
+  "blurb": "This check looks for filesystems still using the older JFS type instead of the current JFS2. Legacy JFS filesystems cannot grow past 2 TB and lack inline logging, online shrink, and modern concurrency handling, so a system still using one is carrying an aging filesystem format that caps growth and weakens crash recovery.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-jfs-legacy/ck-jfs-legacy.ksh"
 }

@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks whether the legacy exec remote-execution service is enabled in the file /etc/inetd.conf. When enabled, that service accepts commands from remote users and sends login credentials in clear text, so anyone on the network can read them. If the check fails, an attacker can run commands on the server or capture the passwords used to connect.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-inetd-exec/ck-inetd-exec.ksh"
 }

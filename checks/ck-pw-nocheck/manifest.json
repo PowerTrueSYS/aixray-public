@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks whether any account is exempt from password strength and history rules because of the NOCHECK flag in the AIX password database. An account with this flag can be given a weak or previously used password, which gives an attacker a much easier way to break in through a normal login.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-pw-nocheck/ck-pw-nocheck.ksh"
 }

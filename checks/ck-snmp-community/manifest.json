@@ -1,0 +1,21 @@
+{
+  "id": "ck-snmp-community",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "snmp_community"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "grep -E '^community[ \t]+(public|private)' /etc/snmpd.conf /etc/snmpdv3.conf"
+  ],
+  "tags": [
+    "stig:V-215231",
+    "cis-l1"
+  ],
+  "blurb": "SNMP lets remote management tools read and write information about a system over the network. SNMP community strings are the password that controls this access, and many systems ship with a well-known default such as public or private. If one of these defaults is still in use, anyone who can reach the box on the network can read, or even modify, its SNMP data.",
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-snmp-community/ck-snmp-community.ksh"
+}

@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks /etc/security/passwd for user accounts whose stored password is still protected by the old crypt method, a weak 56-bit algorithm that is easy to crack. If any non-system account still uses it, an attacker who obtains the stored hashes can quickly recover the real passwords and log in as those users. The check reports the affected account names.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-pw-stored-hash/ck-pw-stored-hash.ksh"
 }

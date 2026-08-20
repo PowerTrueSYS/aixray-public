@@ -15,6 +15,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "The /smit.log file is the record of system administration changes made through the AIX management tool. This control confirms that file is owned by the root account. If a different user owns it, that user could alter or erase the log and hide the record of changes made to the system.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-fileperm-smitlog-owner/ck-fileperm-smitlog-owner.ksh"
 }

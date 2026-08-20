@@ -13,6 +13,7 @@
     "lsps -a"
   ],
   "tags": [],
+  "blurb": "This control measures how full the paging space of the system is. Paging space is the disk overflow used when physical memory runs short. If it fills up, the system can no longer allocate memory to running programs and will start killing them, and heavy use in the meantime means the machine is swapping to disk and running slowly.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-paging/ck-paging.ksh"
 }

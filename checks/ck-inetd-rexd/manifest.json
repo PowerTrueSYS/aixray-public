@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This check verifies that the legacy rexd service is not active in the inetd configuration file /etc/inetd.conf. rexd is an old remote-execution service that lets a remote system run commands on this host with no strong authentication. If it is enabled, an attacker who can reach it over the network may run commands on the system, potentially taking it over.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-inetd-rexd/ck-inetd-rexd.ksh"
 }

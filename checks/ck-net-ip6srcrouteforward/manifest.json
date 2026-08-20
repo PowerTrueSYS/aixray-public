@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "The AIX host has a network setting, ip6srcrouteforward, that controls whether it forwards source-routed IPv6 packets. If the setting is not zero, an attacker can write a route into a packet and steer that traffic around firewalls and routing rules to reach systems that should be unreachable from the outside.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-net-ip6srcrouteforward/ck-net-ip6srcrouteforward.ksh"
 }

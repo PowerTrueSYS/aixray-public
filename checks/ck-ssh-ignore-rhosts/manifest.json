@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "SSH can be configured to trust a connection based on the machine it comes from, through host-based authentication or rhosts files, instead of checking the credentials that belong to the account being logged into. This check verifies that the SSH server has IgnoreRhosts set to yes and HostbasedAuthentication set to no, so every login must prove its own identity. If either setting is wrong, someone who gains access to one trusted machine, or who can plant an rhosts entry, could log in to other accounts without supplying the password or key for those accounts.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-ssh-ignore-rhosts/ck-ssh-ignore-rhosts.ksh"
 }

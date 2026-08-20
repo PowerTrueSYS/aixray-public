@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control verifies that /etc/hosts, the file that maps host names to network addresses, is owned by group 0 - the AIX system group. If the file belongs to another group, members of that group could rewrite host name entries and redirect traffic to systems they control, allowing impersonation of trusted servers and interception of connections.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-fileperm-hosts-group/ck-fileperm-hosts-group.ksh"
 }

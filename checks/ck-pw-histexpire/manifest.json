@@ -16,6 +16,7 @@
     "cis-l1",
     "ffiec:II.C.15"
   ],
+  "blurb": "This control checks how many weeks must pass before a previously used password can be used again, a reuse window stored in the histexpire attribute of the /etc/security/user file. It expects that window to be at least fifty-two weeks. If the window is missing or too short, someone who already knows an older password can reuse it almost as soon as the account changes to a new one, defeating the benefit of password rotation.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-pw-histexpire/ck-pw-histexpire.ksh"
 }

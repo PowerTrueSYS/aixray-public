@@ -18,6 +18,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks whether the portmap service, the RPC port mapper, is running on the system. It flags portmap when it is set to start at boot in the file /etc/rc.tcpip or is already active as a running service. If portmap runs while nothing on the system genuinely needs RPC, it gives a remote attacker a live list of the services and port numbers to attack, plus a well-known network service with a long history of security flaws.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-rctcpip-portmap/ck-rctcpip-portmap.ksh"
 }

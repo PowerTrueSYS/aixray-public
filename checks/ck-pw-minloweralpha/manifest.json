@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This check reads the minloweralpha password setting from the system default policy to confirm that every new password must include at least one lower-case letter. If the setting is missing or zero, accounts can be given passwords with no lower-case letters, which narrows the range of passwords an attacker has to try and makes them easier to guess.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-pw-minloweralpha/ck-pw-minloweralpha.ksh"
 }

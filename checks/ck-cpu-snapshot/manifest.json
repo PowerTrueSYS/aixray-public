@@ -1,0 +1,20 @@
+{
+  "id": "ck-cpu-snapshot",
+  "pillar": "stability",
+  "category": "performance",
+  "finding_ids": [
+    "cpu_snapshot"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "vmstat 1 2",
+    "lparstat 2 1",
+    "prtconf"
+  ],
+  "tags": [],
+  "blurb": "This check samples CPU activity for one second and reads the length of the queue of work waiting to run, to see whether the system has spare CPU capacity or is running close to its limit. If the system is nearly fully busy with a long queue of waiting work, applications will run slowly and users will notice delays when demand peaks.",
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-cpu-snapshot/ck-cpu-snapshot.ksh"
+}

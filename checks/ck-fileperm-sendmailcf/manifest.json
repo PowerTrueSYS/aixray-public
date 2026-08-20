@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks that the sendmail configuration file /etc/mail/sendmail.cf is owned by root, belongs to the system group, and allows no one outside those accounts to read or change it. If those permissions are loosened, another user could edit the file to reroute, capture, or corrupt the mail the system sends.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-fileperm-sendmailcf/ck-fileperm-sendmailcf.ksh"
 }

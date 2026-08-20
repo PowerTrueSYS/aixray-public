@@ -1,0 +1,20 @@
+{
+  "id": "ck-world-writable",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "world_writable"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "find /etc /usr/local/bin -xdev -type f -perm -002"
+  ],
+  "tags": [
+    "cis-l1"
+  ],
+  "blurb": "This check looks in /etc and /usr/local/bin for files that any user can write to. A file that anyone can modify is a risk because an ordinary user could change system settings or replace a program with a hostile copy. Finding such a file means the system is open to that kind of tampering.",
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-world-writable/ck-world-writable.ksh"
+}

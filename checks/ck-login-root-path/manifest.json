@@ -15,6 +15,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks the command search path assigned to the root account at login for entries that point to the current directory. When the current directory is in that path, a command run as root can silently execute a file planted there by another user instead of the real system command. That lets an attacker run anything they choose with full administrator privileges.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-login-root-path/ck-login-root-path.ksh"
 }

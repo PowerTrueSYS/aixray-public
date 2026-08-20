@@ -1,0 +1,18 @@
+{
+  "id": "ck-tz-set",
+  "pillar": "operational-readiness",
+  "category": "config",
+  "finding_ids": [
+    "tz_set"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "grep '^TZ=' /etc/environment"
+  ],
+  "tags": [],
+  "blurb": "This check confirms the system timezone (TZ) is set explicitly in /etc/environment, so logs, scheduled jobs, and timestamps reflect the correct local time. If it is unset, the system may record ambiguous local times, which can confuse audit trails and make incident review unreliable.",
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-tz-set/ck-tz-set.ksh"
+}

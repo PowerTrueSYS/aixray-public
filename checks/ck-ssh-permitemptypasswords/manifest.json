@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control verifies that the SSH service rejects logins from accounts with no password. It checks the effective PermitEmptyPasswords setting in the SSH server configuration. If empty passwords are allowed, any account left without a password can be logged into over the network with no credentials at all.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-ssh-permitemptypasswords/ck-ssh-permitemptypasswords.ksh"
 }

@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This check confirms that the directory holding scheduled at jobs is locked down so ordinary users cannot read, change, or add to it. That directory can contain commands that will run later under another account. If the permissions are too open, another user could read the contents of pending jobs or place their own job to run with privileges they do not have.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-diracc-atjobs-mode/ck-diracc-atjobs-mode.ksh"
 }

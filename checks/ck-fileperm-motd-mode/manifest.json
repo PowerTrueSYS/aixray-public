@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks the permissions on /etc/motd, the message every user sees at login, and verifies that no one except the file owner can change it. If those permissions are too loose, another user could rewrite that message to show false or misleading instructions to everyone signing in, as if the system itself had issued them.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-fileperm-motd-mode/ck-fileperm-motd-mode.ksh"
 }

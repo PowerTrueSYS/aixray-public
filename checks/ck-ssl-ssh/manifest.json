@@ -1,0 +1,18 @@
+{
+  "id": "ck-ssl-ssh",
+  "pillar": "currency",
+  "category": "patch",
+  "finding_ids": [
+    "ssl_ssh"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "lslpp -qcL openssh.base.server openssl.base"
+  ],
+  "tags": [],
+  "blurb": "This control reads the installed OpenSSL and OpenSSH fileset versions on an AIX or VIOS system and flags any OpenSSL release older than the 3.x line. OpenSSL versions before 3.0 have reached the end of upstream support, so a system running them stops receiving current security fixes for its cryptographic stack. If the installed levels cannot be read, the state of that stack is unknown.",
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-ssl-ssh/ck-ssl-ssh.ksh"
+}

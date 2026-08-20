@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks the permissions on the /var/adm/sa directory, where the system keeps its daily system activity data. The directory must not be writable by group members or by other users. If it is, someone without administrative rights could modify or delete those records, corrupting the activity data used to review how the system is running.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-diracc-varadmsa-mode/ck-diracc-varadmsa-mode.ksh"
 }

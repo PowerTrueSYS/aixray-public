@@ -18,6 +18,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks whether the legacy routed service is running, either started at boot from /etc/rc.tcpip or active in the service inventory. Routed maintains routing tables using the old RIP1 protocol, which accepts updates from anyone on the network without authentication. If it is left enabled, an attacker could feed it bogus routes to redirect or disrupt traffic on this host.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-rctcpip-routed/ck-rctcpip-routed.ksh"
 }

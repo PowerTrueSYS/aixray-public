@@ -15,6 +15,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks the sendmail PrivacyOptions setting in /etc/mail/sendmail.cf to confirm the server refuses VRFY and EXPN queries and emits authentication warnings. VRFY and EXPN let anyone ask the mail server whether an address or mailing list exists, so leaving them enabled lets an attacker harvest valid addresses for spam or targeted attacks. Without authwarnings, spoofed or relayed mail is accepted with no flag to reveal the abuse.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-sendmail-privacyoptions/ck-sendmail-privacyoptions.ksh"
 }

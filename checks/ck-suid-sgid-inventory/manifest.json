@@ -17,6 +17,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control inventories every setuid and setgid program on the system and confirms each one is authorized. A setuid or setgid program runs with the privileges of its owner, usually root, no matter who starts it. An unauthorized one can let any user run commands as root, so a planted or unapproved program of this kind hands an attacker full control of the system.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-suid-sgid-inventory/ck-suid-sgid-inventory.ksh"
 }

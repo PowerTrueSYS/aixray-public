@@ -18,6 +18,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks whether the obsolete timed network service is running, either started at boot from the /etc/rc.tcpip file or active as a running system service. timed provides a legacy UNIX time service that has been replaced by NTP. Leaving it running exposes an outdated and unnecessary network service that widens the attack surface and can give any system that still connects to it unreliable time.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-rctcpip-timed/ck-rctcpip-timed.ksh"
 }

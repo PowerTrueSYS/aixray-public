@@ -18,6 +18,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This check confirms the rwhod service is not in use, meaning it is not started at boot from /etc/rc.tcpip and not running as an active system service. rwhod is a legacy daemon that broadcasts the names of logged-in users across the network, which is rarely needed and lets anyone on the wire see who is using the system. A failure means the server is running that service, leaking login information and exposing an extra network service that attackers can probe.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-rctcpip-rwhod/ck-rctcpip-rwhod.ksh"
 }

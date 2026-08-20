@@ -12,6 +12,7 @@
     "ps -e -o comm"
   ],
   "tags": [],
+  "blurb": "This control checks whether a recognised monitoring agent is running on the AIX system, matching process names against a fixed list covering the Zabbix, Nagios, Prometheus, njmon, collectd and Datadog agents. A monitoring agent is how problems on the machine get reported to staff automatically. If none of those is running, a failure or outage here may go unnoticed until someone checks by hand, which lengthens downtime; monitoring that is not on the list may still be in place.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-monitoring-agent/ck-monitoring-agent.ksh"
 }

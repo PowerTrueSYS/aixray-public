@@ -14,6 +14,7 @@
   "tags": [
     "cis-l2"
   ],
+  "blurb": "This control checks the SSH server setting that determines whether a user can log in directly as root over the network. Root is the account with full control over the system, so if direct root login is not refused, anyone who steals or guesses the root password can connect remotely and take over the machine. Failing this check means the system allows or leaves unspecified direct root login rather than refusing it.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-ssh-permitrootlogin/ck-ssh-permitrootlogin.ksh"
 }

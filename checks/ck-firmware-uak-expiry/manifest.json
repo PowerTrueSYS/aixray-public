@@ -1,0 +1,22 @@
+{
+  "id": "ck-firmware-uak-expiry",
+  "pillar": "currency",
+  "category": "lifecycle",
+  "finding_ids": [
+    "firmware_uak_expiry"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "lparstat -u",
+    "lscfg -vpl sysplanar0",
+    "prtconf"
+  ],
+  "tags": [
+    "ffiec:II.C.11"
+  ],
+  "blurb": "IBM firmware and AIX updates require a current Update Access Key. This check reads the expiry date of the key and reports whether it has expired or is within 30 days of doing so. An expired key silently blocks any update released after the expiry date, and that is usually discovered only during an emergency fix, when the delay hurts most.",
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-firmware-uak-expiry/ck-firmware-uak-expiry.ksh"
+}

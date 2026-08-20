@@ -14,6 +14,7 @@
   "tags": [
     "cis-l2"
   ],
+  "blurb": "This control verifies that the AIX audit subsystem is configured to collect audit events into binary trail files. The audit configuration file must have binary collection on and stream collection off, with the trail, bin, and size values the standard prescribes. If these settings are wrong or the file is missing, security-relevant events may never be recorded, leaving no usable record to investigate a breach or misuse.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-audit-config-valid/ck-audit-config-valid.ksh"
 }

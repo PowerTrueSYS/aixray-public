@@ -1,0 +1,21 @@
+{
+  "id": "ck-network-exposure",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "network_exposure"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "netstat -Aan",
+    "lsdev -l ipsec_v4"
+  ],
+  "tags": [
+    "security"
+  ],
+  "blurb": "This check compares how many network services are listening on addresses reachable from the network against whether AIX IP Security packet filtering is active on the host. Every listening service is a door into the system from the network. When services are reachable and the host has no active packet filter, the machine depends entirely on the upstream firewall, so one misrouted subnet or changed rule can expose every one of those services at once.",
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-network-exposure/ck-network-exposure.ksh"
+}

@@ -17,6 +17,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control verifies that every NFS share this system mounts from a remote server has the nosuid and nodev options set. If nosuid is missing, a program planted on the remote share can run with elevated privileges on this system; if nodev is missing, device files on the share are treated as local devices. Either condition lets a compromised or hostile file server gain more access than a shared directory should allow.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-nfs-client-mount-options/ck-nfs-client-mount-options.ksh"
 }

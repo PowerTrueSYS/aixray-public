@@ -14,6 +14,7 @@
   "tags": [
     "stig:V-245567"
   ],
+  "blurb": "This control checks that the at-jobs queue directory /var/spool/cron/atjobs is group-owned by the cron group. The directory stores commands scheduled to run later, sometimes under root or other privileged accounts. If the wrong group owns it, members of that group could read or modify the queued jobs and thereby capture or change commands that later run with those privileges.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-fileperm-atjobs-group/ck-fileperm-atjobs-group.ksh"
 }

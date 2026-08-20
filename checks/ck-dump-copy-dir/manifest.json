@@ -1,0 +1,22 @@
+{
+  "id": "ck-dump-copy-dir",
+  "pillar": "backup",
+  "category": "resilience",
+  "finding_ids": [
+    "dump_copy_dir"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "sysdumpdev -l",
+    "sysdumpdev -e",
+    "df -g"
+  ],
+  "tags": [
+    "ffiec:II.C.21"
+  ],
+  "blurb": "When a system crashes, AIX writes a memory dump to a device and then copies it into a directory so the failure can be investigated later. This check confirms that copy directory has enough free space to hold a full dump. If it does not, the dump cannot be saved and the evidence needed to diagnose the crash is lost.",
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-dump-copy-dir/ck-dump-copy-dir.ksh"
+}

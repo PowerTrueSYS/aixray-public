@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "SSH encrypts each connection with a session key, and the server is meant to negotiate a fresh key so that no single key protects too much traffic. This control reads the effective rekey limit and treats only the exact pairing of 1073741824 bytes and 3600 seconds as meeting the requirement; any other pairing, or none at all, is reported as not meeting it. Where no limit is enforced, one key can cover an entire long-lived session, so an attacker who recovers that key can decrypt far more of the traffic.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-ssh-rekeylimit/ck-ssh-rekeylimit.ksh"
 }

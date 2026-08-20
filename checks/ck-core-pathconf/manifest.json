@@ -12,6 +12,7 @@
     "lscore -d"
   ],
   "tags": [],
+  "blurb": "This check confirms that AIX is set up to send core dump files, the crash snapshots a program leaves behind, to one dedicated path and to give each dump a unique name. If that is not configured, a crash can write a core file into the wrong directory or overwrite an earlier one. That can scatter or destroy the very evidence needed to diagnose the failure.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-core-pathconf/ck-core-pathconf.ksh"
 }

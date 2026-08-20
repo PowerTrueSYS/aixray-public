@@ -15,6 +15,7 @@
   "tags": [
     "cis-l2"
   ],
+  "blurb": "This control compares every installed file against the trusted signature database of the operating system to confirm that nothing has been altered, replaced, or added without authorization. When a file fails that comparison, it means software on the system has been tampered with or an unauthorized program has been installed, giving an attacker a hidden foothold and possible privileged access.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-trustchk-untrusted-scan/ck-trustchk-untrusted-scan.ksh"
 }

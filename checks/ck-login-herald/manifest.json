@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control verifies that a login banner is set in the AIX login settings file /etc/security/login.cfg. That banner appears before the login prompt and tells anyone who connects that only authorized use is permitted. If it is missing, the system shows the login prompt without that authorized-use warning, which weakens legal notice against unauthorized access and removes a visible deterrent to misuse.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-login-herald/ck-login-herald.ksh"
 }

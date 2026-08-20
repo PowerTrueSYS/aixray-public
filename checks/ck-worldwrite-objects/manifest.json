@@ -15,6 +15,7 @@
   "tags": [
     "cis-l2"
   ],
+  "blurb": "This check looks for non-directory objects on local filesystems that are writable by their group and owned by an administrative group. If that group-write access has not been reviewed and approved, any member of the group, or anyone who compromises one, can change those files. That can allow tampering with programs or configuration to take control of the system.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-worldwrite-objects/ck-worldwrite-objects.ksh"
 }

@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks whether the CDE calendar service (cmsd) is enabled in /etc/inetd.conf. When it is enabled, the server exposes a remote procedure call service with a history of remotely exploitable flaws, which an attacker can use to gain root-level control of the system.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-cde-cmsd/ck-cde-cmsd.ksh"
 }

@@ -16,6 +16,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks that the FTP file transfer service, when enabled, shows a login banner telling anyone who connects that the system is for authorized use only and that activity may be monitored and reported. If the banner is missing or wrong, people who connect over FTP are never told the system is monitored, so unauthorized or improper use cannot be clearly tied to a user who was warned. That weakens the ability to enforce acceptable use and to hold users accountable for what they do on the system.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-ftpd-login-banner/ck-ftpd-login-banner.ksh"
 }

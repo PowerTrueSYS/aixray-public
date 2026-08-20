@@ -1,0 +1,21 @@
+{
+  "id": "ck-pw-policy",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "pw_policy"
+  ],
+  "captures": [],
+  "requires_root": true,
+  "read_only": true,
+  "commands": [
+    "lssec -f /etc/security/user -s default -a maxage -a minlen -a loginretries -a histsize"
+  ],
+  "tags": [
+    "cis-l1",
+    "ffiec:II.C.15"
+  ],
+  "blurb": "This check reads the default password rules that every new account on the system inherits: how long a password stays valid, its minimum length, how many failed logins are allowed, and how many old passwords are remembered. If those defaults are weak, each account created afterwards starts out weak too, which makes passwords easier to guess or reuse and the system easier to break into.",
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-pw-policy/ck-pw-policy.ksh"
+}

@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks that every group on the system has a unique numeric ID (GID) and a unique name, as recorded in the /etc/group file. If two groups share a GID or a name, the system cannot tell them apart, so a user in one group can silently gain the file and directory access granted to another, and access controls stop working as designed.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-group-gid-duplicate/ck-group-gid-duplicate.ksh"
 }

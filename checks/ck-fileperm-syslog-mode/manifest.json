@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks the permissions on /etc/syslog.conf, the file that controls how and where the system records its logs. It must allow writing only by the owner and reading only by the owner and group, with no access for everyone else. If other users could write to this file, an attacker could redirect or disable logging to hide an intrusion, and over-broad read access could expose sensitive log configuration details.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-fileperm-syslog-mode/ck-fileperm-syslog-mode.ksh"
 }

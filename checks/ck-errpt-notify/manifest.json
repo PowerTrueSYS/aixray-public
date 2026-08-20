@@ -14,6 +14,7 @@
     "odmget errnotify"
   ],
   "tags": [],
+  "blurb": "AIX records hardware and disk errors in its error log, but by default those entries sit there silently and only get noticed if someone happens to read the log. This control checks the errnotify database for a custom alert method that actively pages or emails a person when those errors occur. Without one, a failing disk or failing hardware can go unnoticed until it becomes an outage or data loss.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-errpt-notify/ck-errpt-notify.ksh"
 }

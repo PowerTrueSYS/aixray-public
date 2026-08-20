@@ -1,0 +1,22 @@
+{
+  "id": "ck-inetd-cleartext",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "inetd_cleartext"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "grep -E '^[[:space:]]*(telnet|telnetd|ftp|ftpd|shell|login|exec|rsh|rlogin)[[:space:]]' /etc/inetd.conf"
+  ],
+  "tags": [
+    "stig:V-215258",
+    "stig:V-215259",
+    "cis-l1"
+  ],
+  "blurb": "This check inspects the inetd configuration for remote-access services that transmit passwords and session data as readable plain text, such as telnet, ftp, and the r-commands like rlogin and rsh. When one of these services is enabled, credentials and everything typed in a session travel across the network in a form anyone watching the wire can read. If they stay on, an attacker who can see that traffic can capture the credentials and use them to take over accounts.",
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-inetd-cleartext/ck-inetd-cleartext.ksh"
+}

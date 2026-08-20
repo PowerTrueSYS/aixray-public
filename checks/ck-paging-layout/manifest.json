@@ -20,6 +20,7 @@
   "tags": [
     "ffiec:II.C.11"
   ],
+  "blurb": "This check reviews where a system keeps its paging space, the disk area used when memory runs low. If several paging spaces share one physical disk, or all paging space sits in the system volume group while other disks are available, the disk becomes a single point of contention and cannot work in parallel. Under heavy memory demand the system can slow sharply or stop responding, interrupting service.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-paging-layout/ck-paging-layout.ksh"
 }

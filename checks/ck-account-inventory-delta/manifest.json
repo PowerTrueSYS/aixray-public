@@ -13,6 +13,7 @@
     "lsuser -a admin maxage account_locked time_last_login ALL"
   ],
   "tags": [],
+  "blurb": "This control keeps a record of which administrator and user accounts exist on the system and compares it to the previous scan to flag anything that changed. An account that has newly gained administrator standing is new privileged access that could be the work of an attacker or insider who created or elevated the account without approval. Any other change, such as an account being added or removed, means the inventory of who has access is no longer accurate.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-account-inventory-delta/ck-account-inventory-delta.ksh"
 }

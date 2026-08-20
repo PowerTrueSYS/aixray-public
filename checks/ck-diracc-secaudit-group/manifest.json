@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks that the /etc/security/audit directory is owned by the audit group. That directory holds the configuration that decides what the AIX security audit records. If a different group owns it, members of that group could change the audit settings, leaving the record of activity on the system able to be altered or erased.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-diracc-secaudit-group/ck-diracc-secaudit-group.ksh"
 }

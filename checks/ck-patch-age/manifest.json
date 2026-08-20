@@ -1,0 +1,20 @@
+{
+  "id": "ck-patch-age",
+  "pillar": "currency",
+  "category": "patch",
+  "finding_ids": [
+    "patch_age"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "oslevel -s"
+  ],
+  "tags": [
+    "ffiec:II.C.10"
+  ],
+  "blurb": "Checks how old the installed AIX operating system build is, using the build week the operating system reports. An old build is missing years of security and stability fixes, which leaves the system exposed to known attacks and reliability problems.",
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-patch-age/ck-patch-age.ksh"
+}

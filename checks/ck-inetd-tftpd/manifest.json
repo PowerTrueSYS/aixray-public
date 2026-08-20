@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks that the legacy tftpd file-transfer service is not enabled in the /etc/inetd.conf configuration file. TFTP transfers files with no authentication or encryption, so a running service lets anyone on the network read or place files on the system, and it can be used to amplify denial-of-service traffic.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-inetd-tftpd/ck-inetd-tftpd.ksh"
 }

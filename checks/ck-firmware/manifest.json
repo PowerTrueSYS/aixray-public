@@ -1,0 +1,24 @@
+{
+  "id": "ck-firmware",
+  "pillar": "currency",
+  "category": "lifecycle",
+  "finding_ids": [
+    "firmware"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "lsmcode -c",
+    "prtconf",
+    "lparstat -u",
+    "lscfg -vpl sysplanar0"
+  ],
+  "tags": [
+    "ffiec:II.C.11",
+    "cis-l1"
+  ],
+  "blurb": "System firmware currency checks whether the firmware level, its supported hardware window, and the Update Access Key that entitles firmware updates are all current. Firmware that falls behind its supported family, or that runs on hardware whose support has ended, leaves a system open to unfixed firmware defects and without an IBM fix path when a part fails. An expired Update Access Key can silently block an emergency firmware update, turning a recoverable problem into an outage.",
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-firmware/ck-firmware.ksh"
+}

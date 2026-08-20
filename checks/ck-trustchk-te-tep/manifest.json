@@ -14,6 +14,7 @@
   "tags": [
     "cis-l2"
   ],
+  "blurb": "Trusted Execution checks each program against a database of trusted signatures before it runs, and Trusted Execution Path limits the directories the system searches when launching programs. If either protection is off, a modified or malicious program can run without being verified, and a planted binary can be substituted for a trusted one.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-trustchk-te-tep/ck-trustchk-te-tep.ksh"
 }

@@ -1,0 +1,22 @@
+{
+  "id": "ck-vios-topology",
+  "pillar": "backup",
+  "category": "resilience",
+  "finding_ids": [
+    "sea_failover",
+    "vios_topology"
+  ],
+  "captures": [],
+  "requires_root": true,
+  "read_only": true,
+  "commands": [
+    "cluster -status",
+    "lsdev -t sea",
+    "lsattr -El <sea>",
+    "entstat -d <sea>"
+  ],
+  "tags": [],
+  "blurb": "This check inspects a VIOS's Shared Ethernet Adapter and CAA cluster state to infer whether the box is a single point of failure. A failover-ready SEA (ha_mode auto/standby, a control channel, a priority) or a CAA cluster implies a partner VIOS and passes; a SEA that cannot fail over, with no cluster to replace it, fails; and when no SEA and no cluster are visible the check reports not-applicable. It also records the SEA failover posture as its own finding.",
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-vios-topology/ck-vios-topology.ksh"
+}

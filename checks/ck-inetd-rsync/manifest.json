@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks whether the legacy rsync file service is enabled in the inetd configuration file (/etc/inetd.conf). When it is active, rsync listens as a clear-text network service that an attacker could use to move files onto or off the system or abuse to amplify attacks aimed at other hosts. A failing result means the machine exposes a file transfer service it likely does not need.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-inetd-rsync/ck-inetd-rsync.ksh"
 }

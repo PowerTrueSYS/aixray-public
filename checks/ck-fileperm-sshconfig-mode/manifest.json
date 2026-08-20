@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks the permissions on /etc/ssh/ssh_config, the OpenSSH client configuration file that all SSH connections on the host read by default. If the file is writable by anyone other than root, that account could silently change how SSH clients connect, for example redirecting them to an untrusted host or disabling the checks that detect an imposter. That would let a non-root user undermine the security of every outgoing SSH connection.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-fileperm-sshconfig-mode/ck-fileperm-sshconfig-mode.ksh"
 }

@@ -15,6 +15,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "The SMIT log (/smit.log) records the system management actions performed through the AIX System Management Interface Tool. This check confirms the log is group-owned by the system group (GID 0). If a different group owns it, members of that group could alter or delete entries in the log, hiding or falsifying the record of administrative changes made on the system.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-fileperm-smitlog-group/ck-fileperm-smitlog-group.ksh"
 }

@@ -14,6 +14,7 @@
     "lsps -a"
   ],
   "tags": [],
+  "blurb": "This control checks that every AIX paging space is active and the same size, so the system spreads memory paging evenly across all of them. If one space is smaller or inactive, paging piles onto the remaining spaces and the system can run short of usable paging capacity and slow or stop under memory load, even when total paging space looks sufficient.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-paging-parity/ck-paging-parity.ksh"
 }

@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This check confirms that /var/adm/sa, the directory holding the systems daily performance and activity records, is owned by the system administration group (adm, group ID 4). If a different group owns that directory, members of that group could read or alter those activity records, which could hide problems or throw off investigations that depend on that data.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-diracc-varadmsa-group/ck-diracc-varadmsa-group.ksh"
 }

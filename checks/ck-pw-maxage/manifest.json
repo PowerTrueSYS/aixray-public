@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks the default password expiry setting (maxage) in the /etc/security/user file, which sets how long a password stays valid before it must be changed. If that value is set to zero or beyond the approved limit, passwords never expire or stay usable far too long, so a stolen password keeps working until it is discovered and changed by hand.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-pw-maxage/ck-pw-maxage.ksh"
 }

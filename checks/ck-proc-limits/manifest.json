@@ -1,0 +1,19 @@
+{
+  "id": "ck-proc-limits",
+  "pillar": "stability",
+  "category": "performance",
+  "finding_ids": [
+    "proc_limits"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "lsattr -El sys0",
+    "ps -eo user"
+  ],
+  "tags": [],
+  "blurb": "This check watches maxuproc, the AIX ceiling on how many processes one account may run at the same time. It compares the highest per-account process count against that ceiling and warns as the limit is approached. When the ceiling is reached, new processes cannot start, so applications and shells fail to spawn work.",
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-proc-limits/ck-proc-limits.ksh"
+}

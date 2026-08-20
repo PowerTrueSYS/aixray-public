@@ -16,6 +16,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "The lpd account exists only to run the line printer service and should never be able to log in interactively. This control confirms the account is either removed entirely or locked with all of its local, remote, and shell login paths disabled. If it fails, the lpd account can still be used to sign in, giving whoever holds it a working entry point into the system.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-system-account-lpd/ck-system-account-lpd.ksh"
 }

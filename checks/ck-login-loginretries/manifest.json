@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks the AIX setting that locks an account after no more than three failed login attempts. If that limit is missing, zero, or set above three, an account either never locks or locks only after many more wrong passwords. An attacker can then keep guessing passwords until one works, which is how automated brute-force login attacks break in.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-login-loginretries/ck-login-loginretries.ksh"
 }

@@ -16,6 +16,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This check confirms the uucp system account has every login path closed and is locked. The uucp account belongs to a legacy file-transfer service and is not meant for anyone to sign in to. If it keeps a usable local or remote login path, an attacker who takes it over can use this trusted system account to move or alter transferred files and hide their activity.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-system-account-uucp/ck-system-account-uucp.ksh"
 }

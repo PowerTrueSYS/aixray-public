@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks that the FTP service, when enabled, is configured in /etc/inetd.conf to create files with a umask of 027, which keeps the files it creates from being world-readable or world-writable. If that setting is missing or weaker, files the FTP daemon creates can be read or changed by accounts that should not have access, exposing uploaded data or allowing it to be altered.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-ftpd-umask/ck-ftpd-umask.ksh"
 }

@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks whether the legacy pcnfsd service is enabled in the file /etc/inetd.conf. pcnfsd is an old network service that exchanges data in the clear and was built for trusted networks, so keeping it running leaves an unencrypted, unauthenticated entry point that remote attackers can use to gain a foothold on the system or to reflect and amplify traffic against other targets. If the check fails, that service is active and reachable.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-inetd-pcnfsd/ck-inetd-pcnfsd.ksh"
 }

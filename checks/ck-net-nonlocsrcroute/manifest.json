@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This check confirms the AIX setting that controls whether the system accepts source-routed packets sent to other machines is turned off. Source routing lets whoever sends a packet choose the path it takes across the network. If the setting is left on, an attacker can steer traffic around firewalls and other network controls so it reaches systems that should be unreachable.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-net-nonlocsrcroute/ck-net-nonlocsrcroute.ksh"
 }

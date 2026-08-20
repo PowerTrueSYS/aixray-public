@@ -1,0 +1,19 @@
+{
+  "id": "ck-entitlement",
+  "pillar": "stability",
+  "category": "performance",
+  "finding_ids": [
+    "entitlement"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "lparstat -i",
+    "lparstat 2 1"
+  ],
+  "tags": [],
+  "blurb": "This control checks whether the CPU entitlement of a shared-processor LPAR is sized to the work it is actually doing. It compares entitled capacity, entitled-capacity consumption, and idle time from a live lparstat sample. If the entitlement is wrong in either direction, the LPAR is either throttled under load or paying for guaranteed cores it never uses.",
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-entitlement/ck-entitlement.ksh"
+}

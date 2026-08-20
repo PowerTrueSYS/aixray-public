@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks whether the legacy klogin remote-login service is enabled in the system inetd configuration file (/etc/inetd.conf). klogin is an old network login service that predates SSH and is not needed on a modern server. If it is left enabled, attackers gain another way to attempt remote logins, which can become an entry point into the system.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-inetd-klogin/ck-inetd-klogin.ksh"
 }

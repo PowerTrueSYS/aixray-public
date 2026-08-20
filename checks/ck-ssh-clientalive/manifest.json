@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "SSH sessions that sit idle too long can leave an open doorway into the system if the user walks away from a logged-in terminal. This control checks the SSH server idle-session timeout settings, ClientAliveInterval and ClientAliveCountMax, to confirm abandoned sessions are automatically disconnected within fifteen minutes. If they are not, an unattended session can be hijacked by anyone who reaches that machine, and stale connections keep consuming system resources.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-ssh-clientalive/ck-ssh-clientalive.ksh"
 }

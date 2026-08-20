@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks that the login message file /etc/motd is assigned to the bin group (group ID 2). If that file is assigned to any other group, the accounts in that group could rewrite the message every user sees at sign-in, planting a false or misleading notice that appears to come from the system.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-fileperm-motd-group/ck-fileperm-motd-group.ksh"
 }

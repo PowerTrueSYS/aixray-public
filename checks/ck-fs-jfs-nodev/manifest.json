@@ -15,6 +15,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks that every JFS filesystem on the system is mounted with the nodev option, which stops the operating system from treating files on those filesystems as hardware devices. If a JFS filesystem is mounted without nodev, a local user who can write to it can create a fake device file and use it to reach raw storage, gaining read or write access to data and privileges they should not have.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-fs-jfs-nodev/ck-fs-jfs-nodev.ksh"
 }

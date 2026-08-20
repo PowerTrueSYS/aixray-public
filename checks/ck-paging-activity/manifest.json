@@ -1,0 +1,18 @@
+{
+  "id": "ck-paging-activity",
+  "pillar": "stability",
+  "category": "performance",
+  "finding_ids": [
+    "paging_activity"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "vmstat 1 2"
+  ],
+  "tags": [],
+  "blurb": "This check detects whether the system is actively paging memory to and from disk. Paging means the system has run out of real memory and is moving pages out to disk and reading them back, which adds disk latency to every memory access. When paging is sustained, the whole system slows down.",
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-paging-activity/ck-paging-activity.ksh"
+}

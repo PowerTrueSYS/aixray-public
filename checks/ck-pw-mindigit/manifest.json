@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks the AIX password rule that sets the minimum number of digits every new password must contain. If the rule is unset or set to zero, users can choose passwords with no digits at all, making them easier to guess or crack and leaving accounts open to compromise.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-pw-mindigit/ck-pw-mindigit.ksh"
 }

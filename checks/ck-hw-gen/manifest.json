@@ -1,0 +1,21 @@
+{
+  "id": "ck-hw-gen",
+  "pillar": "currency",
+  "category": "lifecycle",
+  "finding_ids": [
+    "hw_gen"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "prtconf",
+    "lsdev -c adapter"
+  ],
+  "tags": [
+    "ffiec:II.C.11"
+  ],
+  "blurb": "This check reads the machine type/model from prtconf and looks it up in a bundled IBM hardware-generation reference table to decide whether the LPAR hardware is still in active support. Hardware past its end-of-support date fails when the LPAR has physical I/O adapters of its own; a fully-virtual LPAR warns instead, because the hardware belongs to the host provider; an unknown machine type passes for manual verification on the IBM lifecycle pages.",
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-hw-gen/ck-hw-gen.ksh"
+}

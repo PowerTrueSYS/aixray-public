@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "AIX limits how much of its network memory pool can be in use before it starts refusing new sockets, and sockthresh is the setting that holds that limit. This check reads the current value and expects a hardened one well below the level AIX ships with, rather than the stock setting. A limit left at or near the shipped level lets a runaway or hostile process consume the network memory pool and leave other services unable to open connections.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-net-sockthresh/ck-net-sockthresh.ksh"
 }

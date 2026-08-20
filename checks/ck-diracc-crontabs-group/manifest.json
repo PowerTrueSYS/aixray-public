@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This check confirms that the directory holding scheduled jobs (/var/spool/cron/crontabs) belongs to the cron group. If a different group owns that directory, people in that group could change or add scheduled jobs, running commands under other accounts or silently tampering with scheduled work.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-diracc-crontabs-group/ck-diracc-crontabs-group.ksh"
 }

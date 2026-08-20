@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This check verifies the permission settings on /var/adm/cron/cron.allow, the file that lists which users are allowed to schedule recurring cron jobs. The file must be read-only, readable only by its owner. If it is writable, an unauthorized user could edit the list to grant themselves or others the ability to schedule jobs, gaining persistent execution on the system.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-fileperm-cronallow-mode/ck-fileperm-cronallow-mode.ksh"
 }

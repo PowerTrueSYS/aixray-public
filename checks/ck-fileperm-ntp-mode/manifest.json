@@ -12,6 +12,7 @@
     "ls -ln /etc/ntp.conf"
   ],
   "tags": [],
+  "blurb": "This control checks the permission settings on /etc/ntp.conf, the file that governs how the server keeps its clock synchronized. Only its owner may write to it, and only the owner and owning group may read it. Looser permissions let another account redirect time synchronization or force an incorrect clock, which can break authentication and make audit log timestamps unreliable.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-fileperm-ntp-mode/ck-fileperm-ntp-mode.ksh"
 }

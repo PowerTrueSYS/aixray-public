@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks that the AIX network setting ipsrcrouteforward is off, so the host will not forward IP packets that carry a source-route header. Source-routed packets let the sender choose the path traffic takes, so if forwarding is on an attacker can steer traffic around firewalls and reach parts of the network that should be off-limits.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-net-ipsrcroute-forward/ck-net-ipsrcroute-forward.ksh"
 }

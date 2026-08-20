@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks that the server is configured not to send source-routed packets, where the sender writes the route a packet takes into the packet itself. If sending source-routed packets is enabled, an attacker can dictate the return path of traffic, steering it around firewalls and routing controls.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-net-ipsrcroutesend/ck-net-ipsrcroutesend.ksh"
 }

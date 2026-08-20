@@ -15,6 +15,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control verifies that the at command, which schedules one-off jobs on the system, is restricted by an allow list rather than a deny list: the file /var/adm/cron/at.deny must be absent and /var/adm/cron/at.allow must name root. If a deny list governs access instead, any account not explicitly blocked is allowed by default, so an unprivileged or compromised user could queue a job to run commands later and use it to execute code or hold on to access.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-cron-at-deny-absent/ck-cron-at-deny-absent.ksh"
 }

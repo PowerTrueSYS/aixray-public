@@ -12,6 +12,7 @@
     "ls -ln /etc/ntp.conf"
   ],
   "tags": [],
+  "blurb": "This control checks that /etc/ntp.conf, the file holding the time synchronization settings for the system, is owned by the root user. If a different user owns this file, that user could change which time servers the system trusts or disable time synchronization. A system with wrong or manipulated time can fail login and certificate checks, mislabel audit log entries, and quietly rely on an attacker-controlled time source.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-fileperm-ntp-owner/ck-fileperm-ntp-owner.ksh"
 }

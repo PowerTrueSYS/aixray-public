@@ -16,6 +16,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "The adm account is a built-in AIX account used for system administration and accounting, and it is not meant for people to log into. This check confirms the account is either absent or fully locked down, with local and remote login disabled, a non-working shell, and the account locked. If it can still be logged into, an attacker who takes it over gains a foothold with access to that administrative and accounting data, which could be read or altered.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-system-account-adm/ck-system-account-adm.ksh"
 }

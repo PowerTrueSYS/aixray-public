@@ -14,6 +14,7 @@
   "tags": [
     "stig:V-245557"
   ],
+  "blurb": "This check verifies that the system host name file /etc/hosts is owned by the root account. When that file belongs to another account, that account can change its contents and silently redirect host names to machines it controls, so services and users are tricked into connecting to the wrong system.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-fileperm-hosts/ck-fileperm-hosts.ksh"
 }

@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks that the system audit configuration file /etc/security/audit/config turns on logging for a required set of trusted-execution events by default, including attempts to run untrusted programs, writes to protected files, and changes to security policy and security databases. If any required event type is missing from the default audit set, those activities happen without leaving a record. An attacker could then run unauthorized code or change security settings with no audit trail for detection or investigation.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-audit-classes-default/ck-audit-classes-default.ksh"
 }

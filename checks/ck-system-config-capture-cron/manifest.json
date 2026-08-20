@@ -15,6 +15,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks that the system is set up to record its own hardware and software configuration on a regular schedule, and that its inventory log is saved to a local file. If either of these is missing, there is no dependable record of how the system was set up, so changes from an outage or an intruder can go unnoticed and are hard to reconstruct afterward.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-system-config-capture-cron/ck-system-config-capture-cron.ksh"
 }

@@ -12,6 +12,7 @@
     "find /var/adm/ras -name vmcore* -mtime -30 -print"
   ],
   "tags": [],
+  "blurb": "This control looks in the AIX crash directory /var/adm/ras for vmcore dump files changed within the last 30 days. A vmcore file is the memory image AIX writes when the server crashes, so its presence means the system stopped unexpectedly. If this check fails, the cause of that crash may still be unknown, and the same fault could strike again, causing further unplanned downtime.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-crash-evidence/ck-crash-evidence.ksh"
 }

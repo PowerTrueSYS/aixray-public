@@ -14,6 +14,7 @@
   "tags": [
     "stig:V-245561"
   ],
+  "blurb": "This control checks that the system logging configuration file /etc/syslog.conf is owned by the root account. That file decides what events the server records and where it writes them. If a non-root account owns it, that account could rewrite the file to turn off or redirect logging, hiding evidence of a break-in or erasing the record needed to investigate a fault.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-fileperm-syslog/ck-fileperm-syslog.ksh"
 }

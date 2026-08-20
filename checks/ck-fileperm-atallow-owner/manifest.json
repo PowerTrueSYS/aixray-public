@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "The file /var/adm/cron/at.allow lists which users are allowed to schedule at jobs on the system. This control checks that the file is owned by root. If a non-root user owns it, that user could rewrite the list to grant scheduling rights or alter trusted configuration.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-fileperm-atallow-owner/ck-fileperm-atallow-owner.ksh"
 }

@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This check detects whether the legacy rlogin remote-login service is still enabled in the /etc/inetd.conf network services file. rlogin transmits usernames, passwords, and the entire session in plain text, so anyone able to observe network traffic can capture live credentials and take over the connection. A system that still runs it also keeps an unnecessary, outdated remote entry point open.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-inetd-rlogin/ck-inetd-rlogin.ksh"
 }

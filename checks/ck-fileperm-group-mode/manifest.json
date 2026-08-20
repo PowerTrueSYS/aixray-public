@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This check confirms the group database file, /etc/group, is writable only by its owner. That file lists which users belong to which groups, including groups that grant administrator-level access. If another account could write to it, a user could add themselves to a privileged group and take control of the system.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-fileperm-group-mode/ck-fileperm-group-mode.ksh"
 }

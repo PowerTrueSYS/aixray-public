@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks that the syslogd logging daemon is running with the -r option, which makes it accept incoming log messages sent from other systems. If it is running without that option, log messages from other computers are silently discarded, so break-in attempts or misuse on those systems never reach the central log.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-syslog-daemon-remote/ck-syslog-daemon-remote.ksh"
 }

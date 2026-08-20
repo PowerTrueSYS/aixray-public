@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks which key-exchange algorithms the SSH server will accept, flagging the server if any of three deprecated SHA-1 based algorithms are still enabled. Key exchange is the handshake that sets up the encryption for every SSH session, and these older algorithms use cryptography that attackers can now break. If the check fails, an attacker who can observe or intercept a connection may be able to defeat that encryption and read the session, including logins and any data transferred.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-ssh-kexalgorithms/ck-ssh-kexalgorithms.ksh"
 }

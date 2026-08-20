@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks the permissions on /var/tmp/hostmibd.log, the log file written by the AIX host monitoring daemon, and requires that nothing beyond owner read and write plus group read is granted. If it fails, other users can read or change that log, exposing monitoring data about the host or letting the log record be tampered with.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-fileperm-hostmibdlog-mode/ck-fileperm-hostmibdlog-mode.ksh"
 }

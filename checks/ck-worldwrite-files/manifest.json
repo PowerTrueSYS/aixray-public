@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks whether any regular file on a local JFS or JFS2 filesystem is world-writable, meaning any user on the system can change it. If such files exist, anyone with an account could modify or replace programs, scripts, and configuration files, which can lead to tampering with system behavior or unauthorized access.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-worldwrite-files/ck-worldwrite-files.ksh"
 }

@@ -14,6 +14,7 @@
   "tags": [
     "ffiec:II.C.22"
   ],
+  "blurb": "This control checks that system logging is set up to forward a copy of its records to a remote server, shown by an @ entry in the /etc/syslog.conf file. Forwarding keeps an independent copy of the logs so they survive a crash, disk failure, or an attack on the host itself. If no remote target is set, the only copy of the logs lives on the machine that produced them, so an attacker who takes it over can wipe the evidence and a hardware failure destroys the record of what happened.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-remote-syslog/ck-remote-syslog.ksh"
 }

@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks that address-space layout randomization is running at full strength on the system. ASLR loads each program and its data at unpredictable memory locations, so an attacker who finds a memory-corruption flaw in software cannot reliably predict where to redirect execution. If this protection is weak or disabled, memory addresses become predictable and an attacker can more easily turn such a flaw into the ability to run their own code on the system.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-system-aslr/ck-system-aslr.ksh"
 }

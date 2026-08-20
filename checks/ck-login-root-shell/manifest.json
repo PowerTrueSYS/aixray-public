@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks that the root account is configured to use the Korn shell (/usr/bin/ksh) as its login shell. The root account is the built-in account used for system recovery and administration, so its shell must be a known, working shell. If the shell is set to something else or left blank, a root login may fail or run an unexpected program, which can lock administrators out of the system or hide tampering.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-login-root-shell/ck-login-root-shell.ksh"
 }

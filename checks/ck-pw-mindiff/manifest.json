@@ -15,6 +15,7 @@
     "cis-l1",
     "ffiec:II.C.15"
   ],
+  "blurb": "This check verifies that a new password must differ from the previous password by at least six characters. If that rule is missing or set too low, someone can change a password while keeping nearly all of the old one. Anyone who already knew the old password could then guess the replacement with little effort, so the change provides no real protection.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-pw-mindiff/ck-pw-mindiff.ksh"
 }

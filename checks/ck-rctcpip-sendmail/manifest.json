@@ -18,6 +18,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control confirms that the sendmail mail service is not in use, by checking that it is not started at boot in /etc/rc.tcpip and not running as a service. Sendmail is an older mail daemon with a long history of remotely exploitable vulnerabilities, so leaving it running on a server that does not handle mail exposes an unnecessary, attackable network service. If this control fails, an attacker who can reach that open port may be able to exploit a known sendmail flaw to run code or gain privileged access.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-rctcpip-sendmail/ck-rctcpip-sendmail.ksh"
 }

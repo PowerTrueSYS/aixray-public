@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "The finger service lets anyone on the network ask a server for details about its user accounts, such as login names, real names, and who is currently signed in. This check confirms the finger service is not enabled in /etc/inetd.conf. If it is running, an attacker can silently harvest account names to fuel password-guessing and social-engineering attacks against specific users.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-inetd-finger/ck-inetd-finger.ksh"
 }

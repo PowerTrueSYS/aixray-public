@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "Source-routed IP packets carry instructions telling the network which path they must take. This check verifies the system is set to reject such packets rather than accept them. If it accepts them, an attacker can force traffic along a route they control, bypassing firewall rules and routing policy.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-net-ipsrcrouterecv/ck-net-ipsrcrouterecv.ksh"
 }

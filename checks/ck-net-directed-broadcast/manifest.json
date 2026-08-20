@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control reads the AIX directed_broadcast network setting to confirm the server drops directed broadcast packets. If directed broadcasts are accepted, an attacker can send them with a forged source address and have the server bounce them in bulk to the spoofed target, using this machine to amplify a flood aimed at someone else.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-net-directed-broadcast/ck-net-directed-broadcast.ksh"
 }

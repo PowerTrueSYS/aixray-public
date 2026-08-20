@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This check confirms the system does not answer ICMP timestamp requests, which would reveal its exact current time to anyone who asks. If the system does answer them, an attacker can learn the clock time and use it to defeat time-based protections such as login codes and replay windows, or to time attacks across systems. The check passes when the icmptimestamp network setting is 0, meaning timestamp replies are turned off.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-net-icmptimestamp/ck-net-icmptimestamp.ksh"
 }

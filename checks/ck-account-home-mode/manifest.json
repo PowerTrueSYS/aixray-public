@@ -18,6 +18,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This check confirms that every local, non-system user account has a home directory that exists, is not writable by the group or by other users, and carries no extended access-control list. If a home directory fails this check, another account on the system can write into it and plant or modify files there, which can let an attacker take over the account or tamper with its data.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-account-home-mode/ck-account-home-mode.ksh"
 }

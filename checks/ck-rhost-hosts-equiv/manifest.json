@@ -15,6 +15,7 @@
   "tags": [
     "cis-l2"
   ],
+  "blurb": "This control checks the file /etc/hosts.equiv for active trust entries. A host named in that file is trusted to connect to this system and sign in to matching local accounts without a password. If the check fails, an attacker who compromises one of the trusted hosts, or anyone with an account on it, can reach this system as a local user without any password.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-rhost-hosts-equiv/ck-rhost-hosts-equiv.ksh"
 }

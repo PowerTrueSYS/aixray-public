@@ -1,0 +1,19 @@
+{
+  "id": "ck-memory-decomposition",
+  "pillar": "stability",
+  "category": "performance",
+  "finding_ids": [
+    "memory_decomposition"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "vmstat -v",
+    "svmon -G -O unit=MB"
+  ],
+  "tags": [],
+  "blurb": "This check decomposes AIX memory usage into what is genuinely in use (computational working pages) versus what is reclaimable (file/numperm cache). It reads the svmon -G -O unit=MB and vmstat -v output, and warns when nearly all memory is computational with no reclaimable file cache left, or passes when there is headroom or when the tight look is just reclaimable cache.",
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-memory-decomposition/ck-memory-decomposition.ksh"
+}

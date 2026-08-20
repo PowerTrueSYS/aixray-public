@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This check confirms the SSH server allows only approved message authentication (MAC) algorithms, which guard against tampering with data sent over an SSH connection. If an unapproved algorithm is enabled, an attacker able to intercept the connection could alter or forge transmitted data without being detected.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-ssh-macs/ck-ssh-macs.ksh"
 }

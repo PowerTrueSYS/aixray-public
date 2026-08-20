@@ -15,6 +15,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This check verifies that the log file /smit.log grants no permission beyond owner read and write plus group read. /smit.log is where AIX SMIT, the system management tool, records the administrative actions run through it. If those permissions were looser, an unprivileged user could alter or delete the log and erase the record of what was changed, hiding unauthorized activity.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-fileperm-smitlog-mode/ck-fileperm-smitlog-mode.ksh"
 }

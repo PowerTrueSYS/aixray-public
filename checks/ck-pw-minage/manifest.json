@@ -14,6 +14,7 @@
   "tags": [
     "cis-l2"
   ],
+  "blurb": "This control checks the AIX minimum password age setting (minage) on the default user account. That setting imposes a waiting period before a password can be changed again, which stops a user from immediately cycling back to a previously used or weak password. If it is zero, a user can change a password over and over in one sitting and bypass the password history and forced-change rules.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-pw-minage/ck-pw-minage.ksh"
 }

@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks that the SNMP monitoring log file /var/tmp/snmpdv3.log is owned by the system group rather than an ordinary user group. SNMPv3 logs can contain usernames, management settings, and evidence of monitoring activity. If the file belongs to a different group, users in that group could read or tamper with the log, exposing sensitive management details or hiding signs of unauthorized access.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-fileperm-snmpdv3log-group/ck-fileperm-snmpdv3log-group.ksh"
 }

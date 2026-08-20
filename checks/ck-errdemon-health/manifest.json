@@ -13,6 +13,7 @@
     "/usr/lib/errdemon -l"
   ],
   "tags": [],
+  "blurb": "This check confirms the AIX error-logging daemon is running and that its error log is large enough to keep a reasonable history of hardware and software failures. If the daemon is stopped, new errors are never recorded, so failing hardware or software can go unnoticed until an outage occurs. If the log is too small, older entries are overwritten quickly and evidence of an earlier fault can be gone before it is investigated.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-errdemon-health/ck-errdemon-health.ksh"
 }

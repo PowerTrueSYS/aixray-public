@@ -15,6 +15,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This check verifies that the CDE graphical login screen does not reveal the host name before a user signs in. When CDE is in use, its default greeting shows the host name unless a site-defined label replaces it. If the check fails, anyone who can reach the login prompt sees the host name without authenticating, which gives an attacker useful reconnaissance about the system.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-cde-greeting/ck-cde-greeting.ksh"
 }

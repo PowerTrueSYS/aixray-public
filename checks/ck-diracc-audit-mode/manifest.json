@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This check confirms that the /audit directory, where AIX stores audit records, is readable only by its owner and the audit group, with no access for other users. If those permissions are loosened, other accounts on the system could read the audit trail to learn what is being monitored, or alter or delete audit records to hide their activity.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-diracc-audit-mode/ck-diracc-audit-mode.ksh"
 }

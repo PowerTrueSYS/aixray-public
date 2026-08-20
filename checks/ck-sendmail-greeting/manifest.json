@@ -16,6 +16,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control verifies that the sendmail service greets incoming mail connections with a fixed, static message rather than one that discloses the host name and the sendmail software version, and that its help file is present. A greeting that reveals those details lets anyone who connects, including an attacker scanning the network, learn the exact sendmail version running, which is the information an attacker needs to target version-specific weaknesses.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-sendmail-greeting/ck-sendmail-greeting.ksh"
 }

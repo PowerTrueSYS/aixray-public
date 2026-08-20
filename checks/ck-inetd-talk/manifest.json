@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "The talk service is a legacy internet chat service that sends messages in clear text with no encryption or authentication. This check verifies that talk is not active in the /etc/inetd.conf file. If it is left running, an attacker can reach an unencrypted service that acts as an easy foothold and can be abused to amplify traffic aimed at other systems.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-inetd-talk/ck-inetd-talk.ksh"
 }

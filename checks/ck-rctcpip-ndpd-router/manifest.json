@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks the boot file /etc/rc.tcpip to confirm the IPv6 router service (ndpd-router) is disabled, so the machine will not start acting as an IPv6 router when it boots. If this fails, the machine could come up advertising itself as a router and forwarding IPv6 traffic, which lets an attacker redirect or intercept that traffic or knock IPv6 connectivity offline on the network.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-rctcpip-ndpd-router/ck-rctcpip-ndpd-router.ksh"
 }

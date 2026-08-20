@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control runs the AIX account-file checker in report-only mode to confirm that every local account is recorded consistently across the two files that define it: /etc/passwd and /etc/security/passwd. The account list lives in the first file while the stored password and other protections live in the second, so the two must agree. If the records drift apart or are damaged, an account can lose its stored password and other protections and authenticate without the password the policy requires, or a legitimate user can be locked out entirely.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-account-pwdck-valid/ck-account-pwdck-valid.ksh"
 }

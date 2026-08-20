@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks four CDE desktop programs under /usr/dt/bin (dtaction, dtappgather, dtprintinfo, and dtsession) to confirm none is marked setuid or setgid, a setting that makes a program run with the file owner or group privileges instead of the user who launched it. CDE programs carrying this setting have a history of defects that let an ordinary local user escalate to root. A program left set could therefore hand an attacker with any account on the system full administrative control.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-cde-suid-binaries/ck-cde-suid-binaries.ksh"
 }

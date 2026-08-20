@@ -15,6 +15,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks the NFS export configuration file /etc/exports to confirm that no export grants access to a client named localhost, 127.0.0.1, or ::1. Because a remote host can claim these loopback names for itself, an export that trusts them can be mounted over the network by a machine the administrator never authorized, exposing the shared directory and the data in it.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-nfs-localhost-aliases/ck-nfs-localhost-aliases.ksh"
 }

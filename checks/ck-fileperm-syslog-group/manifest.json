@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks that the AIX system logging configuration file /etc/syslog.conf is owned by the system group (group 0). If a different group owns the file, members of that group could rewrite or disable system logging, redirecting or hiding the log records that show what happened on the system.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-fileperm-syslog-group/ck-fileperm-syslog-group.ksh"
 }

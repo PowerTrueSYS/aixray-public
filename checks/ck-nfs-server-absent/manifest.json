@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks whether the host has the NFS file-sharing server installed (the bos.net.nfs.server package). NFS lets a system share its filesystems with other computers over the network, so a host with this server can serve its files to network clients. When that server exists on a system that does not need to export files, there is a real risk that its data gets shared with machines that should not have access to it.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-nfs-server-absent/ck-nfs-server-absent.ksh"
 }

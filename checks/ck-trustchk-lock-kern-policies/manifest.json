@@ -14,6 +14,7 @@
   "tags": [
     "cis-l2"
   ],
+  "blurb": "This control checks whether the AIX Trusted Execution subsystem has its kernel policy lock enabled, the LOCK_KERN_POLICIES setting. When the lock is on, the kernel enforces the security policies it loaded at boot and refuses any attempt to change or replace them while the system is running. If the lock is off, someone with administrator-level access could swap out or unload an active security policy at runtime, weakening the protections the system was configured to enforce.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-trustchk-lock-kern-policies/ck-trustchk-lock-kern-policies.ksh"
 }

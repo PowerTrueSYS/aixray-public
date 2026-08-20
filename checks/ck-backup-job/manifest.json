@@ -12,6 +12,7 @@
     "crontab -l"
   ],
   "tags": [],
+  "blurb": "This check verifies that the system has an automated backup job scheduled to run on a regular basis, using AIX tools such as mksysb or savevg. A scheduled backup is what makes it possible to restore the server after a disk failure, data corruption, or ransomware. Without one, a failure or attack can leave the system unrecoverable and the business without its data and applications.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-backup-job/ck-backup-job.ksh"
 }

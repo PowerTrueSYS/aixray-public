@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks the permissions on /var/adm/cron/at.allow, the file that lists which users are allowed to schedule one-time jobs with the at command. It must be readable only by root, with no group or world access. If the file is writable by others, an unauthorized user could edit the list to grant themselves or another account the ability to schedule jobs, running commands at a time they choose.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-fileperm-atallow-mode/ck-fileperm-atallow-mode.ksh"
 }

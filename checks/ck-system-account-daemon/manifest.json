@@ -16,6 +16,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "The daemon account is a built-in AIX system account that runs background services and should never be able to accept a login. This control verifies the account is locked, has no usable login shell, and allows no remote login. If it is left able to log in, an attacker who obtains its credentials gains an interactive foothold on the system and access to the files that identity owns.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-system-account-daemon/ck-system-account-daemon.ksh"
 }

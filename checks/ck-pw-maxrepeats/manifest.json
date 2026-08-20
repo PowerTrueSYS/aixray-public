@@ -15,6 +15,7 @@
     "cis-l1",
     "ffiec:II.C.15"
   ],
+  "blurb": "This control checks the AIX maxrepeats password setting, which caps how many times a single character may be repeated in a new password. If repeats are not tightly limited, users can set passwords built mostly from one repeated character, and attackers can guess those weak passwords much faster and take over the accounts.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-pw-maxrepeats/ck-pw-maxrepeats.ksh"
 }

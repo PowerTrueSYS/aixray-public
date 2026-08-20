@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control verifies that the IPv6 autoconfiguration service is set to start automatically from the TCP/IP startup file /etc/rc.tcpip at every boot. If that startup entry is missing, the server will not configure its IPv6 addresses on its own, so IPv6 network services can fail after a reboot or when the network changes.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-rctcpip-autoconf6/ck-rctcpip-autoconf6.ksh"
 }

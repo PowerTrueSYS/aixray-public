@@ -15,6 +15,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control verifies that remote graphical login to the system through XDMCP is turned off. XDMCP is the service that lets other machines open the CDE login screen over the network, and the connection is not encrypted. If it is left enabled, anyone who can reach the system over the network can pull up the login screen and attempt to log in, and usernames and passwords typed there can be captured in transit.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-cde-xdmcp/ck-cde-xdmcp.ksh"
 }

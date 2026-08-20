@@ -15,6 +15,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks that the Xresources configuration files for the CDE desktop, located under /etc/dt/config and /usr/dt/config, are owned by root and cannot be written by other users. These files supply settings that are applied to every CDE login session, including the login screen. If a non-root user can edit them, that user could inject changes into the login sessions of other users or tamper with the login screen itself.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-cde-xresources-access/ck-cde-xresources-access.ksh"
 }

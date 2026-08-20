@@ -1,0 +1,20 @@
+{
+  "id": "ck-stig-fileperms",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "stig_fileperms"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "ls -ldn /etc/inetd.conf /etc/ntp.conf /etc/group /etc/hosts /etc/syslog.conf"
+  ],
+  "tags": [
+    "stig"
+  ],
+  "blurb": "This check verifies the ownership, group, and permission bits of five files mandated by the DISA STIG for IBM AIX 7.x \u2014 /etc/inetd.conf, /etc/ntp.conf, /etc/group, /etc/hosts, and /etc/syslog.conf. Any file that exists and is more permissive than its rule's ceiling, or owned or grouped by the wrong id, fails; an absent file is not applicable. A wrong-owned or over-permissive config file is a documented hardening gap an auditor will flag.",
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-stig-fileperms/ck-stig-fileperms.ksh"
+}

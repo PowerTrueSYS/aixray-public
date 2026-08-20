@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This check confirms that the inetd configuration file at /etc/inetd.conf grants no more than owner read and write plus group read, with no access for everyone else. That file tells the inetd daemon which network services to start on demand, often with elevated privileges. If a wider set of users could write to it, someone could register a rogue service that runs with those privileges and opens a hidden way into the system.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-fileperm-inetd-mode/ck-fileperm-inetd-mode.ksh"
 }

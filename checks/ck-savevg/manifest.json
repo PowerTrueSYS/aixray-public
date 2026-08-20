@@ -1,0 +1,21 @@
+{
+  "id": "ck-savevg",
+  "pillar": "backup",
+  "category": "resilience",
+  "finding_ids": [
+    "savevg_datavg"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "lsvg -o",
+    "find /tmp/vgdata -name '*.data' -mtime -31 -print"
+  ],
+  "tags": [
+    "ffiec:II.C.21"
+  ],
+  "blurb": "This check confirms that every online, non-rootvg volume group has a recent local savevg backup. A rootvg (mksysb) backup restores the operating system but not application data, so each data volume group needs its own savevg image under /tmp/vgdata/<VG>. A volume group with no recent savevg evidence has no known restore point for its application data.",
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-savevg/ck-savevg.ksh"
+}

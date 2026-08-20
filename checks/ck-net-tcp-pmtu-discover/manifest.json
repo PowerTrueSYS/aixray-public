@@ -14,6 +14,7 @@
   "tags": [
     "cis-l1"
   ],
+  "blurb": "This control checks that AIX TCP path-MTU discovery is disabled, as required by the baseline. When the setting is left on, the system keeps per-connection packet-size state based on ICMP traffic, which an attacker on an untrusted network can abuse to stall or break connections and cause a denial of service. A failed check means the system remains open to that attack.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-net-tcp-pmtu-discover/ck-net-tcp-pmtu-discover.ksh"
 }

@@ -14,6 +14,7 @@
   "tags": [
     "stig:V-245566"
   ],
+  "blurb": "This control checks that the AIX directory holding deferred at and batch jobs is owned by the root or bin system account. If some other account owns it, that account can add, replace, or delete jobs waiting in the queue, so scheduled work can run or disappear outside of administrator control.",
   "license": "Apache-2.0",
   "artifact": "checks/ck-fileperm-atjobs-owner/ck-fileperm-atjobs-owner.ksh"
 }

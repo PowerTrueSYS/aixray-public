@@ -1,0 +1,21 @@
+{
+  "id": "ck-aix-uak-expiry",
+  "pillar": "currency",
+  "category": "lifecycle",
+  "finding_ids": [
+    "aix_uak_expiry"
+  ],
+  "captures": [],
+  "requires_root": false,
+  "read_only": true,
+  "commands": [
+    "lparstat -u",
+    "prtconf"
+  ],
+  "tags": [
+    "ffiec:II.C.11"
+  ],
+  "blurb": "This control checks the AIX Update Access Key expiry date reported by the operating system. The key is a Power10-and-later entitlement; earlier hardware does not carry one. If the key expires, the system silently blocks installing AIX levels released after the expiry date and can stop a live partition migration to a destination that requires a newer entitlement.",
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-aix-uak-expiry/ck-aix-uak-expiry.ksh"
+}

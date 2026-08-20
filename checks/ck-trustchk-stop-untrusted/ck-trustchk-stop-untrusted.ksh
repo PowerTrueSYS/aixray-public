@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="1.1.0"
+AIXRAY_STANDALONE_VERSION="1.2.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -217,6 +217,7 @@ STOR_FACT_MAX_FS_MB=4294967296
 STOR_FACT_MAX_USED_PCT=101
 ERR_CRIT_RECUR=3
 ERRDEMON_LOG_MIN=1048576
+LIFECYCLE_VINTAGE=""
 
 CRIT_ERRIDS="
 SC_DISK_ERR1|disk operation error (adapter or drive) — investigate the drive and its path
