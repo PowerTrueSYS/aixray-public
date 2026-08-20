@@ -1,5 +1,98 @@
 # Release notes
 
+## v1.2.0
+
+A reference-data and inventory release. The standalone check-module count grows
+from 324 to 387; the public package is the assembled monolith plus those 387
+modules — 390 build outputs in all. If you downloaded v1.1.0, download v1.2.0,
+verify it against `SHA256SUMS`, and run it again.
+
+### Security APAR seed
+
+A current AIX 7.3 TL4 (7300-04) system can now be judged against bundled
+security APAR rows. v1.1.0 carried no 7300-04 seed row, so `ck-sec-apars`
+refused with "no bundled security APAR rows apply". v1.2.0 adds `IJ59563`
+(7300-04) and the sibling TL rows `IJ59564` (7300-03), `IJ59565` (7300-02) and
+`IJ59566` (7200-05), all carrying CVE-2026-16923 (`bos.mp64` local privilege
+escalation). The check still refuses when `instfix` cannot read the fix
+database; that is evidence handling, not a missing table row.
+
+Three HIPER rows for IBM node 7278066
+(`devices.pciex.7710612214105006.com`) are now in the same seed: `IJ57378`
+(7300-04), `IJ57303` (7300-03), `IJ57855` (7200-05). IBM publishes no CVE for
+that node, so the display field carries the non-CVE token `HIPER-7278066`.
+
+### Firmware floor table
+
+The firmware floor table is now keyed on the full machine-type-model, so current
+Power10 E1050 (`9043-*`) and E1080 (`9080-HEX`) systems resolve to a bundled
+family instead of falling out of the type-only lookup. Power9 E980 (`9080-M9S`)
+is listed. Scale-out 9105 and 9009 rows are globbed (`9105-*`, `9009-*`).
+
+### Check inventory
+
+Standalone check modules grow from 324 to 387. Each new module is a
+self-contained `ck-*` tool; the public tag carries all 387 plus the assembled
+monolith and the two review-pack helpers, which is the 390 build outputs above.
+This is an inventory change, not a change of shape — AIXray is still one
+inspectable script you read before it runs, with the standalone tools published
+alongside it.
+
+CIS Level 1 demonstrated coverage is unchanged from v1.1.0 at 208 of 212
+mapped-and-rendered controls (209 mapped); `4.1.1.19` remains mapped but has
+never rendered a determinate verdict on a committed fixture. The CIS Level 2
+surface and the published count basis are otherwise unchanged.
+
+### Reference data
+
+Curator-verified `as_of` dates advance to 2026-08-18 for the IBM AIX lifecycle,
+IBM security advisory, and CIS IBM AIX reference sources. The DISA STIG for IBM
+AIX source stays at 2026-06-15 — that is DISA's publisher benchmark date, not a
+curator stamp.
+
+The 30-day lifecycle and security-advisory freshness thresholds start from
+2026-08-18. A default installation renders those sources STALE after 2026-09-17
+unless a later refresh ships.
+
+Two post-vintage IBM advisories remain documented gaps, the same class as in
+v1.1.0: IBM publishes no AIX Level→APAR table for them, so both stay on the
+operator-supplied FLRTVC path.
+
+### What did not change
+
+**No remediation of findings, no configuration change.** AIXray reads and
+reports. It does not remediate a host, install or remove software, change
+configuration, restart services, alter accounts, or reboot the system.
+
+**Zero network calls during assessment execution.** The scanner does not phone
+home, fetch reference data, upload a report, perform a live DNS lookup, or open
+an outbound network connection. Reports stay local unless an operator chooses to
+transfer them. Obtaining the script is, as always, a separate download.
+
+**The download is still the monolith plus the standalone `ck-*` tools.**
+
+### Known limitations
+
+The v1.0.0 and v1.1.0 known limitations all still apply:
+
+- Run as root for the intended coverage. A non-root run is supported but
+  incomplete, because several patch, dump, boot, account, audit, SSH and
+  service-policy reads require privilege.
+- The public scanner neither fetches nor bundles IBM's `flrtvc.ksh` or full
+  `apar.csv`. A complete current CVE sweep requires an authorized, locally
+  supplied FLRTVC report or inputs. Without them, source-dependent clean results
+  remain incomplete.
+- This is a point-in-time, bounded posture scan, not continuous monitoring or an
+  exhaustive filesystem or application audit. Workload-specific tuning and
+  controls outside a read-only in-LPAR view still require administrator review.
+- A review-pack file is pseudonymized, not anonymized. It can retain operational
+  detail and must be inspected locally before sharing; never send its separate
+  decoding key with it.
+- Producing a report writes the operator-selected output. Locally supplied
+  FLRTVC inputs also use a private temporary directory; an abrupt termination
+  can leave that directory for manual removal. Neither operation changes
+  assessed AIX/VIOS configuration or state.
+
 ## v1.1.0
 
 A defect-fix release. Zero new checks: the check-module count stays 324,
