@@ -23,8 +23,8 @@ import urllib.request
 
 ROOT = Path(__file__).resolve().parents[1]
 SITE = ROOT / "site"
-SCANNER = ROOT / "aixray-aix.sh"
-REVIEW_HELPER = ROOT / "aixray-review-pack.sh"
+SCANNER = ROOT / "ptxray-aix.sh"
+REVIEW_HELPER = ROOT / "ptxray-review-pack.sh"
 FIXTURE_ROOT = os.environ.get("AIXRAY_FIXTURE_ROOT")
 FIXTURE = Path(FIXTURE_ROOT) if FIXTURE_ROOT else None
 EGRESS_LINTER = ROOT / "tools" / "ci" / "egress-lint.sh"
@@ -611,7 +611,7 @@ class PublicFunnelTests(unittest.TestCase):
                 )
 
     def test_site_serves_the_scanner_directly_over_local_http(self) -> None:
-        site_scanner = SITE / "aixray-aix.sh"
+        site_scanner = SITE / "ptxray-aix.sh"
         self.assertTrue(site_scanner.is_file(), "site scanner payload is missing")
         if not site_scanner.is_file():
             return
@@ -632,7 +632,7 @@ class PublicFunnelTests(unittest.TestCase):
             try:
                 port = server.server_address[1]
                 with urllib.request.urlopen(
-                    f"http://127.0.0.1:{port}/aixray-aix.sh", timeout=5
+                    f"http://127.0.0.1:{port}/ptxray-aix.sh", timeout=5
                 ) as response:
                     self.assertEqual(200, response.status)
                     self.assertEqual(site_scanner.read_bytes(), response.read())
@@ -705,17 +705,17 @@ class PublicFunnelTests(unittest.TestCase):
         self.assertIsInstance(assembled, dict)
         if not isinstance(assembled, dict):
             return
-        self.assertEqual("aixray-aix.sh", assembled.get("artifact"))
-        self.assertEqual("site/aixray-aix.sh", assembled.get("site_artifact"))
+        self.assertEqual("ptxray-aix.sh", assembled.get("artifact"))
+        self.assertEqual("site/ptxray-aix.sh", assembled.get("site_artifact"))
         expected = sha256(SCANNER)
         self.assertEqual(expected, assembled.get("sha256"))
-        self.assertEqual(expected, sha256(SITE / "aixray-aix.sh"))
+        self.assertEqual(expected, sha256(SITE / "ptxray-aix.sh"))
 
         review_pack = catalog.get("review_pack")
         self.assertIsInstance(review_pack, dict)
         if isinstance(review_pack, dict):
             self.assertEqual(
-                "aixray-review-pack.sh",
+                "ptxray-review-pack.sh",
                 review_pack.get("artifact"),
             )
             self.assertTrue(REVIEW_HELPER.is_file())
@@ -1053,7 +1053,7 @@ class PublicFunnelTests(unittest.TestCase):
         for footer in footer_blocks:
             with self.subTest(footer=footer[:80]):
                 self.assertIn("${BOOK_CTA}", footer)
-                self.assertIn("aixray-review-pack.sh", footer)
+                self.assertIn("ptxray-review-pack.sh", footer)
                 self.assertIn(SAFE_SEND_DISCLOSURE, footer)
                 self.assertIn(
                     'href="mailto:review@powertruesystems.com"',
@@ -1061,7 +1061,7 @@ class PublicFunnelTests(unittest.TestCase):
                 )
 
     def test_stig_gated_row_is_literal_and_honestly_documented(self) -> None:
-        for artifact in (SCANNER, SITE / "aixray-aix.sh"):
+        for artifact in (SCANNER, SITE / "ptxray-aix.sh"):
             source = artifact.read_text(encoding="utf-8")
             rows = [
                 tuple(line.split("|"))
