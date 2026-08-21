@@ -1,189 +1,505 @@
-# AIXray: read-only IBM AIX and VIOS health, risk, and security assessment
+# PTxray
 
-AIXray is an open-source IBM AIX health check and VIOS posture assessment for administrators who need evidence before they change a system. Version 1.2.0 runs as a single ksh88 file under AIX `/bin/sh`, reads system state, makes zero network calls during assessment execution, and reports findings without remediating the host.
+**See inside your IBM Power systems.** A free, **read-only** posture scan for
+**IBM AIX and IBM i**. The AIX edition checks over 100 things across 9 catalog
+categories (lifecycle/EOL, patch & CVE currency, storage & capacity,
+performance, errors, availability, security & hardening, config hygiene,
+monitoring gaps); see the [canonical count basis](docs/COUNT-BASIS.md).
+Findings are scored red/amber/green in a
+plain-English, print-ready HTML report (including a clean browser PDF) and a
+stable JSON contract. Single ksh88 file, zero dependencies, no network calls.
+*By [PowerTrue Systems](https://powertruesystems.com).*
 
-**Official page:** [powertruesystems.com/aixray](https://powertruesystems.com/aixray)
+> [Free engineer review: email your report to review@powertruesystems.com — a principal engineer will review it personally and follow up.](mailto:review@powertruesystems.com)
 
-**Download:** [powertruesystems.com/aixray/](https://powertruesystems.com/aixray/)
+> **OPEN SOURCE — Apache-2.0.** PTxray is genuinely open source under
+> Apache-2.0. Anyone may inspect, use, run, fork, modify, and redistribute it
+> under the license terms, including for commercial purposes. Apache-2.0 also
+> includes an express patent grant. PowerTrue Systems uses the same open-source
+> assessment engine in its paid services; the code remains available to
+> everyone under Apache-2.0.
 
-**Guide:** [How to audit an IBM AIX / VIOS system](docs/auditing-aix.md) — a complete, vendor-honest checklist of what to check, why it matters, and what "good" looks like.
+> **FREE & OPEN ACQUISITION.** The source is public at
+> [`PowerTrueSYS/ptxray-public`](https://github.com/PowerTrueSYS/ptxray-public),
+> and the Apache-2.0 artifact has a
+> [direct, ungated download](https://github.com/PowerTrueSYS/ptxray-public/releases/latest/download/ptxray-aix.sh).
+> No email, form, login, or contact information is collected anywhere in the
+> acquisition path. Optional newsletter and service contact remain separate.
+> The report is the lead engine for anyone who wants PowerTrue Systems' help
+> with the findings.
 
-## What is AIXray?
+> IBM i download: [`ptxray-ibmi.sh`](https://github.com/PowerTrueSYS/ptxray-public/releases/latest/download/ptxray-ibmi.sh).
 
-AIXray answers: **“What is measurably true about this AIX or VIOS system right now?”**
+> 🔒 **Read-only. It inspects and reports — it changes nothing, installs nothing,
+> restarts nothing, and sends nothing anywhere.** The report is written on *your*
+> system; you decide what to share. Every line is here for you (or your security
+> team) to read before you run it.
 
-It inspects lifecycle and support levels, patch currency, storage and capacity, performance signals, error history, resilience, security configuration, configuration hygiene, and monitoring readiness. The assembled scan produces HTML, JSON, or supported compliance views. It changes no system configuration and sends no assessment data away from the host.
+## IBM i quick start
 
-AIXray is useful for:
-
-- IBM AIX health checks and pre-change evidence
-- VIOS risk and operational-readiness assessments
-- IBM Power posture reviews
-- AIX security audit preparation and configuration review
-- storage, paging, mirror, MPIO, error-log, dump, and backup checks
-- machine-readable assessment workflows that need explicit unknown states
-
-## What is included?
-
-- [`aixray-aix.sh`](aixray-aix.sh) — the complete AIX/VIOS v1 assessment, version 1.2.0
-- [`aixray-review-pack.sh`](aixray-review-pack.sh) — the offline helper that creates a pseudonymized review copy and a separate local decoding key
-- [`checks/`](checks/) — 387 standalone ksh check tools, each paired with its `manifest.json`
-- [`catalog.json`](catalog.json) — the generated, sorted manifest catalog with SHA-256 hashes and the declared check count
-- [`SECURITY.md`](SECURITY.md) and [`docs/VERIFY.md`](docs/VERIFY.md) — the trust boundary, caveats, and repeatable public-repository verification commands
-- [`site/index.html`](site/index.html) — the public download page for `powertruesystems.com/aixray`
-- [`aixray.jsonld`](aixray.jsonld), [`llms.txt`](llms.txt), and [`robots.txt`](robots.txt) — machine and crawler discovery metadata
-
-The standalone tools are independently callable check modules. Their inventory count is not a numerical claim about every finding produced by the larger assembled assessment.
-
-## Standards coverage
-
-AIXray evaluates selected controls against observed system state. Coverage is partial: a `PASS` applies only to the implemented rule and available evidence, not to the standard as a whole.
-
-| Claim | Proof |
-|---|---|
-| **DISA STIG for IBM AIX 7.x coverage is partial: 66 distinct rule V-IDs receive an engine verdict.** This count is not a single-release coverage fraction. | The live `R_FILEPERM`, `R_SECATTR`, `R_NETTUNE`, and `R_SVCOFF` tables in [`aixray-aix.sh`](aixray-aix.sh) contain 66 distinct V-IDs. `checks_security` calls all four evaluators, and each emits per-rule `PASS`, `FAIL`, or `NA` evidence in JSON `rules[]`. `V-215399` is counted for its `clean_partial_conns` tunable verdict; the package-commit condition in that rule is not checked. Deferred `V-215429` is not in a live table and is not counted. |
-| **Partial: 260 CIS L1-aligned checks** resolve to 209 distinct Level 1 control numbers of the CIS IBM AIX 7 Benchmark v1.2.0, which has 212 Level 1 controls. Their scope spans NFS exports, password hashing, file ownership and permissions, and network tunables, plus login policy, auditing, cron and at, home directories, system accounts, and the r-command services. The three controls with no mapping — 5.1.4, 5.1.5 and 7.1 — are not claimed. A mapping is not a verdict: a mapped control whose evidence is unreadable or absent renders `NOT_ASSESSED`, never `PASS`. This is an alignment cross-check, not a claim of completeness against CIS. | The numeric-only `cis_l1_map` in [`aixray-aix.sh`](aixray-aix.sh) names each source finding or STIG rule the cross-check reads, one per line as `source\|control`. Count its rows and its distinct control numbers directly from the file. The 212 denominator is the Level 1 control count of the benchmark itself; the benchmark PDF is licensed by CIS and is deliberately not redistributed here. The renderer resolves the mappings from the run's actual verdicts and emits no verdict for a control whose evidence is unavailable. |
-| **Level 2 is reachable as `--compliance cis-l2`.** Its scope is narrower than Level 1 and is not summarised as a fraction here. | `--compliance cis-l2` is accepted by the argument parser in [`aixray-aix.sh`](aixray-aix.sh) and renders the same evidence-backed verdict states, `NOT_ASSESSED` included. |
-
-## Why can a cautious AIX administrator inspect it first?
-
-| Claim | Proof |
-|---|---|
-| Read-only on system configuration | The assembled script declares its capture boundary at the top of [`aixray-aix.sh`](aixray-aix.sh). Every public manifest records `"read_only": true` and lists the commands its standalone tool may run. Requested reports and a protected temporary FLRTVC scratch directory are the documented local writes; the scratch directory is removed on exit. |
-| zero egress during the assessment | The shell artifacts contain the assessment logic and reference data locally. They do not fetch reference data or transmit results. Review the command surface in [`catalog.json`](catalog.json) and the executable source before running it. |
-| single ksh88 file | The full scan is one inspectable [`aixray-aix.sh`](aixray-aix.sh) file. On AIX, `/bin/sh` provides the ksh88-compatible runtime used by the script; bash, Python, package installation, and GNU userland are not runtime requirements. |
-| No fabricated assessment result | `NOT_ASSESSED` is a first-class output state. Missing, unreadable, malformed, ambiguous, or unsupported evidence is reported as unavailable rather than silently converted to `PASS`. Search the assembled source for `NOT_ASSESSED` to inspect each branch. |
-| Declared standalone inventory | [`catalog.json`](catalog.json) records `check_count`; each entry resolves to one paired script and manifest under [`checks/`](checks/), and the public tests require all three counts to agree. |
-| Exact artifact identity | Each catalog entry carries the SHA-256 digest of its referenced standalone shell artifact. The catalog is sorted by check ID for deterministic review. |
-| v1 only | The assembled script and all standalone scripts declare version `1.2.0`. This repository does not contain a v2 implementation. |
-
-“Read-only” describes the tool’s effect on target system configuration. If you redirect output or request an export, AIXray writes the output path you selected. The optional offline FLRTVC mode also uses a private temporary directory and removes it on exit. “zero egress” describes assessment execution; obtaining the script is, of course, a separate download.
-
-## Prerequisites
-
-- IBM AIX 7.2 or 7.3, or VIOS
-- AIX `/bin/sh` and standard AIX userland; bash, Python, GNU userland, and package installation are not required
-- Root is recommended for the broadest read access; an unprivileged or non-root run continues, unavailable evidence is explicitly identified, and depending on the check may be reported as `WARN` or `NOT_ASSESSED`
-- Plan for several minutes; runtime varies by system size and optional locally supplied FLRTVC data
-- Nothing is installed, and the assessment makes no network calls
-
-## How do I run AIXray?
-
-Download the scanner from the [download page](https://powertruesystems.com/aixray/), review it, copy it to the AIX or VIOS host, then start with the easy HTML run:
+Sign on as QSECOFR and run the IBM i edition from PASE:
 
 ```sh
-chmod 700 aixray-aix.sh
-./aixray-aix.sh
+/QOpenSys/usr/bin/ksh ./ptxray-ibmi.sh --html > ptxray-ibmi-report.html
 ```
 
-The bare run writes `aixray-<hostname>-<date>.html` in the current directory and prints this completion message:
+Use `--json` for machine-readable output or `--text` for a terminal summary.
+IBM i 7.4 and 7.5 use exact CIS IBM i v2.1.0 crosswalks. Other releases still
+report the release-independent evidence they can assess, omit borrowed CIS
+control numbers, and render as a compatibility scan when the release is before
+7.x. A score is emitted only when measured coverage reaches the hard 80% floor
+for both the security and currency pillars; adverse findings are always shown.
+
+## AIX quick start
+
+On the AIX system, become root, go to the directory containing
+`ptxray-aix.sh`, and run this one command:
+
+```sh
+./ptxray-aix.sh --out .
+```
+
+On a terminal, PTxray first shows an interactive standard-selection menu (STIG,
+CIS Level 1, FFIEC, or all of them — Enter accepts all); with `--out .` each
+selected standard is written as its own
+`aixray-<hostname>-<YYYY-MM-DD>-<standard>.html`. To get the single health
+report described below instead, skip the menu:
+
+```sh
+./ptxray-aix.sh --no-menu --out .
+```
+
+PTxray scans read-only and writes a file named
+`aixray-<hostname>-<YYYY-MM-DD>.html` in the current directory. When it
+finishes, it tells you the exact file to open:
 
 ```text
-Report ready: ./aixray-<hostname>-<date>.html — open it in your browser. To save a PDF: Print -> Save as PDF.
+Report ready: ./aixray-<hostname>-<YYYY-MM-DD>.html — open it in your browser. To save a PDF: Print -> Save as PDF.
 ```
 
-Open the named report in a browser. Use **Print → Save as PDF** when you need a PDF copy. To write the named HTML report somewhere else, use `./aixray-aix.sh --out DIR`.
-
-For advanced, explicit stdout output, redirect HTML or JSON yourself:
+Before transferring or emailing a report, create a separate review candidate:
 
 ```sh
-./aixray-aix.sh --html > aixray-report.html
-./aixray-aix.sh --json > aixray-report.json
+./ptxray-review-pack.sh --pseudonymize aixray-<hostname>-<YYYY-MM-DD>.html
 ```
 
-For a supported compliance view on stdout:
+The helper performs an independent validation pass before it publishes any
+`aixray-review-*.html`. A successful candidate is **pseudonymized, not
+anonymized**, and its status is always **REVIEW REQUIRED**. Inspect the review
+candidate and the item-level `aixray-local-removals-*.txt` manifest before
+sharing. The mode-0600 `aixray-local-key-*.map` and local removals manifest
+never leave this machine; send only the review candidate after inspection.
+
+```text
+Transfer in (workstation to AIX):
+scp ptxray-aix.sh ptxray-review-pack.sh ptxray-review-validate.awk root@<aix-host>:/tmp/
+Copy all three files from the same release; the helper enforces its validator contract.
+Pseudonymize and inspect on AIX before transfer out.
+Transfer out only after inspection (AIX to workstation):
+scp root@<aix-host>:/tmp/aixray-review-<token>-<YYYY-MM-DD>.html .
+```
+
+Copy only the inspected `aixray-review-*.html` candidate to your workstation
+if needed, then double-click it or open it in any browser. Do not transfer the
+raw `aixray-<hostname>-*.html`, the `aixray-local-key-*.map`, or the
+`aixray-local-removals-*.txt`. The review candidate is self-contained: it does
+not need PTxray, fonts, internet access, or any other files beside it.
+
+To make the PDF, open the HTML report, choose **Print**, then choose
+**Save as PDF**. This browser workflow is the supported PDF path; there is
+nothing to install on AIX. The report supplies print-safe colors, margins,
+page breaks, and its own hostname/date/page header and footer. If your print
+dialog would add a second header/footer, turn off its **Headers and footers**
+option. Enable **Background graphics** for the closest color match.
+
+No install, no scanner dependencies, and no network access. PTxray runs under
+AIX `/bin/sh` (ksh88) — no bash, Python, browser, PDF tool, or GNU utility is
+needed on the scanned system. You can inspect `ptxray-aix.sh` before running
+it; the shipped scanner is one readable shell file.
+
+If you need the public files first, clone them on a connected workstation and
+copy the scanner, pseudonymization helper, and independent validator to the
+AIX system through your normal approved transfer path:
 
 ```sh
-./aixray-aix.sh --compliance stig > aixray-stig.html
+git clone https://github.com/PowerTrueSYS/ptxray-public
 ```
 
-## Send a report safely for review
-
-Before sending a generated HTML report, run the offline review helper beside
-the report:
+Existing scripts can keep the stdout forms exactly as before:
 
 ```sh
-./aixray-review-pack.sh aixray-<hostname>-<date>.html
+./ptxray-aix.sh --html > report.html
+./ptxray-aix.sh --json > report.json
+./ptxray-aix.sh --compliance stig > compliance.html
 ```
 
-The v1.0.0-and-later release bundle also supplies
-`aixray-review-validate.awk`; keep it beside `aixray-review-pack.sh` when you
-transfer or run the helper. The historical v0.1.0 helper is self-contained.
+### Check reference-data currency without assessing the host
 
-The helper produces a sendable `aixray-review-*.html` review file and a
-separate mode-`0600` `aixray-local-key-*.map` decoding key that never leaves
-this machine. Its output is pseudonymized, not anonymized: undiscovered
-pure-alphabetic barewords are the documented residual. Inspect the review file
-before sending it; never send the local decoding key. See the exact boundary
-in [`SECURITY.md`](SECURITY.md#outbound-review-pack) and the review steps in
-[`docs/VERIFY.md`](docs/VERIFY.md).
+The AIX artifact has an assessment-free currency readiness check:
+
+```sh
+./ptxray-aix.sh --currency-status
+./ptxray-aix.sh --currency-status --json
+./ptxray-aix.sh --currency-status \
+  --flrtvc-ksh ./flrtvc.ksh --flrtvc-apar-csv ./apar.csv
+```
+
+It reads only the checksum-bound embedded registry and explicitly supplied
+local FLRTVC inputs. It does not inspect the host, invoke FLRTVC, or access the
+network. Text mode prints all eight required sources in stable order with
+version/revision, as-of date, calendar-day age, limit, and status. JSON mode
+prints the exact `aixray-currency-attestation/1` object used by reports.
+
+The check exits `0` only when every required source is identified,
+integrity/provenance verified, and current. Exit `3` is the expected
+fail-closed result for stale, missing, unknown, invalid, or future-dated data;
+`2` is invalid syntax or an invalid threshold override; `1` is an unexpected
+read/serialization failure. A normal assessment still produces its report
+when currency is unverified.
+
+The default limits are 30 days for lifecycle, advisory, CVE, APAR, FLRTVC, and
+firmware sources, and 180 days for CIS and DISA benchmark verification. A
+repeatable override is available on assessment, status, Contract-v2 pipeline,
+fleet, and executive commands:
+
+```sh
+./ptxray-aix.sh --currency-status \
+  --currency-max-age ibm-apar-csv=45
+```
+
+Overrides are per-source and appear in the resulting attestation. Unknown
+source IDs, negative/non-decimal values, and duplicate overrides are rejected
+with exit `2`; no last-value-wins behavior is used.
+
+**Optional off-box PDF automation for an operator:** on a Mac/Linux operator
+workstation that has Chrome/Chromium or `wkhtmltopdf`, the included helper can
+perform the same conversion without opening a print dialog:
+
+```sh
+tools/ptxray-pdf.sh report.html report.pdf
+```
+
+This helper is never required or invoked on the customer AIX system. The
+HTML + browser Print -> Save as PDF workflow remains the primary customer path.
+
+**Run as root.** PTxray requires root because patch, dump, boot,
+SSH, password/account, audit, and service-policy evidence otherwise becomes
+incomplete. An unprivileged production invocation exits with status 2 before
+collecting evidence; it never produces a deceptively partial assessment.
 
 ## Verify what you run
 
-SHA-256 values for the artifacts in this repository revision are published in
-[`SHA256SUMS`](SHA256SUMS), one line per released file, rather than pasted into
-this page where they would rot. Verify every release payload against it.
+Before running PTxray as root, follow
+**[How to verify PTxray is safe](docs/VERIFY.md)**. The skeptical-admin
+checklist gives exact commands to inspect likely network and mutating
+primitives, run the egress and read-only command gates, reassemble the shipped
+script byte for byte, print its SHA-256, and confirm IBM FLRTVC delivery inputs
+are not bundled. [`SECURITY.md`](SECURITY.md) states the trust boundary and the
+limits of each check.
 
-When verifying a full repository tree (a `git clone` or tag archive), use:
+## What you get
+
+- **`--html`** — a red/amber/green report a person reads: per-finding status,
+  severity, what was observed, what it means, and how to fix it, with per-category
+  scores. Every report includes the complete eight-source currency attestation
+  and marks itself **READ-ONLY**.
+- **`--json`** — the same findings as a **stable, documented schema** (`id`,
+  `category`, `label`, `status`, `severity`, `observed`, `meaning`, `fix`,
+  `controls`) plus a required top-level `currency` object, summary, and
+  per-category rollups. It does not mutate assessed system state and is
+  byte-deterministic under fixture replay, making the output suitable for
+  tooling or an AI agent. Live point-in-time CPU/memory samples may legitimately
+  vary between runs and are disclosed by `capacity.snapshot`.
+- **Interactive standard selection** — run on a terminal with no output-format
+  flag (`--compliance`, `--json`, `--html`, `--currency-status`, `--flrt-export`,
+  `--flrtvc-*`), PTxray shows a menu that asks which compliance standard(s) to
+  assess: STIG, CIS Level 1, CIS Level 2, FFIEC, any space-separated combination,
+  or all of them. The menu appears only when both stdin and stdout are a terminal
+  — scripts, pipes, cron, and CI never see it and run exactly as before. `--no-menu`
+  (or `AIXRAY_NO_MENU=1`) forces the non-interactive path on a terminal. The menu
+  never triggers any download; the scanner has no network path.
+
+The AIX JSON contract is version **1.1**. Its additive `facts` object promotes
+already-captured identity, OS/lifecycle, firmware, capacity-snapshot, and
+recovery values into typed fields while retaining the original findings and
+`upgrade_readiness` block for compatibility. Every null is named in exactly one
+of the owning block's `unreadable` (render as **NOT ASSESSED**) or
+`not_applicable` (render as **n/a**) lists; an unread value is never emitted as
+zero.
+
+## CVE exposure — complete FLRTVC sweep in the delivery bundle
+
+The committed public scanner ships a curated **seed** of headline security
+APARs (e.g. CVE-2025-36250, the NIM nimesis RCE). Its FLRTVC embed slots are
+deliberately empty: IBM's IPL-1.0 `flrtvc.ksh` and `apar.csv` are not committed
+or publicly redistributed. A bare run of that public file therefore retains
+the seed-only `apar_scan` WARN.
+
+For an authorized customer delivery, an internet-connected admin box creates a
+local, gitignored scanner containing freshly fetched and verified IBM inputs:
 
 ```sh
-sha256sum -c SHA256SUMS
+# Admin/delivery system only. This output is ignored and must never be
+# committed, published, attached to a public release, or otherwise redistributed.
+python3 tools/refresh-data.py bundle
+
+# Deliver dist/aixray-aix.bundled.sh through the approved customer channel.
+# It may be named ptxray-aix.sh at the destination; no FLRTVC flags are needed.
+./ptxray-aix.sh --html > report.html
 ```
 
-When verifying only downloaded release assets, use:
+On the target, path 0 decodes both blobs only inside PTxray's private mode-700
+scratch directory, verifies the decoded script and feed against their embedded
+SHA256 values, checks the feed vintage, and invokes the verified script with
+`-s -f -l -e -d '|'`. It uses no network. Any missing slot, decode failure,
+hash mismatch, invalid/future vintage, capture gap, or unexpected FLRTVC result
+fails closed to WARN/not-assessed; it never fabricates a clean PASS. Set
+`AIXRAY_NO_BUNDLED_FLRTVC=1` to disable path 0 and restore the seed-only
+fallback for that run.
+
+Explicit `--flrtvc-ksh` plus `--flrtvc-apar-csv` remains path 1 and overrides a
+present bundle. `--flrtvc-report` remains path 2 for parsing a report produced
+elsewhere. PTxray wraps IBM's own FLRTVC matching engine in all complete-sweep
+paths; it never re-implements the fileset/vulnerable-range decision.
+
+**Air-gap bundle path (`--definitions-bundle <file>`):** an operator who cannot
+run the `bundle` producer on the same machine can carry a single
+`.aixray-defs` envelope instead. On a connected admin box,
+`python3 tools/refresh-data.py fetch-bundle --out aixray-defs-YYYYMMDD.aixray-defs`
+frames apar.csv, the pinned flrtvc.ksh, and the optional CISA KEV catalog into
+one closed-text envelope with a footer SHA-256 and per-source payload digests
+(docs/DATA-REFRESH.md). Copy that file to the isolated AIX box, verify it
+(`openssl dgst -sha256 -r file`, compare with the fetch output), and run:
 
 ```sh
-sha256sum -c --ignore-missing SHA256SUMS
+./ptxray-aix.sh --definitions-bundle /path/to/aixray-defs-YYYYMMDD.aixray-defs --json
 ```
 
-The `--ignore-missing` flag verifies only the files present in the directory;
-it skips any `SHA256SUMS` entry whose file is absent without reporting it as a
-failure.
+The scanner validates the envelope and every payload digest entirely offline
+(ksh88 + openssl), decodes the verified bytes into a private mode-700 scratch,
+and invokes the decoded engine with `-s -f -l -e -d '|'` — the same offline
+invoke used by path 1. Any framing, footer-digest, or per-source digest failure
+refuses the whole bundle with a one-line reason on stderr and leaves the scan
+exactly as if no bundle was supplied; nothing is partially ingested.
+`--definitions-bundle` conflicts with `--flrtvc-ksh`/`--flrtvc-apar-csv`/
+`--flrtvc-report` and composes with `--currency-status`, `--flrt-export`, and
+`--out`.
 
-On AIX, `csum -h SHA256 <file>` produces the same digest for a single file.
+**Precisely what writes, and where** (never "zero"): flrtvc.ksh itself, given
+`-s -f -l -e`, makes no network calls and no writes of its own (verified by
+reading the full script — the only such paths are on code paths this
+invocation never takes). But the surrounding workflow *does* write, to paths
+under your control only: the local delivery artifact (or path-1's fetched
+`apar.csv`/`flrtvc.ksh`) and small private scratch files holding decoded inputs
+plus this run's already-in-memory `lslpp`/`emgr` state. Scratch is removed
+immediately after invocation. Nothing is written to the target system's own
+config, filesets, or state — that's the read-only guarantee, made precise
+rather than hand-waved.
 
-The top-level `assembled_scanner` entry in [`catalog.json`](catalog.json)
-binds the root and site scanner copies to the scanner's `SHA256SUMS` line. The
-top-level `review_pack` entry binds the review helper to its line. Each sorted
-`checks[]` entry records its standalone artifact and SHA-256; `check_count`
-must match that list and the paired files under `checks/`.
+A fallback path exists for boxes without ksh93: generate a report elsewhere
+and supply it via `--flrtvc-report <file>` (the admin-side wrapper must append
+a `# FLRTVC_EXIT=$?` trailer proving the real exit status — a weaker
+attestation than the direct-invoke path, since PTxray cannot itself verify
+that invocation used the enforced offline flags; the finding text always says
+which path produced the result).
 
-The published `v0.1.0` assets do not match its immutable tag. See the
-[`v0.1.0` release-integrity note](docs/RELEASE-NOTES.md#v010-release-integrity-note)
-for the exact commits and published-asset digests.
+**PASS requires ALL of:** output matching flrtvc.ksh's own banner and exact
+compact-report column schema, a valid non-future real-calendar vintage parsed
+from line 2 (`2026-02-31`-style impossible dates are explicitly rejected, not
+silently miscalculated), a completion proof (direct exit-status capture, or
+the `FLRTVC_EXIT` trailer on the fallback path), and — when the exit code is 0
+("clean") — a body that is *only* the recognized clean-exit text with zero
+other/malformed rows (a corrupt report that happens to also contain that text
+must not slip through). Any of those missing renders **WARN** ("not assessed"),
+never PASS. Canonical source currency uses the 30-day APAR/FLRTVC limits: a
+source-dependent clean result becomes WARN when its verified source is stale
+and `NOT_ASSESSED` when identity, integrity, provenance, or date cannot be
+verified; a real exposure remains FAIL. HTML and JSON disclose the canonical
+source rows. The legacy `flrtvc_data` JSON object remains only as a compatibility
+projection of those rows, never a second freshness decision.
 
-On a review workstation with `jq`, `rg`, and SHA-256 tooling:
+`--json` carries one structured `exposures[]` entry per CVE/APAR the box is
+exposed to: fileset, installed vs. vulnerable level, IBM's HIPER — High Impact
+PERvasive — flag, an `apars` array (**all** APAR/ifix identifiers IBM's row
+lists — these are often ifix labels like `"3013ma"`, not APAR numbers, so
+they're never mislabeled a singular `"apar"`), bulletin URL, and CVSS, for
+downstream tooling (e.g. PowerTrue Blueprint's remediation sequencing).
+`fixed_at_or_above` is **read verbatim from flrtvc.ksh's own "Fixed In"
+column, never re-derived** — real IBM data comes in both dotted VRMF
+(`"7.2.5.200"`) and dash TL-SP (`"7100-05-10"`, `"7200-05-03-2136"`) shape, and
+both are sourced as-is; it renders `null` only for a genuine non-answer (the
+common `"See Bulletin"` placeholder), never a guess. Every string field is
+JSON-escaped exactly like an ordinary finding — a report-derived value is
+external IBM text, not an inherently safe token. Because IBM's own tool does
+the fileset/version/coverage matching, PTxray never re-decides which installed
+level is exposed or which efix already covers it — eliminating that whole
+class of re-derivation bug by construction.
+
+The JSON also carries a top-level `upgrade_readiness` block (current OS/TL,
+firmware, VIOS, machine type, the documented upgrade path) — the on-box facts
+a stepped upgrade plan needs. The full OS × firmware × VIOS × HMC compatibility
+**matrix** is IBM FLRT web-service output, not on-box data;
+`upgrade_readiness.flrt_compat_matrix` says so explicitly rather than guessing
+at it.
+
+## Compliance report — `--compliance stig|cis-l1|ffiec`
 
 ```sh
-jq '.tool_version, .check_count, .license' catalog.json
-python3 tools/sync-release-shape.py --check
-find checks -name manifest.json | wc -l
-jq -e 'all(.checks[]; .read_only == true and .license == "Apache-2.0")' catalog.json
-version=$(jq -r '.tool_version' catalog.json)
-rg -n -F -e "VERSION=\"${version}\"" -e "AIXRAY_REVIEW_PACK_VERSION=\"${version}\"" -e "AIXRAY_STANDALONE_VERSION=\"${version}\"" aixray-aix.sh aixray-review-pack.sh checks --glob '*.ksh'
-rg -n 'NOT_ASSESSED' aixray-aix.sh
-cmp aixray-aix.sh site/aixray-aix.sh
-set -- aixray-aix.sh aixray-review-pack.sh checks/*/*.ksh
-[ ! -f aixray-review-validate.awk ] || set -- "$@" aixray-review-validate.awk
-sh tools/ci/egress-lint.sh "$@"
-python3 tools/check-no-ibm-redistribution.py
-sh tests/run-tests.sh
+./ptxray-aix.sh --compliance stig > compliance.html
 ```
 
-To verify a standalone artifact, compare its digest with the `sha256` value in its catalog entry. To audit behavior, inspect its manifest’s declared commands and then read the paired ksh file; both are adjacent by design.
+A second output with two layers: an auditor-shaped summary (control-by-control
+status with observed evidence and an honest automation-coverage note) and a
+Critical-first remediation worklist an engineer works through. Findings carry
+control mappings in the JSON (`"controls": ["stig:V-215263", ...]`).
 
-## Output honesty and limitations
+- **stig** — DISA STIG for AIX 7.x (granular V-ID mappings; the authoritative
+  embedded source, public domain, attributed). Hardening depth is being built out
+  against the full public STIG rule set via a data-driven rule engine — file
+  permissions/ownership are the first family (each rule evaluated and reported per
+  V-ID). See `docs/COVERAGE.md`.
+- **cis-l1** — CIS Level-1 as an *alignment tag only* (no CIS text or section
+  numbers — licensing).
+- **ffiec** — FFIEC IT Handbook section tags (public domain; the credit-union
+  overlay).
 
-AIXray reports observable posture; it does not prove that a system is secure, compliant, recoverable, or free of defects. A `PASS` applies only to the evidence and rule implemented by that check. AIXray does not perform remediation. A backup record is not a restore test, and a configuration assessment is not a penetration test.
+## Fleet & executive views
 
-Reference data has a declared vintage in the assembled script. Review that value when deciding whether the result is current enough for your use.
+- **Fleet runner** (`tools/ptxray-fleet.py`, an admin box) — SSH a host list,
+  aggregate every LPAR's JSON into one fleet report: per-host scorecard,
+  category heatmap, cross-host worst findings. Targets need **nothing
+  installed** — the script is streamed over SSH and run read-only.
+  Currency is re-aged at the fleet report date; legacy, malformed, mixed, or
+  unreachable hosts make the aggregate `UNVERIFIED`.
+  `python3 tools/ptxray-fleet.py --hosts hosts.txt`
+- **Executive report** (`tools/ptxray-exec.py`) — renders one host or a fleet
+  into a decision-maker document: posture verdict, score, category bars, top
+  risks in business language, no jargon or command output. It carries the same
+  host/source attestation and never presents a would-be GREEN result as current
+  when aggregate currency is unverified.
+  `python3 tools/ptxray-exec.py report.json --out exec.html`
+
+Both entry points accept repeatable
+`--currency-max-age SOURCE_ID=DAYS` overrides and generate self-contained HTML
+without remote font or asset requests.
+
+## For AI agents (MCP)
+
+An **MCP server** (`mcp/`) exposes the scan as tools any MCP-aware assistant can
+call: `health_check`, `compliance_report`, and `about` (the safety guarantees to
+relay). The supported assessment path runs the AIX edition.
+Because the on-box scanner does not mutate assessed system state or
+make network calls, an assistant can run “check this system's posture” without
+granting it a remediation or upload path. AIX health results return the native
+`currency` object unchanged, and compliance HTML contains the native visible
+attestation rather than an MCP-specific interpretation. The selected report
+path and any documented private FLRTVC scratch files are still local filesystem
+writes.
+
+## Trust boundaries
+
+**What it inspects:** filesets and patch levels, TL/SP and firmware versions,
+storage/filesystem/VG capacity, CPU/memory/paging performance counters, the
+error report (`errpt`), network and SSH configuration, account/password/audit
+policy, cron and service config —
+all via standard read commands (`lslpp`, `oslevel`, `df`, `svmon`, `errpt`,
+`sshd -T`, `lsuser`, etc.), never by reading arbitrary files off disk.
+
+**What it never does:** it never installs, upgrades, or removes a fileset;
+never edits a config file, device attribute, or security policy; never
+starts, stops, or restarts a service; never reboots or shuts down; never
+creates, locks, or deletes a user; never deletes or moves assessed system data.
+It removes only its private scratch files and atomically moves its report
+temporary file into the output path you selected. Every
+`chmod`/`chsec`/`chdev`/`chuser`-style command you'll see in a
+finding's *fix* text is advisory prose describing what **you** would run — the
+scan itself never executes it. The report/export modes (`--html`, `--json`,
+`--compliance`, `--out`, and `--flrt-export`) write only to the path or
+redirection you choose; `--out` may create the directory you explicitly name
+and writes the named HTML report there. When path 0 is present, or
+`--flrtvc-ksh` and
+`--flrtvc-apar-csv` are supplied, PTxray also creates a
+temporary FLRTVC scratch directory under `${TMPDIR:-/tmp}` on the target; that
+directory is removed on exit after normal completion or a handled signal. An
+abrupt termination can leave private scratch debris to remove manually.
+`--flrtvc-report` reads a pre-generated report without that scratch workflow.
+It never writes system configuration.
+
+- **Read-only to assessed system state.** Inspects and reports;
+  changes/installs/restarts nothing. Local writes are limited to the explicit
+  report/export and private scratch paths described above.
+- **Zero on-box network egress.** The scanner uses embedded or explicitly
+  side-loaded local reference data; the report never leaves your box unless
+  you send it.
+- **One inspectable file.** `ptxray-aix.sh` is plain ksh88 with base64 delivery
+  data in the authorized customer build — no compiled code and no runtime
+  fetches. A cautious admin can inspect and decode every byte before running it.
+- **Least privilege.** Elevated reads are documented; unprivileged runs degrade
+  loudly, never silently.
+
+## Data currency
+
+The tool never phones home, so its knowledge is **attested, not assumed**.
+`data/source-registry.json` binds the exact static payloads and names all eight
+required verdict-bearing sources. Runtime rows come from the exact local KEV,
+APAR, FLRTVC, and firmware packages selected for the run. Missing identity,
+digest, provenance, or date stays the literal `unknown`; filenames, mtimes,
+assessment dates, and the wall clock never fill the gap. The legacy
+`data_vintage` field remains for compatibility and is derived from the source
+rows; it is not an evaluation input.
+
+At the current base, the CIS and DISA benchmark vendor versions remain
+`unknown` until a curator verifies the actual revisions behind the numeric-only
+crosswalk and loaded rules. That intentionally makes the public release
+readiness check nonzero rather than claiming current benchmark coverage from
+comments or a content hash alone.
+
+We keep source packages current on an **event-driven** cadence — when IBM ships
+a bulletin or lifecycle change, we ship a data release (⭐ Watch → **Releases**
+to get pinged). The refresh engine (`tools/refresh-data.py`) polls live feeds on
+*our* side; assessment, status, rendering, fleet, and executive paths stay
+offline. For **day-0 / actively-exploited** CVEs, the fast lane
+(`tools/dayzero-monitor.py`) polls CISA KEV + IBM FLRT/PSIRT + Red Hat + NVD on
+the acquisition side and proposes a curated dataset row. See
+[`docs/DATA-REFRESH.md`](docs/DATA-REFRESH.md) and
+[`docs/DAYZERO-FEED.md`](docs/DAYZERO-FEED.md).
+
+## Docs
+
+- [`docs/CHECK-CATALOG.md`](docs/CHECK-CATALOG.md) — the full check catalog (A–J).
+- [`docs/COVERAGE.md`](docs/COVERAGE.md) — every catalog line mapped to finding
+  IDs with an honest covered/thin/out status.
+- [`docs/DATA-REFRESH.md`](docs/DATA-REFRESH.md) — the currency cadence: sources,
+  the event-driven flow, and the zero-day path.
+- [`docs/DAYZERO-FEED.md`](docs/DAYZERO-FEED.md) — the day-0 fast lane: CISA KEV +
+  IBM PSIRT + Red Hat + NVD, high-frequency polling, alerts, curated dataset
+  updates (detection only; remediation is out of scope).
+- [`docs/SCHEDULING.md`](docs/SCHEDULING.md) — the self-serve nightly-cron recipe.
+
+## Why it's free
+
+PowerTrue Systems provides managed AIX and IBM Power administration, and PTxray is
+the free, honest, inspectable version of the assessment we run for every
+client — **you don't have to take our word for what it finds, and you don't
+have to run it yourself either.**
+
+The report, not an acquisition form, is the lead engine: it gives you useful
+findings first and points to optional PowerTrue Systems help only if you want
+it.
+
+If you'd rather not run it: PowerTrue will run PTxray against **one system you
+choose**, for free, and turn the findings into a **PowerTrue Blueprint** — a
+prioritized, plain-English plan for what to fix and in what order. That's the
+free offer; it costs you 20 minutes and nothing else. From there, most estates
+have more than one system worth looking at — a **paid Blueprint** covers your
+**whole IBM Power estate** (every AIX LPAR and IBM i partition, one priced and sequenced plan),
+which is what typically precedes a scoped remediation engagement (we call
+these **Fortify** and **Refresh**) and, for shops that want it handled on an
+ongoing basis, our managed service (**Bulwark**). Start here:
+[powertruesystems.com](https://powertruesystems.com).
 
 ## License
 
-AIXray is open source under the [Apache License 2.0](LICENSE). Use, modification, and redistribution are permitted under the license's terms, including the patent grant. See the [NOTICE](NOTICE) file for attribution.
-
-Machine-readable license expression: `Apache-2.0`.
-
-The assembled report includes IBM Plex font data under the SIL Open Font License 1.1. See [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
-
-Copyright © 2026 CJDM LLC, doing business as PowerTrue Systems.
+PTxray is open source under Apache-2.0. Use, modification, and redistribution
+— including commercial use — are permitted under the license terms, including
+the patent grant. Read-only tool; provided without warranty.

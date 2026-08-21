@@ -1,5 +1,36 @@
 # Release notes
 
+## v1.3.0
+
+PTxray joins the IBM i platform and takes its production name. This release
+renames the project from AIXray to **PTxray** and adds a dedicated IBM i
+edition alongside the existing AIX assessment.
+
+### IBM i edition
+
+`ptxray-ibmi.sh` is a new read-only IBM i assessment that runs from PASE
+(`/QOpenSys/usr/bin/ksh`). On IBM i 7.4 and 7.5 it aligns to the CIS IBM i
+v2.1.0 benchmark; on other releases it reports the release-independent evidence
+it can assess and omits borrowed control numbers. Like the AIX edition it
+changes nothing, installs nothing, and makes no network calls during
+assessment, and it reports `NOT_ASSESSED` when evidence is unavailable rather
+than inventing a result. There is no DISA STIG for IBM i, so none is claimed.
+
+### PTxray rename
+
+The AIX assessment is now `ptxray-aix.sh`, and the review helpers are
+`ptxray-review-pack.sh` and `ptxray-review-validate.awk`. For continuity, each
+release also publishes `aixray-aix.sh` as a byte-identical alias so download
+links and report footers minted before the rename keep resolving; the alias
+will be retired at a future major release.
+
+### Download
+
+The release assets are `ptxray-aix.sh`, `ptxray-ibmi.sh`,
+`ptxray-review-pack.sh`, `ptxray-review-validate.awk`, the `aixray-aix.sh`
+alias, and `SHA256SUMS`. Download the assets, verify them against
+`SHA256SUMS`, and run the edition for your platform.
+
 ## v1.2.0
 
 A reference-data and inventory release. The standalone check-module count grows

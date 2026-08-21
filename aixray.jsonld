@@ -2,22 +2,23 @@
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
   "@id": "https://powertruesystems.com/aixray#software",
-  "name": "AIXray",
-  "alternateName": "AIXray AIX and VIOS posture assessment",
-  "description": "An open-source, read-only IBM AIX and VIOS posture assessment delivered as a single ksh88-compatible shell file with zero egress during assessment execution and explicit NOT_ASSESSED results when evidence is unavailable.",
+  "name": "PTxray",
+  "alternateName": "PTxray AIX and IBM i posture assessment",
+  "description": "An open-source, read-only IBM AIX and IBM i posture assessment delivered as a single ksh88-compatible shell file with zero egress during assessment execution and explicit NOT_ASSESSED results when evidence is unavailable.",
   "url": "https://powertruesystems.com/aixray",
-  "codeRepository": "https://github.com/PowerTrueSYS/aixray-public",
+  "codeRepository": "https://github.com/PowerTrueSYS/ptxray-public",
   "downloadUrl": "https://powertruesystems.com/aixray/",
-  "softwareVersion": "1.2.0",
+  "softwareVersion": "1.3.0",
   "applicationCategory": "System administration and security assessment",
-  "applicationSubCategory": "IBM AIX health check and VIOS posture assessment",
+  "applicationSubCategory": "IBM AIX and IBM i health check and posture assessment",
   "operatingSystem": [
     "IBM AIX 7.2",
     "IBM AIX 7.3",
-    "IBM VIOS"
+    "IBM i 7.4",
+    "IBM i 7.5"
   ],
-  "programmingLanguage": "KornShell (ksh88-compatible AIX /bin/sh)",
-  "softwareRequirements": "AIX /bin/sh and standard AIX userland; no bash, Python, GNU userland, package installation, or assessment-time network access required.",
+  "programmingLanguage": "KornShell (ksh88-compatible AIX /bin/sh; IBM i PASE ksh)",
+  "softwareRequirements": "AIX /bin/sh and standard AIX userland, or IBM i PASE ksh for the IBM i edition; no bash, Python, GNU userland, package installation, or assessment-time network access required.",
   "license": "https://www.apache.org/licenses/LICENSE-2.0",
   "provider": {
     "@type": "Organization",
@@ -33,9 +34,10 @@
     "Explicit NOT_ASSESSED status for unavailable evidence",
     "DISA STIG for IBM AIX 7.x coverage is partial: 66 distinct rule V-IDs receive an engine verdict; this count is not a single-release coverage fraction; V-215399 covers only the clean_partial_conns tunable, not its package-commit condition; deferred V-215429 is not counted",
     "260 CIS L1-aligned checks across NFS exports, password hashing, file ownership and permissions, and network tunables, plus login policy, auditing, cron and at, home directories, system accounts and the r-command services, resolving to 209 distinct Level 1 control numbers of the 212 in CIS IBM AIX 7 Benchmark v1.2.0; 5.1.4, 5.1.5 and 7.1 are not claimed; alignment only",
+    "IBM i edition aligns to the CIS IBM i v2.1.0 benchmark on IBM i 7.4 and 7.5; there is no DISA STIG for IBM i",
     "387 standalone check tools with machine-readable manifests"
   ],
-  "keywords": "IBM AIX health check, VIOS assessment, IBM Power security audit, AIX posture assessment, AIX risk scanner, DISA STIG IBM AIX 7.x, CIS L1-aligned checks, ksh88, read-only, zero egress",
+  "keywords": "IBM AIX health check, IBM i assessment, IBM i posture assessment, IBM Power security audit, AIX posture assessment, AIX risk scanner, DISA STIG IBM AIX 7.x, CIS IBM AIX 7, CIS IBM i, CIS L1-aligned checks, ksh88, read-only, zero egress",
   "additionalProperty": [
     {
       "@type": "PropertyValue",

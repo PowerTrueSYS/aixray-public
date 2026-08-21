@@ -1,458 +1,335 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>AIXray — read-only IBM AIX and VIOS health assessment</title>
-  <meta name="description" content="Download AIXray, the open-source IBM AIX and VIOS posture assessment: read-only on system configuration, zero egress during execution, one inspectable ksh88 file.">
-  <meta name="keywords" content="IBM AIX health check, VIOS assessment, IBM Power security audit, AIX posture assessment, AIX risk scanner, ksh88, read-only, zero egress">
-  <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1">
-  <link rel="canonical" href="https://powertruesystems.com/aixray">
-  <meta property="og:type" content="website">
-  <meta property="og:site_name" content="PowerTrue Systems">
-  <meta property="og:title" content="AIXray — read-only IBM AIX and VIOS health assessment">
-  <meta property="og:description" content="Inspect AIX and VIOS posture with one reviewable ksh88 file. No configuration changes and zero assessment-time network egress.">
-  <meta property="og:url" content="https://powertruesystems.com/aixray">
-  <meta name="twitter:card" content="summary">
-  <meta name="theme-color" content="#102d35">
-  <script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "SoftwareApplication",
-  "@id": "https://powertruesystems.com/aixray#software",
-  "name": "AIXray",
-  "alternateName": "AIXray AIX and VIOS posture assessment",
-  "description": "An open-source, read-only IBM AIX and VIOS posture assessment delivered as a single ksh88-compatible shell file with zero egress during assessment execution and explicit NOT_ASSESSED results when evidence is unavailable.",
-  "url": "https://powertruesystems.com/aixray",
-  "codeRepository": "https://github.com/PowerTrueSYS/aixray-public",
-  "downloadUrl": "https://powertruesystems.com/aixray/",
-  "softwareVersion": "1.2.0",
-  "applicationCategory": "System administration and security assessment",
-  "applicationSubCategory": "IBM AIX health check and VIOS posture assessment",
-  "operatingSystem": [
-    "IBM AIX 7.2",
-    "IBM AIX 7.3",
-    "IBM VIOS"
-  ],
-  "programmingLanguage": "KornShell (ksh88-compatible AIX /bin/sh)",
-  "softwareRequirements": "AIX /bin/sh and standard AIX userland; no bash, Python, GNU userland, package installation, or assessment-time network access required.",
-  "license": "https://www.apache.org/licenses/LICENSE-2.0",
-  "provider": {
-    "@type": "Organization",
-    "@id": "https://powertruesystems.com/#org",
-    "name": "PowerTrue Systems",
-    "url": "https://powertruesystems.com"
-  },
-  "featureList": [
-    "Read-only system posture assessment",
-    "Zero network egress during assessment execution",
-    "HTML and JSON reports",
-    "Supported compliance-oriented views",
-    "Explicit NOT_ASSESSED status for unavailable evidence",
-    "387 standalone check tools with machine-readable manifests"
-  ],
-  "keywords": "IBM AIX health check, VIOS assessment, IBM Power security audit, AIX posture assessment, AIX risk scanner, ksh88, read-only, zero egress",
-  "additionalProperty": [
-    {
-      "@type": "PropertyValue",
-      "name": "licenseExpression",
-      "value": "Apache-2.0"
-    },
-    {
-      "@type": "PropertyValue",
-      "name": "standaloneCheckCount",
-      "value": 387
-    },
-    {
-      "@type": "PropertyValue",
-      "name": "configurationEffect",
-      "value": "read-only"
-    },
-    {
-      "@type": "PropertyValue",
-      "name": "assessmentNetworkEgress",
-      "value": "none"
-    }
-  ]
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PTxray — see inside your IBM Power systems</title>
+<meta name="description" content="A free, read-only health & vulnerability check for IBM AIX, IBM i, Power. Run it, get a plain-English red/amber/green report. It inspects and reports — it changes nothing. By PowerTrue Systems.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --slate-900:#1B1F24; --slate-850:#23272E; --slate-800:#2B3038; --slate-700:#31363E;
+  --copper:#C2703D; --copper-d:#A85A2C; --copper-l:#D98A5A;
+  --cream:#F4F2EE; --line:#E2DDD5; --ink:#23272E; --body:#5C5F63;
+  --lightText:#CBCFD4; --mute:#8A929B; --white:#FFFFFF;
+  --red:#C0392B; --amber:#B7791F; --green:#2E7D52;
+  --font-display:"IBM Plex Serif",Georgia,serif;
+  --font-body:"IBM Plex Sans",-apple-system,sans-serif;
+  --font-mono:"IBM Plex Mono",monospace;
+  --wrap:1180px; --pad:32px;
 }
-  </script>
-  <style>
-    :root {
-      --ink: #102d35;
-      --ink-deep: #071e25;
-      --paper: #f4efe6;
-      --paper-light: #fcfaf6;
-      --copper: #b7673c;
-      --copper-dark: #8d4626;
-      --sea: #58b7a8;
-      --green: #25735a;
-      --line: rgba(16, 45, 53, .17);
-      --muted: #5b6d70;
-      --white: #fff;
-      --shadow: 0 24px 70px rgba(7, 30, 37, .15);
-    }
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:var(--font-body);font-weight:300;color:var(--body);background:var(--cream);font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.wrap{max-width:var(--wrap);margin:0 auto;padding:0 var(--pad)}
+h1,h2,h3{font-family:var(--font-display);color:var(--ink);letter-spacing:-0.01em;font-weight:600}
+h1{font-size:clamp(38px,6vw,68px);line-height:1.12;margin:0}
+h2{font-size:clamp(28px,3.6vw,42px);line-height:1.12;margin:0 0 14px}
+h3{font-size:24px;margin:0 0 8px}
+p{margin:0 0 16px}
+a{color:var(--copper-d);text-decoration:none}
+a:hover{text-decoration:underline}
+.eyebrow{font-family:var(--font-mono);font-size:12px;font-weight:500;letter-spacing:3px;text-transform:uppercase;color:var(--copper);margin:0 0 14px}
+.lead{font-size:19px;font-weight:400;line-height:1.55;color:var(--body)}
+section{padding:96px 0}
+.btn{display:inline-block;font-family:var(--font-mono);font-size:13px;font-weight:500;letter-spacing:1px;text-transform:uppercase;padding:14px 26px;border:1px solid var(--copper);color:var(--white);background:var(--copper);border-radius:0;cursor:pointer}
+.btn:hover{background:var(--copper-d);border-color:var(--copper-d);text-decoration:none}
+.btn.ghost{background:transparent;color:var(--copper);}
+.btn.ghost:hover{background:var(--copper);color:var(--white)}
+.btn.onDark{color:var(--white)}
+.btn.ghost.onDark{color:var(--copper-l);border-color:var(--copper-l)}
+.btn.ghost.onDark:hover{background:var(--copper);color:var(--white);border-color:var(--copper)}
+code,pre,.mono{font-family:var(--font-mono)}
 
-    * { box-sizing: border-box; }
-    html { scroll-behavior: smooth; }
-    body {
-      margin: 0;
-      color: var(--ink);
-      background: var(--paper);
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      line-height: 1.6;
-    }
-    a { color: inherit; }
-    button, input, select { font: inherit; }
-    .wrap { width: min(1120px, calc(100% - 40px)); margin: 0 auto; }
+/* top bar */
+.topbar{background:var(--slate-900);border-bottom:1px solid var(--slate-700)}
+.topbar .wrap{display:flex;align-items:center;justify-content:space-between;padding-top:16px;padding-bottom:16px}
+.brand{font-family:var(--font-display);font-weight:600;font-size:22px;color:var(--white)}
+.brand .by{display:block;font-family:var(--font-mono);font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--mute);margin-top:2px}
+.topbar nav a{font-family:var(--font-mono);font-size:12px;letter-spacing:1px;text-transform:uppercase;color:var(--lightText);margin-left:22px}
+.topbar nav a:hover{color:var(--copper-l);text-decoration:none}
+@media(max-width:720px){.topbar nav{display:none}}
 
-    .hero {
-      position: relative;
-      overflow: hidden;
-      color: var(--white);
-      background:
-        radial-gradient(circle at 82% 18%, rgba(88, 183, 168, .24), transparent 32%),
-        linear-gradient(140deg, var(--ink-deep), var(--ink));
-      border-bottom: 5px solid var(--copper);
-    }
-    .hero::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      opacity: .11;
-      background-image:
-        linear-gradient(rgba(255,255,255,.35) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,.35) 1px, transparent 1px);
-      background-size: 42px 42px;
-      mask-image: linear-gradient(to bottom, black, transparent 88%);
-    }
-    nav {
-      position: relative;
-      z-index: 1;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 26px 0;
-    }
-    .brand { font-weight: 780; letter-spacing: -.025em; text-decoration: none; }
-    .brand span { color: #e39a6f; }
-    .nav-link { color: #dce9e8; font-size: .9rem; text-underline-offset: 5px; }
-    .hero-grid {
-      position: relative;
-      z-index: 1;
-      display: grid;
-      grid-template-columns: 1.25fr .75fr;
-      gap: 70px;
-      align-items: end;
-      padding: 74px 0 96px;
-    }
-    .eyebrow {
-      display: inline-flex;
-      align-items: center;
-      gap: 9px;
-      margin: 0 0 18px;
-      color: #9ed9cf;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-size: .76rem;
-      font-weight: 700;
-      letter-spacing: .16em;
-      text-transform: uppercase;
-    }
-    .eyebrow::before { content: ""; width: 24px; height: 2px; background: currentColor; }
-    h1, h2, h3, p { margin-top: 0; }
-    h1 {
-      max-width: 780px;
-      margin-bottom: 24px;
-      font-family: Georgia, "Times New Roman", serif;
-      font-size: clamp(3.3rem, 7vw, 6.7rem);
-      font-weight: 500;
-      letter-spacing: -.055em;
-      line-height: .94;
-    }
-    h1 em { color: #e39a6f; font-style: normal; }
-    .lede { max-width: 750px; color: #dce9e8; font-size: clamp(1.08rem, 2vw, 1.28rem); }
-    .version-card {
-      padding: 28px;
-      background: rgba(255,255,255,.07);
-      border: 1px solid rgba(255,255,255,.16);
-      backdrop-filter: blur(12px);
-      box-shadow: 0 20px 60px rgba(0,0,0,.18);
-    }
-    .version-card code { color: #f5b48d; font-size: .82rem; }
-    .version-card strong { display: block; margin: 8px 0 18px; font-size: 1.45rem; }
-    .version-card ul { margin: 0; padding: 0; list-style: none; }
-    .version-card li { padding: 9px 0; border-top: 1px solid rgba(255,255,255,.13); color: #dce9e8; }
-    .version-card li::before { content: "✓"; margin-right: 10px; color: #9ed9cf; font-weight: 800; }
+/* hero */
+.hero{background:var(--slate-900);color:var(--lightText);position:relative;overflow:hidden;padding:104px 0 96px}
+.hero::before{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(194,112,61,0.05) 1px,transparent 1px),linear-gradient(90deg,rgba(194,112,61,0.05) 1px,transparent 1px);background-size:46px 46px;pointer-events:none}
+.hero .wrap{position:relative}
+.hero h1{color:var(--white);max-width:14ch}
+.hero .lead{color:var(--lightText);max-width:60ch;margin-top:22px;font-size:20px}
+.hero .cta{margin-top:34px;display:flex;gap:14px;flex-wrap:wrap}
+.platforms{margin-top:30px;font-family:var(--font-mono);font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--mute)}
+.platforms b{color:var(--copper-l);font-weight:500}
 
-    main section { padding: 92px 0; }
-    .intro { background: var(--paper-light); }
-    .section-head { max-width: 780px; margin-bottom: 42px; }
-    .section-head .eyebrow { color: var(--copper-dark); }
-    h2 {
-      margin-bottom: 18px;
-      font-family: Georgia, "Times New Roman", serif;
-      font-size: clamp(2.2rem, 4vw, 3.7rem);
-      font-weight: 500;
-      letter-spacing: -.035em;
-      line-height: 1.05;
-    }
-    .section-head p { color: var(--muted); font-size: 1.1rem; }
-    .proof-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
-    .proof {
-      min-height: 190px;
-      padding: 25px;
-      background: var(--white);
-      border: 1px solid var(--line);
-      border-top: 3px solid var(--sea);
-    }
-    .proof .num { color: var(--copper-dark); font-family: ui-monospace, monospace; font-size: .77rem; font-weight: 800; }
-    .proof h3 { margin: 18px 0 9px; font-size: 1.08rem; }
-    .proof p { margin-bottom: 0; color: var(--muted); font-size: .9rem; }
+/* read-only trust strip */
+.trust-strip{background:var(--slate-850);border-top:1px solid var(--slate-700);border-bottom:3px solid var(--copper);color:var(--lightText)}
+.trust-strip .wrap{padding-top:26px;padding-bottom:26px;display:flex;gap:18px;align-items:flex-start}
+.trust-strip .lock{font-family:var(--font-mono);font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--green);background:rgba(46,125,82,0.15);padding:6px 12px;white-space:nowrap}
+.trust-strip p{margin:0;font-size:15px}
+.trust-strip b{color:var(--white)}
+@media(max-width:640px){.trust-strip .wrap{flex-direction:column;gap:12px}}
 
-    .gate { background: var(--ink); color: var(--white); }
-    .gate .section-head .eyebrow { color: #9ed9cf; }
-    .gate .section-head p { color: #c4d5d4; }
-    .gate-grid { display: grid; grid-template-columns: 1.25fr .75fr; gap: 22px; align-items: stretch; }
-    .panel { padding: clamp(27px, 5vw, 46px); background: var(--paper-light); color: var(--ink); box-shadow: var(--shadow); }
-    .panel.secondary { display: flex; flex-direction: column; justify-content: space-between; background: #dce9e6; }
-    .panel h3 { margin-bottom: 10px; font-family: Georgia, serif; font-size: 1.75rem; font-weight: 500; }
-    .panel p { color: var(--muted); }
-    .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 11px; margin-top: 25px; }
-    .field { display: grid; gap: 6px; }
-    .field span { font-size: .78rem; font-weight: 760; }
-    .field small { color: var(--muted); font-size: inherit; font-weight: 500; }
-    .field input, .field select {
-      width: 100%;
-      min-width: 0;
-      min-height: 52px;
-      padding: 15px 16px;
-      color: var(--ink);
-      background: var(--white);
-      border: 1px solid #aebfbd;
-      border-radius: 0;
-    }
-    .field input:focus, .field select:focus { outline: 3px solid rgba(183,103,60,.25); border-color: var(--copper); }
-    .form-grid > .button { align-self: end; }
-    .button {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      min-height: 52px;
-      padding: 13px 20px;
-      color: var(--white);
-      background: var(--copper);
-      border: 0;
-      border-radius: 0;
-      font-weight: 760;
-      text-decoration: none;
-      cursor: pointer;
-      transition: transform .16s ease, background .16s ease;
-    }
-    .button:hover { background: var(--copper-dark); transform: translateY(-1px); }
-    .button:focus-visible { outline: 3px solid #9ed9cf; outline-offset: 3px; }
-    .button:disabled { cursor: wait; opacity: .65; transform: none; }
-    .button.alt { width: 100%; color: var(--white); background: var(--ink); }
-    .button.alt:hover { background: var(--ink-deep); }
-    .fine { margin: 13px 0 0; font-size: .78rem; line-height: 1.5; }
-    .status { min-height: 1.5em; margin: 12px 0 0; color: var(--muted); font-size: .86rem; }
-    .ready { margin-top: 18px; padding: 18px; border-left: 4px solid var(--green); background: #e4f1ea; }
-    .ready[hidden] { display: none; }
-    .ready p { color: var(--ink); margin-bottom: 12px; }
-    .ready .button { width: 100%; background: var(--green); }
-    .mini-proof { margin: 24px 0 0; padding: 0; list-style: none; }
-    .mini-proof li { padding: 9px 0; color: var(--muted); border-top: 1px solid rgba(16,45,53,.13); font-size: .9rem; }
-    .mini-proof li::before { content: "→"; margin-right: 9px; color: var(--copper-dark); }
-    .soft-cta { margin: 20px 0 0; font-size: .92rem; color: var(--ink); }
-    .teaser { margin: 12px 0 0; font-size: .8rem; color: var(--muted); }
-    .notify { margin-top: 22px; padding-top: 20px; border-top: 1px solid var(--line); }
-    .notify .field { margin-bottom: 12px; }
-    .notify .button { width: 100%; }
+/* generic light/dark section helpers */
+.dark{background:var(--slate-900);color:var(--lightText)}
+.dark h2,.dark h3{color:var(--white)}
+.dark .lead{color:var(--lightText)}
+.dark p{color:var(--lightText)}
+.section-head{max-width:62ch;margin-bottom:48px}
 
-    .inspect { background: var(--paper); }
-    .inspect-grid { display: grid; grid-template-columns: .8fr 1.2fr; gap: 50px; align-items: start; }
-    pre {
-      margin: 0;
-      padding: 26px;
-      overflow: auto;
-      color: #dce9e8;
-      background: var(--ink-deep);
-      border-left: 4px solid var(--copper);
-      font: .84rem/1.8 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      box-shadow: var(--shadow);
-    }
-    .inspect-copy p { color: var(--muted); }
-    .text-link { color: var(--copper-dark); font-weight: 750; text-underline-offset: 4px; }
-    footer { padding: 32px 0; color: #c4d5d4; background: var(--ink-deep); font-size: .82rem; }
-    footer .wrap { display: flex; justify-content: space-between; gap: 24px; }
+/* checks grid */
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:26px}
+@media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:620px){.grid{grid-template-columns:1fr}}
+.card{background:var(--white);border:1px solid var(--line);border-top:3px solid var(--copper);padding:30px 28px}
+.card .cat{font-family:var(--font-mono);font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--copper-d);margin-bottom:10px}
+.card h3{font-size:20px}
+.card p{font-size:14.5px;margin:0;color:var(--body)}
 
-    @media (max-width: 900px) {
-      .hero-grid, .gate-grid, .inspect-grid { grid-template-columns: 1fr; }
-      .hero-grid { gap: 38px; }
-      .proof-grid { grid-template-columns: repeat(2, 1fr); }
-    }
-    @media (max-width: 580px) {
-      .wrap { width: min(100% - 28px, 1120px); }
-      .hero-grid { padding: 50px 0 68px; }
-      main section { padding: 68px 0; }
-      .proof-grid { grid-template-columns: 1fr; }
-      .form-grid { grid-template-columns: 1fr; }
-      footer .wrap { flex-direction: column; }
-    }
-    @media (prefers-reduced-motion: reduce) {
-      html { scroll-behavior: auto; }
-      .button { transition: none; }
-    }
-  </style>
+/* trust detail bullets */
+.bullets{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(2,1fr);gap:18px 30px}
+@media(max-width:620px){.bullets{grid-template-columns:1fr}}
+.bullets li{padding-left:26px;position:relative;font-size:15.5px}
+.bullets li::before{content:"";position:absolute;left:0;top:9px;width:10px;height:10px;background:var(--copper);}
+.dark .bullets li{color:var(--lightText)}
+
+/* quick start */
+.terminal{background:var(--slate-900);border:1px solid var(--slate-700);border-top:3px solid var(--copper);font-family:var(--font-mono);font-size:14px;color:var(--lightText);padding:24px 26px;overflow-x:auto;line-height:1.8}
+.terminal .c{color:var(--mute)}
+.terminal .p{color:var(--copper-l)}
+.terminal .o{color:var(--green)}
+.note{font-size:14px;color:var(--mute);font-family:var(--font-mono);letter-spacing:.5px;margin-top:14px}
+.samples{list-style:none;padding:0;margin:12px 0 0}
+.samples li{padding:8px 0;border-bottom:1px solid var(--line);font-size:15px}
+.samples li:last-child{border-bottom:0}
+.samples a{color:var(--copper-d);font-weight:600;text-decoration:none}
+.samples a:hover{text-decoration:underline}
+
+/* split layouts */
+.split{display:grid;grid-template-columns:1fr 1fr;gap:54px;align-items:center}
+@media(max-width:860px){.split{grid-template-columns:1fr;gap:34px}}
+
+/* AI agents schema box */
+.schema{background:var(--slate-850);border:1px solid var(--slate-700);padding:22px 24px;font-family:var(--font-mono);font-size:13px;color:var(--lightText);overflow-x:auto;line-height:1.7;white-space:pre}
+.schema .k{color:var(--copper-l)}
+.schema .s{color:var(--green)}
+
+/* optional email capture */
+.capture{background:var(--cream)}
+.capture .box{background:var(--white);border:1px solid var(--line);border-left:3px solid var(--copper);padding:44px 40px;max-width:760px;margin:0 auto}
+.capture form{display:flex;gap:12px;margin-top:22px;flex-wrap:wrap}
+.capture input[type=email]{flex:1;min-width:240px;font-family:var(--font-mono);font-size:14px;padding:14px 16px;border:1px solid var(--line);background:var(--cream);color:var(--ink);border-radius:0}
+.capture input[type=email]:focus{outline:none;border-color:var(--copper)}
+.pledge{margin-top:16px;font-size:13.5px;color:var(--mute)}
+.pledge b{color:var(--green)}
+.download-offer{margin-bottom:54px}
+.source-route{margin:18px 0 0;font-size:14px;color:var(--body)}
+.source-route b{color:var(--ink)}
+
+/* free / CTA */
+.cta-final{background:var(--slate-900);color:var(--lightText);text-align:center}
+.cta-final h2{color:var(--white);max-width:20ch;margin:0 auto 16px}
+.cta-final .lead{color:var(--lightText);max-width:60ch;margin:0 auto 30px}
+
+/* footer */
+footer.site{background:var(--slate-850);color:var(--mute);border-top:3px solid var(--copper);padding:40px 0}
+footer.site .wrap{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:18px}
+footer.site a{color:var(--lightText)}
+footer.site .small{font-family:var(--font-mono);font-size:11px;letter-spacing:1px;text-transform:uppercase}
+</style>
 </head>
 <body>
-  <header class="hero">
-    <div class="wrap">
-      <nav aria-label="Primary">
-        <a class="brand" href="https://powertruesystems.com">Power<span>True</span> Systems</a>
-        <a class="nav-link" href="https://github.com/PowerTrueSYS/aixray-public">Inspect the source</a>
-      </nav>
-      <div class="hero-grid">
-        <div>
-          <p class="eyebrow">Free &amp; open source · Apache-2.0</p>
-          <h1>Know what is true <em>before</em> you change it.</h1>
-          <p class="lede">AIXray is a free, open-source IBM AIX and VIOS health, risk, and security assessment. One inspectable ksh88 file you read before it runs — read-only, zero egress, and we never see your systems or your data. Explicit unknowns instead of invented answers.</p>
-        </div>
-        <aside class="version-card" aria-label="AIXray v1 trust summary">
-          <code>AIXRAY / VERSION 1.2.0</code>
-          <strong>Built for cautious operators.</strong>
-          <ul>
-            <li>Open source — Apache-2.0</li>
-            <li>No system remediation</li>
-            <li>No assessment-time network calls</li>
-            <li>No runtime package install</li>
-            <li>HTML and JSON output</li>
-          </ul>
-        </aside>
+
+<!-- TOP BAR -->
+<header class="topbar">
+  <div class="wrap">
+    <div class="brand">PTxray<span class="by">by PowerTrue Systems</span></div>
+    <nav>
+      <a href="#checks">What it checks</a>
+      <a href="#trust">Read-only</a>
+      <a href="#start">Quick start</a>
+      <a href="#agents">For AI agents</a>
+      <a href="sample-report-aix.html">Sample report</a>
+    </nav>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">AIX · IBM i · IBM Power</p>
+    <h1>See inside your IBM Power systems.</h1>
+    <p class="lead">A free, <b>read-only</b> health &amp; vulnerability check for IBM AIX, IBM i, and Power. Run it, get a plain-English risk report &mdash; support status, missing patches, weak SSH ciphers, disk headroom, hardening gaps, and exposure to recently-disclosed CVEs &mdash; scored red / amber / green. Kept current as new CVEs land.</p>
+    <div class="cta">
+      <a class="btn onDark" href="#download">Get PTxray</a>
+      <a class="btn ghost onDark" href="sample-report-aix.html">See a sample report &rarr;</a>
+    </div>
+    <p class="platforms">Inspects: <b>AIX</b> &middot; <b>IBM i</b> &middot; <b>IBM Power</b> &nbsp;|&nbsp; Open source &middot; Apache-2.0 &middot; no install</p>
+  </div>
+</section>
+
+<!-- READ-ONLY TRUST STRIP -->
+<div class="trust-strip">
+  <div class="wrap">
+    <span class="lock">&#128274; Read-only</span>
+    <p>It <b>inspects and reports &mdash; it changes nothing, installs nothing, restarts nothing, and sends nothing anywhere.</b> The report is written on <i>your</i> system; you decide what to share. Every line is here for you (or your security team) to read before you run it.</p>
+  </div>
+</div>
+
+<!-- WHAT IT CHECKS -->
+<section id="checks">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">The complete checkup</p>
+      <h2>Not just security &mdash; the whole picture.</h2>
+      <p class="lead">No free tool (and few paid ones) covers lifecycle, capacity, performance, errors, resilience, <i>and</i> security together, in plain English. PTxray reports the same things the managed service watches every day &mdash; once, on demand.</p>
+    </div>
+    <div class="grid">
+      <div class="card"><div class="cat">A &middot; Lifecycle</div><h3>Support &amp; EOL exposure</h3><p>OS level, system firmware &amp; microcode currency, Power generation and hardware end-of-service, key component versions (OpenSSL, OpenSSH, Java).</p></div>
+      <div class="card"><div class="cat">B &middot; Patches &amp; CVEs</div><h3>Vulnerability currency</h3><p>How stale the system is, installed interim fixes, unapplied security fixes, and exposure to recently-disclosed AIX / IBM i / Power / OpenSSH CVEs.</p></div>
+      <div class="card"><div class="cat">C &middot; Storage</div><h3>Capacity &amp; resilience</h3><p>Filesystem and inode headroom, paging space, volume groups, stale mirror partitions, un-mirrored OS disk, and FAILED MPIO SAN paths.</p></div>
+      <div class="card"><div class="cat">D &middot; Performance</div><h3>Sizing &amp; load</h3><p>CPU / LPAR entitlement, memory pressure and paging activity, disk I/O saturation, network adapter errors, and runaway processes.</p></div>
+      <div class="card"><div class="cat">E &middot; Errors</div><h3>errpt &amp; logs</h3><p>Recent and recurring errors, hardware / permanent (PERM) entries, syslog review, crash / core dumps, and whether the dump device can even capture a panic.</p></div>
+      <div class="card"><div class="cat">F &middot; Resilience</div><h3>Backup &amp; availability</h3><p>mksysb / savevg currency and recoverability, rootvg mirroring, PowerHA / HACMP status, and DR evidence.</p></div>
+      <div class="card"><div class="cat">G &middot; Security</div><h3>Hardening</h3><p>SSH version &amp; weak ciphers, root-login &amp; password policy, multiple UID-0 accounts, stale accounts, failed logins, world-writable / SUID files, open ports, Trusted Execution.</p></div>
+      <div class="card"><div class="cat">H &middot; Config hygiene</div><h3>Configuration</h3><p>Time sync (NTP), DNS / routing sanity, cron health, risky non-default tunables (vmo / ioo / no / schedo), locale / timezone, software-maintenance status.</p></div>
+      <div class="card"><div class="cat">I &middot; Monitoring gap</div><h3>Operational readiness</h3><p>Is <i>anything</i> watching this box? Log rotation and errpt housekeeping, alerting, and whether a documented runbook exists at all.</p></div>
+    </div>
+    <p class="note" style="margin-top:30px">Each section gets its own red / amber / green subscore, rolling up to an overall posture. Full list in <span class="mono">docs/CHECK-CATALOG.md</span>.</p>
+  </div>
+</section>
+
+<!-- READ-ONLY / TRUST -->
+<section id="trust" class="dark">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Trust by design</p>
+      <h2>Safe to run on production. Here's why.</h2>
+      <p class="lead">You're being asked to run something with elevated reads on a system that matters. PTxray is built so a cautious admin can verify that promise before they run it &mdash; not take it on faith.</p>
+    </div>
+    <ul class="bullets">
+      <li><b>Changes nothing.</b> Inspects and reports only &mdash; installs nothing, restarts nothing, edits no config.</li>
+      <li><b>No network calls.</b> The report is written on your box and stays there. Nothing is sent anywhere.</li>
+      <li><b>You read it first.</b> A clean shell script, no compiled blobs &mdash; <span class="mono">less ptxray-aix.sh</span> and read every line.</li>
+      <li><b>Least privilege.</b> Some checks need root reads; each elevated read is documented and read-only.</li>
+      <li><b>Deterministic.</b> Re-running on an unchanged system produces the same findings &mdash; nothing hidden, nothing random.</li>
+      <li><b>The report is yours.</b> You decide what to share, with whom, and when. We never receive it.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- QUICK START -->
+<section id="start" class="capture" style="background:var(--cream)">
+  <div class="wrap">
+    <!-- D112: public source and direct download stay separate from optional contact CTAs. -->
+    <div id="download" class="box download-offer">
+      <p class="eyebrow">Free &amp; open &middot; Apache-2.0</p>
+      <h2>Get PTxray</h2>
+      <p class="lead">PTxray is free &amp; open (Apache-2.0), with an ungated download. No email or contact information is collected anywhere in the acquisition path.</p>
+      <a class="btn" href="https://github.com/PowerTrueSYS/ptxray-public/releases/latest/download/ptxray-aix.sh" download>Download PTxray &mdash; free</a>
+      <p class="source-route" data-source-public><b>The source is public on GitHub</b> and free to clone and read under Apache-2.0. <a href="https://github.com/PowerTrueSYS/ptxray-public">Read the source on GitHub &rarr;</a></p>
+    </div>
+    <div class="split">
+      <div>
+        <p class="eyebrow">Quick start</p>
+        <h2>Inspect, then run.</h2>
+        <p class="lead">No dependencies, no install, no network calls. Read the script first &mdash; that's the point &mdash; then run it for a human-readable report or machine-readable findings.</p>
+        <p class="eyebrow" style="margin-top:26px">Real sample output</p>
+        <ul class="samples">
+          <li><a href="sample-report-aix.html">Health check</a> &mdash; the full red/amber/green posture report from a real AIX 7.3 LPAR.</li>
+          <li><a href="sample-compliance.html">Compliance report</a> &mdash; the same scan as a DISA STIG control summary + remediation worklist.</li>
+          <li><a href="sample-executive.html">Executive summary</a> &mdash; the same findings as a plain-English report for the boss.</li>
+        </ul>
+      </div>
+      <div>
+        <div class="terminal"><span class="c"># clone and read it before you run it</span>
+git clone https://github.com/PowerTrueSYS/ptxray-public
+cd ptxray-public
+less ptxray-aix.sh              <span class="c"># read it first</span>
+
+<span class="c"># human-readable report (run as root for the full picture)</span>
+./ptxray-aix.sh --html &gt; report.html
+
+<span class="c"># machine-readable findings (tooling / AI agents)</span>
+./ptxray-aix.sh --json</div>
+        <p class="note">AIX edition &mdash; one ksh88 file, zero dependencies, read-only, no network calls.</p>
       </div>
     </div>
-  </header>
+  </div>
+</section>
 
-  <main>
-    <section class="intro" aria-labelledby="what-title">
-      <div class="wrap">
-        <div class="section-head">
-          <p class="eyebrow">What AIXray answers</p>
-          <h2 id="what-title">Where does this AIX or VIOS system actually stand?</h2>
-          <p>AIXray reads observable posture across lifecycle, patching, storage, performance, errors, resilience, security, configuration, and monitoring. It reports the evidence; it does not repair the host.</p>
-        </div>
-        <div class="proof-grid">
-          <article class="proof">
-            <span class="num">01 / BOUNDARY</span>
-            <h3>Read-only</h3>
-            <p>System configuration is inspected, never remediated. Requested report paths are the operator-controlled output.</p>
-          </article>
-          <article class="proof">
-            <span class="num">02 / EGRESS</span>
-            <h3>Zero network calls</h3>
-            <p>Assessment execution does not fetch reference data or transmit report data.</p>
-          </article>
-          <article class="proof">
-            <span class="num">03 / RUNTIME</span>
-            <h3>Single ksh88 file</h3>
-            <p>Runs with AIX <code>/bin/sh</code>; no bash, Python, GNU userland, or package install required.</p>
-          </article>
-          <article class="proof">
-            <span class="num">04 / HONESTY</span>
-            <h3>No fabricated status</h3>
-            <p>Unavailable or ambiguous evidence can be <code>NOT_ASSESSED</code>; it is not silently reported as a pass.</p>
-          </article>
-        </div>
+<!-- FOR AI AGENTS -->
+<section id="agents" class="dark">
+  <div class="wrap">
+    <div class="split">
+      <div>
+        <p class="eyebrow">For AI agents</p>
+        <h2>Built for autonomous tooling.</h2>
+        <p>Because PTxray is read-only and side-effect-free, it's safe for an agent to run on a production box. <span class="mono">--json</span> emits findings as a <b>stable, documented schema</b> &mdash; id, status, severity, observed, meaning, fix.</p>
+        <p>An <b>MCP server</b> (<span class="mono">mcp/</span>) lets any AI assistant run &ldquo;check this system's posture&rdquo; natively &mdash; it calls the <span class="mono">health_check</span> tool, gets structured findings, and explains them. An <span class="mono">about</span> tool returns the read-only guarantees to relay to the user.</p>
       </div>
-    </section>
-
-    <section class="gate" id="download" aria-labelledby="download-title">
-      <div class="wrap">
-        <div class="section-head">
-          <p class="eyebrow">Free &amp; open — yours to run</p>
-          <h2 id="download-title">Download it, read every line, run it anywhere.</h2>
-          <p>No form, no email, no gate. AIXray is open source under Apache-2.0 — inspect the code before you run it, and if it helps, star the repo or tell us what to check next.</p>
-        </div>
-        <div class="gate-grid">
-          <section class="panel" aria-labelledby="get-title">
-            <h3 id="get-title">Get AIXray v1</h3>
-            <p>One inspectable ksh88 file. Download it straight from the public GitHub release, review the source, then copy it to an AIX or VIOS host.</p>
-            <p><a class="button" href="https://github.com/PowerTrueSYS/aixray-public/releases/latest/download/aixray-aix.sh">Download aixray-aix.sh</a></p>
-            <p class="fine">Version 1.2.0 · Apache-2.0. <a class="text-link" href="https://github.com/PowerTrueSYS/aixray-public">Read every line of the source on GitHub</a> and verify the published SHA-256 before you run it.</p>
-            <ul class="mini-proof">
-              <li>No email, no gate — read before you run</li>
-              <li>Read-only on system configuration</li>
-              <li>Zero network egress during the assessment</li>
-            </ul>
-            <p class="soft-cta">Make it better: <a class="text-link" href="https://github.com/PowerTrueSYS/aixray-public">star the repo</a>, <a class="text-link" href="https://github.com/PowerTrueSYS/aixray-public/issues">suggest a check</a>, or contribute one.</p>
-            <p class="teaser">Coming soon: run AIXray straight from your AI agent (MCP).</p>
-            <form class="notify" action="https://formsubmit.co/hello@powertruesystems.com" method="POST">
-              <input type="hidden" name="_subject" value="AIXray — notify me when new checks ship">
-              <input type="hidden" name="_template" value="table">
-              <input type="hidden" name="_captcha" value="false">
-              <input type="hidden" name="_next" value="https://powertruesystems.com/aixray/ready/">
-              <input type="hidden" name="product" value="AIXray v1">
-              <input type="text" name="_honey" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-10000px">
-              <label class="field" for="notify-email">
-                <span>Email me when new checks ship <small>(optional — never required to download)</small></span>
-                <input id="notify-email" type="email" name="email" autocomplete="email" placeholder="you@company.com">
-              </label>
-              <button class="button alt" type="submit">Keep me posted</button>
-            </form>
-          </section>
-
-          <aside class="panel secondary" aria-labelledby="blueprint-title">
-            <div>
-              <h3 id="blueprint-title">Want these findings fixed and monitored 24/7?</h3>
-              <p>Book a free one-system Blueprint. A senior engineer walks the evidence with you — what needs attention and in what order — and lays out the managed path if you'd rather have it fixed and watched around the clock.</p>
-              <ul class="mini-proof">
-                <li>One system you choose</li>
-                <li>Evidence explained in plain language</li>
-                <li>No obligation</li>
-              </ul>
-            </div>
-            <div>
-              <a class="button alt" href="https://cal.com/tanner-powertruesystems/20min" rel="noopener">Book the free Blueprint on Cal.com</a>
-              <p class="fine">You can also <a class="text-link" href="https://powertruesystems.com/assessment/">request the free Blueprint through PowerTrue’s assessment form</a>.</p>
-            </div>
-          </aside>
-        </div>
+      <div>
+        <div class="schema"><span class="k">"finding"</span>: {
+  <span class="k">"id"</span>:       <span class="s">"ciphers"</span>,
+  <span class="k">"label"</span>:    <span class="s">"SSH ciphers"</span>,
+  <span class="k">"status"</span>:   <span class="s">"FAIL"</span>,
+  <span class="k">"severity"</span>: <span class="s">"high"</span>,
+  <span class="k">"observed"</span>: <span class="s">"weak: aes256-cbc"</span>,
+  <span class="k">"meaning"</span>:  <span class="s">"Weak/legacy ciphers enabled..."</span>,
+  <span class="k">"fix"</span>:      <span class="s">"restrict Ciphers to AEAD..."</span>
+}</div>
+        <p class="note">Stable schema &middot; read-only &middot; deterministic &middot; safe to automate.</p>
       </div>
-    </section>
-
-    <section class="inspect" aria-labelledby="inspect-title">
-      <div class="wrap inspect-grid">
-        <div class="inspect-copy">
-          <p class="eyebrow">Trust through inspection</p>
-          <h2 id="inspect-title">The claims are in the files.</h2>
-          <p>The repository includes the assembled v1 script, 387 standalone checks with adjacent command manifests, and a catalog with SHA-256 hashes. Read the exact command surface before anything runs.</p>
-          <a class="text-link" href="https://github.com/PowerTrueSYS/aixray-public">Inspect AIXray on GitHub →</a>
-        </div>
-        <pre aria-label="AIXray example commands"><code># easiest run — writes a named HTML report
-chmod 700 aixray-aix.sh
-./aixray-aix.sh
-
-# expect:
-# Report ready: ./aixray-&lt;hostname&gt;-&lt;date&gt;.html — open it in your browser. To save a PDF: Print -&gt; Save as PDF.
-
-# advanced: explicit HTML on stdout
-./aixray-aix.sh --html &gt; aixray-report.html
-
-# advanced: explicit JSON on stdout
-./aixray-aix.sh --json &gt; aixray-report.json
-
-# verify the public catalog
-jq '.tool_version, .check_count, .license' catalog.json</code></pre>
-      </div>
-    </section>
-  </main>
-  <!-- download is a direct link; the optional notify field posts natively -->
-
-  <footer>
-    <div class="wrap">
-      <span>PowerTrue Systems · AIX · VIOS · IBM Power</span>
-      <span>Apache-2.0 · AIXray v1 · version 1.2.0</span>
     </div>
-  </footer>
+  </div>
+</section>
+
+<!-- EMAIL CAPTURE -->
+<section class="capture">
+  <div class="wrap">
+    <div class="box">
+      <p class="eyebrow">Stay current</p>
+      <h2>CVE-watch digest</h2>
+      <p class="lead">When a significant AIX / IBM i / Power / OpenSSH CVE is disclosed, we ship a check for it &mdash; often within days. Get notified, plus a short monthly CVE-watch digest.</p>
+      <!-- Posts to FormSubmit. Replace the action endpoint at go-live and confirm the address once. -->
+      <form id="cve-watch-form" action="https://formsubmit.co/hello@powertruesystems.com" method="POST">
+        <input type="hidden" name="_subject" value="PTxray CVE-watch digest signup">
+        <input type="hidden" name="_template" value="table">
+        <input type="hidden" name="_captcha" value="true">
+        <!-- _next should point at a thank-you page once one exists -->
+        <input type="hidden" name="_next" value="https://aixrayvision.com/index.html">
+        <input type="email" name="email" placeholder="you@yourcompany.com" required aria-label="Email address">
+        <button class="btn" type="submit">Notify me</button>
+      </form>
+      <p class="pledge"><b>Free &amp; open (Apache-2.0), ungated download:</b> no email or contact information is collected anywhere in the acquisition path. This CVE-watch signup is an optional site CTA and remains separate.</p>
+    </div>
+  </div>
+</section>
+
+<!-- WHY IT'S FREE / CTA -->
+<section class="cta-final">
+  <div class="wrap">
+    <p class="eyebrow">Why it's free</p>
+    <h2>You don't have to run it &mdash; or fix what it finds &mdash; yourself.</h2>
+    <p class="lead">PowerTrue Systems provides managed AIX and IBM Power administration. PTxray is the free, honest version of what we do every day: the same checks, run once, on demand. If it surfaces something, walk the results with an engineer &mdash; free, no obligation.</p>
+    <a class="btn onDark" href="https://powertruesystems.com">Book a free 20-min review &rarr;</a>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="site">
+  <div class="wrap">
+    <div>
+      <div class="brand">PTxray</div>
+      <p class="small" style="margin:8px 0 0">By PowerTrue Systems &middot; Read-only &middot; Open source (Apache-2.0)</p>
+    </div>
+    <div class="small" style="text-align:right;line-height:2">
+      <a href="sample-report-aix.html">Sample report</a> &nbsp;&middot;&nbsp;
+      <a href="https://github.com/PowerTrueSYS/ptxray-public">GitHub</a> &nbsp;&middot;&nbsp;
+      <a href="https://powertruesystems.com">powertruesystems.com</a>
+    </div>
+  </div>
+</footer>
 
 </body>
 </html>
