@@ -31,6 +31,15 @@ CURRENT_RELEASE_ARTIFACTS = (
 LEGACY_RELEASE_ARTIFACTS = {
     "0.1.0": (SCANNER_PATH, REVIEW_HELPER_PATH),
 }
+# Byte-copy transition aliases published as release assets only (rebrand R2).
+# An alias is NOT a SHA256SUMS payload and NOT a required tagged-tree file: it
+# carries no manifest line, so pre-rename download links keep resolving without
+# changing what SHA256SUMS proves. Each alias MUST be byte-identical to the
+# release payload it mirrors; validate_assets asserts that same-bytes invariant.
+# Mirrors tools/render-public-release.py RELEASE_ASSET_ALIASES. Retire at 2.0.
+CURRENT_RELEASE_ASSET_ALIASES = {
+    "aixray-aix.sh": SCANNER_PATH,
+}
 VERSION_VARIABLES = {
     SCANNER_PATH: "VERSION",
     REVIEW_HELPER_PATH: "AIXRAY_REVIEW_PACK_VERSION",
@@ -43,6 +52,13 @@ def sha256_bytes(content: bytes) -> str:
 
 def release_artifacts_for_version(version: str | None) -> tuple[str, ...]:
     return LEGACY_RELEASE_ARTIFACTS.get(version, CURRENT_RELEASE_ARTIFACTS)
+
+
+def release_asset_aliases_for_version(version: str | None) -> dict[str, str]:
+    # The immutable v0.1.0 surface predates the rename and ships no alias.
+    if version in LEGACY_RELEASE_ARTIFACTS:
+        return {}
+    return dict(CURRENT_RELEASE_ASSET_ALIASES)
 
 
 class Validator:
@@ -63,6 +79,9 @@ class Validator:
         self.failed_reads: set[str] = set()
         self.version = self._version_from_tag()
         self.release_artifacts = release_artifacts_for_version(self.version)
+        self.release_asset_aliases = release_asset_aliases_for_version(
+            self.version
+        )
 
     def fail(self, message: str) -> None:
         self.errors.append(message)
@@ -405,7 +424,11 @@ class Validator:
             self.fail(f"cannot list release asset directory: {exc}")
             return
 
-        expected_names = set(self.release_artifacts)
+        # The published surface is the SHA256SUMS-listed release artifacts plus
+        # the byte-copy transition aliases, which carry no manifest line.
+        expected_names = set(self.release_artifacts) | set(
+            self.release_asset_aliases
+        )
         for missing in sorted(expected_names - entries.keys()):
             self.fail(f"required release asset is missing: {missing}")
         for unexpected in sorted(entries.keys() - expected_names):
@@ -429,6 +452,29 @@ class Validator:
                     f"release asset differs from tagged tree: {relative}: "
                     f"tagged sha256={sha256_bytes(tagged)} "
                     f"asset sha256={sha256_bytes(published)}"
+                )
+
+        # R2 same-bytes invariant: a transition alias is not on the manifest,
+        # so nothing else proves its bytes. It MUST be byte-identical to the
+        # payload it mirrors; a drifted alias is a release-integrity error.
+        for alias_name, target in self.release_asset_aliases.items():
+            asset = entries.get(alias_name)
+            target_bytes = self.read_tree_file(target)
+            if asset is None or target_bytes is None:
+                continue
+            if not asset.is_file() or asset.is_symlink():
+                self.fail(f"release asset is not a regular file: {alias_name}")
+                continue
+            try:
+                published = asset.read_bytes()
+            except OSError as exc:
+                self.fail(f"cannot read release asset {alias_name}: {exc}")
+                continue
+            if published != target_bytes:
+                self.fail(
+                    f"release asset alias {alias_name} is not byte-identical to "
+                    f"{target}: {target} sha256={sha256_bytes(target_bytes)} "
+                    f"alias sha256={sha256_bytes(published)}"
                 )
 
     def run(self) -> bool:
@@ -459,6 +505,15 @@ class Validator:
                 f"release-integrity: OK: {relative} "
                 f"sha256={sha256_bytes(content)}"
             )
+        if self.assets_dir is not None:
+            for alias_name, target in self.release_asset_aliases.items():
+                content = self.contents.get(target)
+                if content is None:
+                    continue
+                print(
+                    f"release-integrity: OK: {alias_name} "
+                    f"(byte-alias of {target}) sha256={sha256_bytes(content)}"
+                )
         scope = (
             "tagged tree and release assets"
             if self.assets_dir is not None

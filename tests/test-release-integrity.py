@@ -74,6 +74,9 @@ class ReleaseIntegrityTests(unittest.TestCase):
         (self.assets / "ptxray-ibmi.sh").write_bytes(ibmi)
         (self.assets / "ptxray-review-pack.sh").write_bytes(review)
         (self.assets / "ptxray-review-validate.awk").write_bytes(validator)
+        # aixray-aix.sh ships as an asset-only byte-copy alias of ptxray-aix.sh:
+        # no SHA256SUMS line, no tagged-tree entry, byte-identical to the scanner.
+        (self.assets / "aixray-aix.sh").write_bytes(scanner)
         self.write_catalog()
         self.write_sha256sums()
 
@@ -175,6 +178,11 @@ class ReleaseIntegrityTests(unittest.TestCase):
         )
         self.assertIn(
             f"SHA256SUMS sha256={sha256(self.tree / 'SHA256SUMS')}",
+            result.stdout,
+        )
+        self.assertIn(
+            "aixray-aix.sh (byte-alias of ptxray-aix.sh) "
+            f"sha256={sha256(self.tree / 'ptxray-aix.sh')}",
             result.stdout,
         )
 
@@ -287,6 +295,23 @@ class ReleaseIntegrityTests(unittest.TestCase):
         (self.assets / "notes.txt").write_text("not a shipped artifact\n")
         self.assert_failed_with("unexpected release asset: notes.txt")
 
+    def test_byte_alias_asset_that_drifts_is_rejected(self) -> None:
+        # The alias carries no SHA256SUMS line, so only the same-bytes invariant
+        # protects it: a drifted aixray-aix.sh must be a release-integrity error.
+        (self.assets / "aixray-aix.sh").write_bytes(
+            b"#!/bin/sh\nVERSION=\"0.2.0\"\n# drifted alias bytes\n"
+        )
+        self.assert_failed_with(
+            "release asset alias aixray-aix.sh is not byte-identical to "
+            "ptxray-aix.sh"
+        )
+
+    def test_missing_byte_alias_asset_is_rejected(self) -> None:
+        (self.assets / "aixray-aix.sh").unlink()
+        self.assert_failed_with(
+            "required release asset is missing: aixray-aix.sh"
+        )
+
     def test_sha256sums_requires_exact_payload_set(self) -> None:
         payloads = PAYLOAD_ARTIFACTS + (
             "checks/ck-example/ck-example.ksh",
@@ -327,6 +352,8 @@ class ReleaseIntegrityTests(unittest.TestCase):
             (directory / "ptxray-ibmi.sh").unlink()
             (directory / "ptxray-review-validate.awk").unlink()
             (directory / "SHA256SUMS").unlink()
+        # The byte-alias is also a post-rename asset; v0.1.0 shipped no alias.
+        (self.assets / "aixray-aix.sh").unlink()
         (self.tree / "site" / "ptxray-aix.sh").write_bytes(scanner)
         self.write_catalog(version=legacy_version)
 
