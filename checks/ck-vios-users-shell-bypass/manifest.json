@@ -1,0 +1,19 @@
+{
+  "id": "ck-vios-users-shell-bypass",
+  "pillar": "security",
+  "category": "security",
+  "finding_ids": [
+    "vios_users_shell_bypass"
+  ],
+  "captures": [],
+  "requires_root": true,
+  "read_only": true,
+  "commands": [
+    "ls /usr/ios/cli/ioscli",
+    "lsuser -a shell account_locked login rlogin ALL"
+  ],
+  "tags": [],
+  "blurb": "This check confirms that login-capable accounts on a Virtual I/O Server use the ioscli restricted shell. IBM VIOS lsuser documents those accounts as using the rksh shell; a ksh, sh, bash, or oem_setup_env login shell skips that wrapper and is the persistent form of oem_setup_env unrestricted AIX access. On a plain AIX partition the restricted-shell model does not apply.",
+  "license": "Apache-2.0",
+  "artifact": "checks/ck-vios-users-shell-bypass/ck-vios-users-shell-bypass.ksh"
+}

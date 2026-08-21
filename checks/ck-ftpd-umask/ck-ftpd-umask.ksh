@@ -1,5 +1,5 @@
 #!/bin/ksh
-# Generated standalone AIXray check support. READ-ONLY: captures only; no
+# Generated standalone PTxray check support. READ-ONLY: captures only; no
 # remediation, service control, network access, or durable target-host writes.
 set -u
 
@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="1.2.0"
+AIXRAY_STANDALONE_VERSION="1.3.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -58,7 +58,7 @@ function aixv {
 # it". Live mode returns false (rc=1): a real box has no concept of a missing
 # fixture, and rc=127 there genuinely means the command was not found. Must be
 # called in the PARENT shell after the probe, not inside the $(aix ...)
-# substitution. Byte-for-byte the monolith's semantics (src/aixray-aix.sh.in);
+# substitution. Byte-for-byte the monolith's semantics (src/ptxray-aix.sh.in);
 # without it here, an undefined-command rc of 127 makes the guard read false and
 # the caller launders a missing capture into NOT_APPLICABLE.
 function aix_capture_missing {
@@ -324,13 +324,29 @@ function standalone_main {
     echo "usage: $0 --json" >&2
     return 2
   fi
-  if [ -z "${AIXRAY_FIXTURES:-}" ] && [ "$(uname -s 2>/dev/null)" != "AIX" ]; then
-    echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
-    return 2
+  if [ -z "${AIXRAY_FIXTURES:-}" ]; then
+    _os=$(uname -s 2>/dev/null)
+    if [ "$_os" = "AIX" ]; then
+      :
+    elif [ "$_os" = "OS400" ] && [ "${IBMI_PROBES:-0}" = 1 ]; then
+      :
+    else
+      echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
+      return 2
+    fi
   fi
   standalone_initialize
   initialize_rc=$?
   [ "$initialize_rc" -eq 0 ] || return "$initialize_rc"
+  if [ "${IBMI_PROBES:-0}" = 1 ]; then
+    if ! ibmi_require_qsecofr; then
+      echo "$AIXRAY_TOOL requires SESSION_USER=QSECOFR and SYSTEM_USER=QSECOFR; no scan was run." >&2
+      return 2
+    fi
+  elif [ -z "${AIXRAY_FIXTURES:-}" ] && [ "${MYUID:-}" != 0 ]; then
+    echo "$AIXRAY_TOOL requires root; no scan was run." >&2
+    return 2
+  fi
   standalone_run
   run_rc=$?
   [ "$run_rc" -eq 0 ] || return 1
@@ -416,8 +432,8 @@ _AIXRAY_SESSION_KEYS=""
       if [ -z "$ID_FTPD_RAW" ]; then
         ID_FTPD_STATUS=NOT_ASSESSED
         ID_FTPD_OBSERVED="not assessed - ftp inetd probe rc=0 but output was empty after grep" # network-lint: allow -- prose finding text, no network call
-        ID_FTPD_MEANING="AIXray did not obtain trustworthy ftp service-definition evidence." # network-lint: allow -- prose finding text, no network call
-        ID_FTPD_FIX="inspect /etc/inetd.conf, resolve the read or shape problem, and rerun AIXray."
+        ID_FTPD_MEANING="PTxray did not obtain trustworthy ftp service-definition evidence." # network-lint: allow -- prose finding text, no network call
+        ID_FTPD_FIX="inspect /etc/inetd.conf, resolve the read or shape problem, and rerun PTxray."
       else
         case "$ID_FTPD_CLASS" in
           pass)
@@ -430,19 +446,19 @@ _AIXRAY_SESSION_KEYS=""
             ID_FTPD_STATUS=FAIL
             ID_FTPD_OBSERVED="ftp service in /etc/inetd.conf does not set umask 027" # network-lint: allow -- prose finding text, no network call
             ID_FTPD_MEANING="The ftp daemon arguments either omit the -u flag or set a umask other than 027, so files it creates may be exposed to unintended access." # network-lint: allow -- prose finding text, no network call
-            ID_FTPD_FIX="after service-owner approval, edit the ftp definition in /etc/inetd.conf to include -u 027 in the server arguments and refresh inetd; AIXray only recommends these actions." # network-lint: allow -- prose finding text, no network call
+            ID_FTPD_FIX="after service-owner approval, edit the ftp definition in /etc/inetd.conf to include -u 027 in the server arguments and refresh inetd; PTxray only recommends these actions." # network-lint: allow -- prose finding text, no network call
             ;;
           multiple)
             ID_FTPD_STATUS=NOT_ASSESSED
             ID_FTPD_OBSERVED="not assessed - ftp inetd probe matched more than one service line" # network-lint: allow -- prose finding text, no network call
-            ID_FTPD_MEANING="AIXray did not obtain trustworthy ftp service-definition evidence." # network-lint: allow -- prose finding text, no network call
-            ID_FTPD_FIX="inspect /etc/inetd.conf, resolve the duplicate-definition ambiguity, and rerun AIXray."
+            ID_FTPD_MEANING="PTxray did not obtain trustworthy ftp service-definition evidence." # network-lint: allow -- prose finding text, no network call
+            ID_FTPD_FIX="inspect /etc/inetd.conf, resolve the duplicate-definition ambiguity, and rerun PTxray."
             ;;
           *)
             ID_FTPD_STATUS=NOT_ASSESSED
             ID_FTPD_OBSERVED="not assessed - ftp inetd probe output could not be classified" # network-lint: allow -- prose finding text, no network call
-            ID_FTPD_MEANING="AIXray did not obtain trustworthy ftp service-definition evidence." # network-lint: allow -- prose finding text, no network call
-            ID_FTPD_FIX="inspect /etc/inetd.conf, resolve the read or shape problem, and rerun AIXray."
+            ID_FTPD_MEANING="PTxray did not obtain trustworthy ftp service-definition evidence." # network-lint: allow -- prose finding text, no network call
+            ID_FTPD_FIX="inspect /etc/inetd.conf, resolve the read or shape problem, and rerun PTxray."
             ;;
         esac
       fi
@@ -456,15 +472,15 @@ _AIXRAY_SESSION_KEYS=""
       else
         ID_FTPD_STATUS=NOT_ASSESSED
         ID_FTPD_OBSERVED="not assessed - ftp inetd probe rc=1 but output was non-empty (contradictory)" # network-lint: allow -- prose finding text, no network call
-        ID_FTPD_MEANING="AIXray did not obtain trustworthy ftp service-definition evidence." # network-lint: allow -- prose finding text, no network call
-        ID_FTPD_FIX="inspect /etc/inetd.conf, resolve the read or shape problem, and rerun AIXray."
+        ID_FTPD_MEANING="PTxray did not obtain trustworthy ftp service-definition evidence." # network-lint: allow -- prose finding text, no network call
+        ID_FTPD_FIX="inspect /etc/inetd.conf, resolve the read or shape problem, and rerun PTxray."
       fi
       ;;
     *)
       ID_FTPD_STATUS=NOT_ASSESSED
       ID_FTPD_OBSERVED="not assessed - ftp inetd probe grep failed (rc=$ID_FTPD_RC)" # network-lint: allow -- prose finding text, no network call
-      ID_FTPD_MEANING="AIXray did not obtain trustworthy ftp service-definition evidence." # network-lint: allow -- prose finding text, no network call
-      ID_FTPD_FIX="inspect /etc/inetd.conf, resolve the read or shape problem, and rerun AIXray."
+      ID_FTPD_MEANING="PTxray did not obtain trustworthy ftp service-definition evidence." # network-lint: allow -- prose finding text, no network call
+      ID_FTPD_FIX="inspect /etc/inetd.conf, resolve the read or shape problem, and rerun PTxray."
       ;;
   esac
 

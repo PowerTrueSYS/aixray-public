@@ -1,5 +1,5 @@
 #!/bin/ksh
-# Generated standalone AIXray check support. READ-ONLY: captures only; no
+# Generated standalone PTxray check support. READ-ONLY: captures only; no
 # remediation, service control, network access, or durable target-host writes.
 set -u
 
@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="1.2.0"
+AIXRAY_STANDALONE_VERSION="1.3.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -58,7 +58,7 @@ function aixv {
 # it". Live mode returns false (rc=1): a real box has no concept of a missing
 # fixture, and rc=127 there genuinely means the command was not found. Must be
 # called in the PARENT shell after the probe, not inside the $(aix ...)
-# substitution. Byte-for-byte the monolith's semantics (src/aixray-aix.sh.in);
+# substitution. Byte-for-byte the monolith's semantics (src/ptxray-aix.sh.in);
 # without it here, an undefined-command rc of 127 makes the guard read false and
 # the caller launders a missing capture into NOT_APPLICABLE.
 function aix_capture_missing {
@@ -324,13 +324,29 @@ function standalone_main {
     echo "usage: $0 --json" >&2
     return 2
   fi
-  if [ -z "${AIXRAY_FIXTURES:-}" ] && [ "$(uname -s 2>/dev/null)" != "AIX" ]; then
-    echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
-    return 2
+  if [ -z "${AIXRAY_FIXTURES:-}" ]; then
+    _os=$(uname -s 2>/dev/null)
+    if [ "$_os" = "AIX" ]; then
+      :
+    elif [ "$_os" = "OS400" ] && [ "${IBMI_PROBES:-0}" = 1 ]; then
+      :
+    else
+      echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
+      return 2
+    fi
   fi
   standalone_initialize
   initialize_rc=$?
   [ "$initialize_rc" -eq 0 ] || return "$initialize_rc"
+  if [ "${IBMI_PROBES:-0}" = 1 ]; then
+    if ! ibmi_require_qsecofr; then
+      echo "$AIXRAY_TOOL requires SESSION_USER=QSECOFR and SYSTEM_USER=QSECOFR; no scan was run." >&2
+      return 2
+    fi
+  elif [ -z "${AIXRAY_FIXTURES:-}" ] && [ "${MYUID:-}" != 0 ]; then
+    echo "$AIXRAY_TOOL requires root; no scan was run." >&2
+    return 2
+  fi
   standalone_run
   run_rc=$?
   [ "$run_rc" -eq 0 ] || return 1
@@ -369,14 +385,14 @@ _AIXRAY_SESSION_KEYS=""
     # rc not in {0,2}: unexpected stat failure.
     add security hosts_equiv_entries "hosts.equiv trust entries" NOT_ASSESSED low \
         "not assessed — stat probe failed (rc=$HHE_STAT_RC)" \
-        "AIXray did not establish whether /etc/hosts.equiv exists, so its content cannot be assessed." \
-        "run 'ls -ld /etc/hosts.equiv', resolve the stat failure, and rerun AIXray." "cis-l2"
+        "PTxray did not establish whether /etc/hosts.equiv exists, so its content cannot be assessed." \
+        "run 'ls -ld /etc/hosts.equiv', resolve the stat failure, and rerun PTxray." "cis-l2"
   elif [ -z "$HHE_STAT" ]; then
     # rc=0 with empty stdout: contradictory probe output.
     add security hosts_equiv_entries "hosts.equiv trust entries" NOT_ASSESSED low \
         "not assessed — stat probe returned empty output" \
-        "AIXray obtained a zero exit status with no stat output, which is not a trustworthy existence record." \
-        "run 'ls -ld /etc/hosts.equiv', correct the capture or path problem, and rerun AIXray." "cis-l2"
+        "PTxray obtained a zero exit status with no stat output, which is not a trustworthy existence record." \
+        "run 'ls -ld /etc/hosts.equiv', correct the capture or path problem, and rerun PTxray." "cis-l2"
   else
     # rc=0 with non-empty stdout: file confirmed present; read active entries.
     HHE_ENTRIES=$(aix hosts_equiv_entries grep -v "^\s*#" /etc/hosts.equiv); HHE_ENTRIES_RC=$?
@@ -392,19 +408,19 @@ _AIXRAY_SESSION_KEYS=""
       add security hosts_equiv_entries "hosts.equiv trust entries" FAIL high \
           "active entries: $HHE_ENTRIES" \
           "/etc/hosts.equiv contains at least one active host-equivalence entry, granting unauthenticated trust to those hosts." \
-          "remove every active (non-comment, non-blank) line from /etc/hosts.equiv; AIXray only recommends this action." "cis-l2"
+          "remove every active (non-comment, non-blank) line from /etc/hosts.equiv; PTxray only recommends this action." "cis-l2"
     elif [ "$HHE_ENTRIES_RC" -eq 2 ]; then
       # rc=2 against a confirmed-present file: read error.
       add security hosts_equiv_entries "hosts.equiv trust entries" NOT_ASSESSED low \
           "not assessed — entries probe failed (rc=$HHE_ENTRIES_RC)" \
-          "AIXray could not read /etc/hosts.equiv, so its active entries could not be assessed." \
-          "restore read access to /etc/hosts.equiv and rerun AIXray." "cis-l2"
+          "PTxray could not read /etc/hosts.equiv, so its active entries could not be assessed." \
+          "restore read access to /etc/hosts.equiv and rerun PTxray." "cis-l2"
     else
       # rc not in {0,1,2}: unexpected grep outcome.
       add security hosts_equiv_entries "hosts.equiv trust entries" NOT_ASSESSED low \
           "not assessed — entries probe returned rc=$HHE_ENTRIES_RC" \
-          "AIXray did not obtain a trustworthy read of /etc/hosts.equiv, so its active entries could not be assessed." \
-          "run 'grep -v \"^[[:space:]]*#\" /etc/hosts.equiv', resolve the read problem, and rerun AIXray." "cis-l2"
+          "PTxray did not obtain a trustworthy read of /etc/hosts.equiv, so its active entries could not be assessed." \
+          "run 'grep -v \"^[[:space:]]*#\" /etc/hosts.equiv', resolve the read problem, and rerun PTxray." "cis-l2"
     fi
   fi
 }

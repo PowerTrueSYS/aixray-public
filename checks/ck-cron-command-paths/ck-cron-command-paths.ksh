@@ -1,5 +1,5 @@
 #!/bin/ksh
-# Generated standalone AIXray check support. READ-ONLY: captures only; no
+# Generated standalone PTxray check support. READ-ONLY: captures only; no
 # remediation, service control, network access, or durable target-host writes.
 set -u
 
@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="1.2.0"
+AIXRAY_STANDALONE_VERSION="1.3.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -58,7 +58,7 @@ function aixv {
 # it". Live mode returns false (rc=1): a real box has no concept of a missing
 # fixture, and rc=127 there genuinely means the command was not found. Must be
 # called in the PARENT shell after the probe, not inside the $(aix ...)
-# substitution. Byte-for-byte the monolith's semantics (src/aixray-aix.sh.in);
+# substitution. Byte-for-byte the monolith's semantics (src/ptxray-aix.sh.in);
 # without it here, an undefined-command rc of 127 makes the guard read false and
 # the caller launders a missing capture into NOT_APPLICABLE.
 function aix_capture_missing {
@@ -324,13 +324,29 @@ function standalone_main {
     echo "usage: $0 --json" >&2
     return 2
   fi
-  if [ -z "${AIXRAY_FIXTURES:-}" ] && [ "$(uname -s 2>/dev/null)" != "AIX" ]; then
-    echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
-    return 2
+  if [ -z "${AIXRAY_FIXTURES:-}" ]; then
+    _os=$(uname -s 2>/dev/null)
+    if [ "$_os" = "AIX" ]; then
+      :
+    elif [ "$_os" = "OS400" ] && [ "${IBMI_PROBES:-0}" = 1 ]; then
+      :
+    else
+      echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
+      return 2
+    fi
   fi
   standalone_initialize
   initialize_rc=$?
   [ "$initialize_rc" -eq 0 ] || return "$initialize_rc"
+  if [ "${IBMI_PROBES:-0}" = 1 ]; then
+    if ! ibmi_require_qsecofr; then
+      echo "$AIXRAY_TOOL requires SESSION_USER=QSECOFR and SYSTEM_USER=QSECOFR; no scan was run." >&2
+      return 2
+    fi
+  elif [ -z "${AIXRAY_FIXTURES:-}" ] && [ "${MYUID:-}" != 0 ]; then
+    echo "$AIXRAY_TOOL requires root; no scan was run." >&2
+    return 2
+  fi
   standalone_run
   run_rc=$?
   [ "$run_rc" -eq 0 ] || return 1
@@ -473,20 +489,20 @@ if [ -n "$CCP_REASON" ]; then
     *)
       add security cron_command_paths "cron command paths" NOT_ASSESSED med \
         "not assessed — $CCP_REASON" \
-        "AIXray could not enumerate the crontab command paths, so it cannot assess them." \
-        "run 'crontab -l', correct the probe problem, and rerun AIXray." "cis-l1"
+        "PTxray could not enumerate the crontab command paths, so it cannot assess them." \
+        "run 'crontab -l', correct the probe problem, and rerun PTxray." "cis-l1"
       ;;
   esac
 elif [ "$CCP_BAD" -eq 1 ]; then
   add security cron_command_paths "cron command paths" FAIL med \
     "a cron command path component is group-writable, world-writable, or owned by neither root(0) nor bin(2)" \
     "Every absolute-path command in the crontab, and each ancestor directory up to the root, must be not group-writable, not world-writable, and owned by uid 0 or 2. At least one inspected component ($CCP_VIOL) violates that boundary." \
-    "after validation, correct the mode and owner of each offending path component; AIXray recommends this remediation and never executes it." "cis-l1"
+    "after validation, correct the mode and owner of each offending path component; PTxray recommends this remediation and never executes it." "cis-l1"
 elif [ "$CCP_NA" -eq 1 ]; then
   add security cron_command_paths "cron command paths" NOT_ASSESSED med \
     "not assessed — ls -ldn failed for at least one path component" \
-    "AIXray could not obtain trustworthy metadata for every inspected path component, so it cannot certify the full command chain." \
-    "run 'ls -ldn' on each crontab command path, correct the probe problem, and rerun AIXray." "cis-l1"
+    "PTxray could not obtain trustworthy metadata for every inspected path component, so it cannot certify the full command chain." \
+    "run 'ls -ldn' on each crontab command path, correct the probe problem, and rerun PTxray." "cis-l1"
 else
   add security cron_command_paths "cron command paths" PASS med \
     "all inspected cron command path components are clean" \

@@ -1,5 +1,5 @@
 #!/bin/ksh
-# Generated standalone AIXray check support. READ-ONLY: captures only; no
+# Generated standalone PTxray check support. READ-ONLY: captures only; no
 # remediation, service control, network access, or durable target-host writes.
 set -u
 
@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="1.2.0"
+AIXRAY_STANDALONE_VERSION="1.3.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -58,7 +58,7 @@ function aixv {
 # it". Live mode returns false (rc=1): a real box has no concept of a missing
 # fixture, and rc=127 there genuinely means the command was not found. Must be
 # called in the PARENT shell after the probe, not inside the $(aix ...)
-# substitution. Byte-for-byte the monolith's semantics (src/aixray-aix.sh.in);
+# substitution. Byte-for-byte the monolith's semantics (src/ptxray-aix.sh.in);
 # without it here, an undefined-command rc of 127 makes the guard read false and
 # the caller launders a missing capture into NOT_APPLICABLE.
 function aix_capture_missing {
@@ -324,13 +324,29 @@ function standalone_main {
     echo "usage: $0 --json" >&2
     return 2
   fi
-  if [ -z "${AIXRAY_FIXTURES:-}" ] && [ "$(uname -s 2>/dev/null)" != "AIX" ]; then
-    echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
-    return 2
+  if [ -z "${AIXRAY_FIXTURES:-}" ]; then
+    _os=$(uname -s 2>/dev/null)
+    if [ "$_os" = "AIX" ]; then
+      :
+    elif [ "$_os" = "OS400" ] && [ "${IBMI_PROBES:-0}" = 1 ]; then
+      :
+    else
+      echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
+      return 2
+    fi
   fi
   standalone_initialize
   initialize_rc=$?
   [ "$initialize_rc" -eq 0 ] || return "$initialize_rc"
+  if [ "${IBMI_PROBES:-0}" = 1 ]; then
+    if ! ibmi_require_qsecofr; then
+      echo "$AIXRAY_TOOL requires SESSION_USER=QSECOFR and SYSTEM_USER=QSECOFR; no scan was run." >&2
+      return 2
+    fi
+  elif [ -z "${AIXRAY_FIXTURES:-}" ] && [ "${MYUID:-}" != 0 ]; then
+    echo "$AIXRAY_TOOL requires root; no scan was run." >&2
+    return 2
+  fi
   standalone_run
   run_rc=$?
   [ "$run_rc" -eq 0 ] || return 1
@@ -437,8 +453,8 @@ _AIXRAY_SESSION_KEYS=""
   if [ "${CIS_SERVICES_RC:-1}" -ne 0 ] || [ "$CIS_SERVICES_READY" -ne 1 ]; then
     add security dt "dt service" NOT_ASSESSED low \
         "not assessed - dt SRC inventory $CIS_SERVICES_REASON" \
-        "AIXray did not obtain one trustworthy complete SRC inventory." \
-        "make 'lssrc -a' return a complete readable inventory, then rerun AIXray." \
+        "PTxray did not obtain one trustworthy complete SRC inventory." \
+        "make 'lssrc -a' return a complete readable inventory, then rerun PTxray." \
         "cis-l1"
   else
     DT_MATCH=$(printf '%s\n' "$CIS_SERVICES_ROWS" | awk -F'|' '$1=="dt"{print $2}')
@@ -446,15 +462,15 @@ _AIXRAY_SESSION_KEYS=""
     if [ "$DT_MATCH_RC" -ne 0 ]; then
       add security dt "dt service" NOT_ASSESSED low \
           "not assessed - dt SRC inventory filter failed (rc=$DT_MATCH_RC)" \
-          "AIXray could not safely filter the normalized SRC inventory." \
-          "make 'awk' available and rerun AIXray." "cis-l1"
+          "PTxray could not safely filter the normalized SRC inventory." \
+          "make 'awk' available and rerun PTxray." "cis-l1"
     else
       DT_COUNT=$(printf '%s\n' "$DT_MATCH" | awk 'NF{n++} END{print n+0}')
       if [ "$DT_COUNT" -gt 1 ]; then
         add security dt "dt service" NOT_ASSESSED low \
             "not assessed - dt has duplicate SRC inventory rows" \
-            "AIXray obtained contradictory or duplicated evidence for the dt subsystem." \
-            "inspect 'lssrc -a' output for duplicate dt rows, then rerun AIXray." \
+            "PTxray obtained contradictory or duplicated evidence for the dt subsystem." \
+            "inspect 'lssrc -a' output for duplicate dt rows, then rerun PTxray." \
             "cis-l1"
       elif [ "$DT_COUNT" -eq 0 ]; then
         add security dt "dt service" PASS low \
@@ -466,7 +482,7 @@ _AIXRAY_SESSION_KEYS=""
           add security dt "dt service" FAIL high \
               "dt active in the SRC inventory" \
               "The dt subsystem is active and adds avoidable service exposure." \
-              "after service-owner approval, stop dt and disable its startup; AIXray only recommends these actions." \
+              "after service-owner approval, stop dt and disable its startup; PTxray only recommends these actions." \
               "cis-l1"
         else
           add security dt "dt service" PASS low \

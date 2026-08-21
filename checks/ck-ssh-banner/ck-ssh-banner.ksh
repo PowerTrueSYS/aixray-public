@@ -1,5 +1,5 @@
 #!/bin/ksh
-# Generated standalone AIXray check support. READ-ONLY: captures only; no
+# Generated standalone PTxray check support. READ-ONLY: captures only; no
 # remediation, service control, network access, or durable target-host writes.
 set -u
 
@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="1.2.0"
+AIXRAY_STANDALONE_VERSION="1.3.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -58,7 +58,7 @@ function aixv {
 # it". Live mode returns false (rc=1): a real box has no concept of a missing
 # fixture, and rc=127 there genuinely means the command was not found. Must be
 # called in the PARENT shell after the probe, not inside the $(aix ...)
-# substitution. Byte-for-byte the monolith's semantics (src/aixray-aix.sh.in);
+# substitution. Byte-for-byte the monolith's semantics (src/ptxray-aix.sh.in);
 # without it here, an undefined-command rc of 127 makes the guard read false and
 # the caller launders a missing capture into NOT_APPLICABLE.
 function aix_capture_missing {
@@ -324,13 +324,29 @@ function standalone_main {
     echo "usage: $0 --json" >&2
     return 2
   fi
-  if [ -z "${AIXRAY_FIXTURES:-}" ] && [ "$(uname -s 2>/dev/null)" != "AIX" ]; then
-    echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
-    return 2
+  if [ -z "${AIXRAY_FIXTURES:-}" ]; then
+    _os=$(uname -s 2>/dev/null)
+    if [ "$_os" = "AIX" ]; then
+      :
+    elif [ "$_os" = "OS400" ] && [ "${IBMI_PROBES:-0}" = 1 ]; then
+      :
+    else
+      echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
+      return 2
+    fi
   fi
   standalone_initialize
   initialize_rc=$?
   [ "$initialize_rc" -eq 0 ] || return "$initialize_rc"
+  if [ "${IBMI_PROBES:-0}" = 1 ]; then
+    if ! ibmi_require_qsecofr; then
+      echo "$AIXRAY_TOOL requires SESSION_USER=QSECOFR and SYSTEM_USER=QSECOFR; no scan was run." >&2
+      return 2
+    fi
+  elif [ -z "${AIXRAY_FIXTURES:-}" ] && [ "${MYUID:-}" != 0 ]; then
+    echo "$AIXRAY_TOOL requires root; no scan was run." >&2
+    return 2
+  fi
   standalone_run
   run_rc=$?
   [ "$run_rc" -eq 0 ] || return 1
@@ -359,8 +375,8 @@ _AIXRAY_SESSION_KEYS=""
   typeset SSH_BANNER_LAST_FIELD
   SSH_BANNER_STATUS=NOT_ASSESSED
   SSH_BANNER_OBSERVED=''
-  SSH_BANNER_MEANING='AIXray did not obtain trustworthy global effective Banner and regular-file evidence, so it cannot establish a usable pre-authentication banner.'
-  SSH_BANNER_FIX='run sshd -T as root, resolve any configuration or host-key error, verify the effective banner target, and rerun AIXray.'
+  SSH_BANNER_MEANING='PTxray did not obtain trustworthy global effective Banner and regular-file evidence, so it cannot establish a usable pre-authentication banner.'
+  SSH_BANNER_FIX='run sshd -T as root, resolve any configuration or host-key error, verify the effective banner target, and rerun PTxray.'
   SSH_BANNER_REASON=''
 
   if [ "${MYUID:-0}" != "0" ]; then
@@ -400,7 +416,7 @@ _AIXRAY_SESSION_KEYS=""
           SSH_BANNER_STATUS=FAIL
           SSH_BANNER_OBSERVED='Banner none'
           SSH_BANNER_MEANING='sshd has no usable regular-file pre-authentication banner configured.'
-          SSH_BANNER_FIX="configure an approved absolute Banner file, validate the global effective path with 'sshd -T', and restart sshd; AIXray only recommends these actions."
+          SSH_BANNER_FIX="configure an approved absolute Banner file, validate the global effective path with 'sshd -T', and restart sshd; PTxray only recommends these actions."
           ;;
         /*)
           SSH_BANNER_PATH=$SSH_BANNER_PARSED
@@ -435,12 +451,12 @@ _AIXRAY_SESSION_KEYS=""
               SSH_BANNER_STATUS=FAIL
               SSH_BANNER_OBSERVED="Banner $SSH_BANNER_PATH; target exists but is not a regular file"
               SSH_BANNER_MEANING='sshd has no usable regular-file pre-authentication banner configured.'
-              SSH_BANNER_FIX='replace the effective Banner target with an approved regular file, validate sshd_config, and restart sshd; AIXray only recommends these actions.'
+              SSH_BANNER_FIX='replace the effective Banner target with an approved regular file, validate sshd_config, and restart sshd; PTxray only recommends these actions.'
             elif [ "$SSH_BANNER_LAST_FIELD" != "$SSH_BANNER_PATH" ]; then
               SSH_BANNER_STATUS=FAIL
               SSH_BANNER_OBSERVED="Banner $SSH_BANNER_PATH; file metadata path mismatch"
               SSH_BANNER_MEANING='sshd has no positively identified regular-file pre-authentication banner target.'
-              SSH_BANNER_FIX='inspect the effective Banner path and target metadata, correct the mismatch, and rerun AIXray.'
+              SSH_BANNER_FIX='inspect the effective Banner path and target metadata, correct the mismatch, and rerun PTxray.'
             else
               SSH_BANNER_STATUS=PASS
               SSH_BANNER_OBSERVED="Banner $SSH_BANNER_PATH; regular file present"
@@ -454,7 +470,7 @@ _AIXRAY_SESSION_KEYS=""
           SSH_BANNER_STATUS=FAIL
           SSH_BANNER_OBSERVED="Banner $SSH_BANNER_PATH; relative path is misconfiguration"
           SSH_BANNER_MEANING='sshd has no usable regular-file pre-authentication banner configured.'
-          SSH_BANNER_FIX='set Banner to an approved absolute regular-file path, validate sshd_config, and restart sshd; AIXray only recommends these actions.'
+          SSH_BANNER_FIX='set Banner to an approved absolute regular-file path, validate sshd_config, and restart sshd; PTxray only recommends these actions.'
           ;;
       esac
     fi

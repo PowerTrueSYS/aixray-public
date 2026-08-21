@@ -1,5 +1,5 @@
 #!/bin/ksh
-# Generated standalone AIXray check support. READ-ONLY: captures only; no
+# Generated standalone PTxray check support. READ-ONLY: captures only; no
 # remediation, service control, network access, or durable target-host writes.
 set -u
 
@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="1.2.0"
+AIXRAY_STANDALONE_VERSION="1.3.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -58,7 +58,7 @@ function aixv {
 # it". Live mode returns false (rc=1): a real box has no concept of a missing
 # fixture, and rc=127 there genuinely means the command was not found. Must be
 # called in the PARENT shell after the probe, not inside the $(aix ...)
-# substitution. Byte-for-byte the monolith's semantics (src/aixray-aix.sh.in);
+# substitution. Byte-for-byte the monolith's semantics (src/ptxray-aix.sh.in);
 # without it here, an undefined-command rc of 127 makes the guard read false and
 # the caller launders a missing capture into NOT_APPLICABLE.
 function aix_capture_missing {
@@ -324,13 +324,29 @@ function standalone_main {
     echo "usage: $0 --json" >&2
     return 2
   fi
-  if [ -z "${AIXRAY_FIXTURES:-}" ] && [ "$(uname -s 2>/dev/null)" != "AIX" ]; then
-    echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
-    return 2
+  if [ -z "${AIXRAY_FIXTURES:-}" ]; then
+    _os=$(uname -s 2>/dev/null)
+    if [ "$_os" = "AIX" ]; then
+      :
+    elif [ "$_os" = "OS400" ] && [ "${IBMI_PROBES:-0}" = 1 ]; then
+      :
+    else
+      echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
+      return 2
+    fi
   fi
   standalone_initialize
   initialize_rc=$?
   [ "$initialize_rc" -eq 0 ] || return "$initialize_rc"
+  if [ "${IBMI_PROBES:-0}" = 1 ]; then
+    if ! ibmi_require_qsecofr; then
+      echo "$AIXRAY_TOOL requires SESSION_USER=QSECOFR and SYSTEM_USER=QSECOFR; no scan was run." >&2
+      return 2
+    fi
+  elif [ -z "${AIXRAY_FIXTURES:-}" ] && [ "${MYUID:-}" != 0 ]; then
+    echo "$AIXRAY_TOOL requires root; no scan was run." >&2
+    return 2
+  fi
   standalone_run
   run_rc=$?
   [ "$run_rc" -eq 0 ] || return 1
@@ -365,8 +381,8 @@ _AIXRAY_SESSION_KEYS=""
   PATH_ENV_CHECK_RAW=""
   PATH_ENV_STATUS=NOT_ASSESSED
   PATH_ENV_OBSERVED=""
-  PATH_ENV_MEANING="AIXray did not obtain trustworthy evidence about the PATH assignment in /etc/environment, so it cannot establish whether the value is secure."
-  PATH_ENV_FIX="verify /etc/environment exists and is readable, then rerun AIXray."
+  PATH_ENV_MEANING="PTxray did not obtain trustworthy evidence about the PATH assignment in /etc/environment, so it cannot establish whether the value is secure."
+  PATH_ENV_FIX="verify /etc/environment exists and is readable, then rerun PTxray."
 
   PATH_ENV_STAT_RAW=$(aix path_env_stat ls -ld /etc/environment)
   PATH_ENV_STAT_RC=$?
@@ -383,8 +399,8 @@ _AIXRAY_SESSION_KEYS=""
     if [ "$PATH_ENV_LINE_RC" -eq 127 ]; then
       PATH_ENV_STATUS=NOT_ASSESSED
       PATH_ENV_OBSERVED="not assessed — PATH capture is absent or grep is missing (rc=127)"
-      PATH_ENV_MEANING="AIXray has no captured PATH lines from /etc/environment, so it cannot establish whether the value is secure."
-      PATH_ENV_FIX="capture /etc/environment for this check, then rerun AIXray."
+      PATH_ENV_MEANING="PTxray has no captured PATH lines from /etc/environment, so it cannot establish whether the value is secure."
+      PATH_ENV_FIX="capture /etc/environment for this check, then rerun PTxray."
     elif [ "$PATH_ENV_LINE_RC" -eq 1 ]; then
       PATH_ENV_STATUS=PASS
       PATH_ENV_OBSERVED="no PATH assignment in /etc/environment"
@@ -393,13 +409,13 @@ _AIXRAY_SESSION_KEYS=""
     elif [ "$PATH_ENV_LINE_RC" -ne 0 ]; then
       PATH_ENV_STATUS=NOT_ASSESSED
       PATH_ENV_OBSERVED="not assessed — PATH probe failed (rc=$PATH_ENV_LINE_RC)"
-      PATH_ENV_MEANING="AIXray could not read the PATH assignment from /etc/environment, so it cannot establish whether the value is secure."
-      PATH_ENV_FIX="verify /etc/environment is readable, then rerun AIXray."
+      PATH_ENV_MEANING="PTxray could not read the PATH assignment from /etc/environment, so it cannot establish whether the value is secure."
+      PATH_ENV_FIX="verify /etc/environment is readable, then rerun PTxray."
     elif [ -z "$PATH_ENV_LINE_RAW" ]; then
       PATH_ENV_STATUS=NOT_ASSESSED
       PATH_ENV_OBSERVED="not assessed — PATH capture was empty (grep returned success but the capture contained no bytes)"
       PATH_ENV_MEANING="The probe reported success but produced no PATH content; the evidence is insufficient to judge the PATH assignment."
-      PATH_ENV_FIX="verify /etc/environment contains a readable PATH= line, capture it, then rerun AIXray."
+      PATH_ENV_FIX="verify /etc/environment contains a readable PATH= line, capture it, then rerun PTxray."
     else
       PATH_ENV_CHECK_RAW=$(printf '%s\n' "$PATH_ENV_LINE_RAW" | awk '
         /^PATH=/ {
@@ -416,7 +432,7 @@ _AIXRAY_SESSION_KEYS=""
         PATH_ENV_STATUS=FAIL
         PATH_ENV_OBSERVED="insecure $PATH_ENV_CHECK_RAW"
         PATH_ENV_MEANING="The PATH assignment in /etc/environment contains a dot entry, an empty path component, or a single-character relative entry; all directories must be explicitly defined in PATH, and an unprivileged user could place an executable ahead of system binaries."
-        PATH_ENV_FIX="remove the dot entry or empty path component from the PATH assignment in /etc/environment, then rerun AIXray."
+        PATH_ENV_FIX="remove the dot entry or empty path component from the PATH assignment in /etc/environment, then rerun PTxray."
       else
         PATH_ENV_STATUS=PASS
         PATH_ENV_OBSERVED="PATH assignment in /etc/environment is clean"

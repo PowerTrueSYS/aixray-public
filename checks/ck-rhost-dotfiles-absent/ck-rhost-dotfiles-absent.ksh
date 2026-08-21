@@ -1,5 +1,5 @@
 #!/bin/ksh
-# Generated standalone AIXray check support. READ-ONLY: captures only; no
+# Generated standalone PTxray check support. READ-ONLY: captures only; no
 # remediation, service control, network access, or durable target-host writes.
 set -u
 
@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="1.2.0"
+AIXRAY_STANDALONE_VERSION="1.3.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -58,7 +58,7 @@ function aixv {
 # it". Live mode returns false (rc=1): a real box has no concept of a missing
 # fixture, and rc=127 there genuinely means the command was not found. Must be
 # called in the PARENT shell after the probe, not inside the $(aix ...)
-# substitution. Byte-for-byte the monolith's semantics (src/aixray-aix.sh.in);
+# substitution. Byte-for-byte the monolith's semantics (src/ptxray-aix.sh.in);
 # without it here, an undefined-command rc of 127 makes the guard read false and
 # the caller launders a missing capture into NOT_APPLICABLE.
 function aix_capture_missing {
@@ -324,13 +324,29 @@ function standalone_main {
     echo "usage: $0 --json" >&2
     return 2
   fi
-  if [ -z "${AIXRAY_FIXTURES:-}" ] && [ "$(uname -s 2>/dev/null)" != "AIX" ]; then
-    echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
-    return 2
+  if [ -z "${AIXRAY_FIXTURES:-}" ]; then
+    _os=$(uname -s 2>/dev/null)
+    if [ "$_os" = "AIX" ]; then
+      :
+    elif [ "$_os" = "OS400" ] && [ "${IBMI_PROBES:-0}" = 1 ]; then
+      :
+    else
+      echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
+      return 2
+    fi
   fi
   standalone_initialize
   initialize_rc=$?
   [ "$initialize_rc" -eq 0 ] || return "$initialize_rc"
+  if [ "${IBMI_PROBES:-0}" = 1 ]; then
+    if ! ibmi_require_qsecofr; then
+      echo "$AIXRAY_TOOL requires SESSION_USER=QSECOFR and SYSTEM_USER=QSECOFR; no scan was run." >&2
+      return 2
+    fi
+  elif [ -z "${AIXRAY_FIXTURES:-}" ] && [ "${MYUID:-}" != 0 ]; then
+    echo "$AIXRAY_TOOL requires root; no scan was run." >&2
+    return 2
+  fi
   standalone_run
   run_rc=$?
   [ "$run_rc" -eq 0 ] || return 1
@@ -432,13 +448,13 @@ _AIXRAY_SESSION_KEYS=""
     RDA_SEVERITY=high
     RDA_OBSERVED="present: $RDA_PATTERNS"
     RDA_MEANING='A scan of every local JFS/JFS2 filesystem found at least one host-based trust dotfile. Such files permit logins without an interactive password exchange.'
-    RDA_FIX='remove every matching .netrc, .rhosts, and .shosts file from JFS/JFS2 filesystems; AIXray only recommends these actions.'
+    RDA_FIX='remove every matching .netrc, .rhosts, and .shosts file from JFS/JFS2 filesystems; PTxray only recommends these actions.'
   elif [ "$RDA_ERROR" -eq 1 ]; then
     RDA_STATUS=NOT_ASSESSED
     RDA_SEVERITY=med
     RDA_OBSERVED="not assessed — $RDA_ERR_REASON"
     RDA_MEANING='The JFS/JFS2 scan did not complete for at least one trust-dotfile pattern, so absence of the remaining patterns cannot be asserted; the state is unknown.'
-    RDA_FIX='resolve the scan failure (permissions or I/O), verify the filesystems are traversable, then rerun AIXray.'
+    RDA_FIX='resolve the scan failure (permissions or I/O), verify the filesystems are traversable, then rerun PTxray.'
   else
     RDA_STATUS=PASS
     RDA_SEVERITY=med

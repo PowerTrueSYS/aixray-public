@@ -1,5 +1,5 @@
 #!/bin/ksh
-# Generated standalone AIXray check support. READ-ONLY: captures only; no
+# Generated standalone PTxray check support. READ-ONLY: captures only; no
 # remediation, service control, network access, or durable target-host writes.
 set -u
 
@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="1.2.0"
+AIXRAY_STANDALONE_VERSION="1.3.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -58,7 +58,7 @@ function aixv {
 # it". Live mode returns false (rc=1): a real box has no concept of a missing
 # fixture, and rc=127 there genuinely means the command was not found. Must be
 # called in the PARENT shell after the probe, not inside the $(aix ...)
-# substitution. Byte-for-byte the monolith's semantics (src/aixray-aix.sh.in);
+# substitution. Byte-for-byte the monolith's semantics (src/ptxray-aix.sh.in);
 # without it here, an undefined-command rc of 127 makes the guard read false and
 # the caller launders a missing capture into NOT_APPLICABLE.
 function aix_capture_missing {
@@ -324,13 +324,29 @@ function standalone_main {
     echo "usage: $0 --json" >&2
     return 2
   fi
-  if [ -z "${AIXRAY_FIXTURES:-}" ] && [ "$(uname -s 2>/dev/null)" != "AIX" ]; then
-    echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
-    return 2
+  if [ -z "${AIXRAY_FIXTURES:-}" ]; then
+    _os=$(uname -s 2>/dev/null)
+    if [ "$_os" = "AIX" ]; then
+      :
+    elif [ "$_os" = "OS400" ] && [ "${IBMI_PROBES:-0}" = 1 ]; then
+      :
+    else
+      echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
+      return 2
+    fi
   fi
   standalone_initialize
   initialize_rc=$?
   [ "$initialize_rc" -eq 0 ] || return "$initialize_rc"
+  if [ "${IBMI_PROBES:-0}" = 1 ]; then
+    if ! ibmi_require_qsecofr; then
+      echo "$AIXRAY_TOOL requires SESSION_USER=QSECOFR and SYSTEM_USER=QSECOFR; no scan was run." >&2
+      return 2
+    fi
+  elif [ -z "${AIXRAY_FIXTURES:-}" ] && [ "${MYUID:-}" != 0 ]; then
+    echo "$AIXRAY_TOOL requires root; no scan was run." >&2
+    return 2
+  fi
   standalone_run
   run_rc=$?
   [ "$run_rc" -eq 0 ] || return 1
@@ -811,15 +827,15 @@ function check_adapter_microcode {
   if [ "$AM_RC" -ne 0 ]; then
     AM_OBS="not assessed — lsdev -Cc adapter inventory failed (rc=$AM_RC)"
     AM_MEAN="Adapter inventory was unavailable, so this LPAR's physical-adapter microcode ownership and currency could not be assessed."
-    AM_FIX="restore access to 'lsdev -Cc adapter', then rerun AIXray; review any physical adapter levels against the current hardware-specific reference."
+    AM_FIX="restore access to 'lsdev -Cc adapter', then rerun PTxray; review any physical adapter levels against the current hardware-specific reference."
   elif [ -z "$AM_OUT" ]; then
     AM_OBS="not assessed — lsdev -Cc adapter reported no adapters (rc=0)"
     AM_MEAN="An empty adapter inventory cannot establish whether this LPAR owns physical adapter microcode."
-    AM_FIX="verify the complete output of 'lsdev -Cc adapter' and rerun AIXray."
+    AM_FIX="verify the complete output of 'lsdev -Cc adapter' and rerun PTxray."
   elif ! printf '%s\n' "$AM_OUT" | adapter_microcode_lsdev_shape; then
     AM_OBS="not assessed — lsdev -Cc adapter inventory was unparseable (rc=0)"
     AM_MEAN="The adapter inventory did not match the expected AIX lsdev structure, so physical-adapter ownership and microcode currency could not be assessed."
-    AM_FIX="capture the complete output of 'lsdev -Cc adapter', correct the replay source if needed, and rerun AIXray."
+    AM_FIX="capture the complete output of 'lsdev -Cc adapter', correct the replay source if needed, and rerun PTxray."
   else
     AM_PHYSICAL=$(printf '%s\n' "$AM_OUT" |
       awk 'NF && /PCI/{n++} END{print n+0}')

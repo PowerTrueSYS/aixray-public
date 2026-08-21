@@ -1,5 +1,5 @@
 #!/bin/ksh
-# Generated standalone AIXray check support. READ-ONLY: captures only; no
+# Generated standalone PTxray check support. READ-ONLY: captures only; no
 # remediation, service control, network access, or durable target-host writes.
 set -u
 
@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="1.2.0"
+AIXRAY_STANDALONE_VERSION="1.3.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -58,7 +58,7 @@ function aixv {
 # it". Live mode returns false (rc=1): a real box has no concept of a missing
 # fixture, and rc=127 there genuinely means the command was not found. Must be
 # called in the PARENT shell after the probe, not inside the $(aix ...)
-# substitution. Byte-for-byte the monolith's semantics (src/aixray-aix.sh.in);
+# substitution. Byte-for-byte the monolith's semantics (src/ptxray-aix.sh.in);
 # without it here, an undefined-command rc of 127 makes the guard read false and
 # the caller launders a missing capture into NOT_APPLICABLE.
 function aix_capture_missing {
@@ -324,13 +324,29 @@ function standalone_main {
     echo "usage: $0 --json" >&2
     return 2
   fi
-  if [ -z "${AIXRAY_FIXTURES:-}" ] && [ "$(uname -s 2>/dev/null)" != "AIX" ]; then
-    echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
-    return 2
+  if [ -z "${AIXRAY_FIXTURES:-}" ]; then
+    _os=$(uname -s 2>/dev/null)
+    if [ "$_os" = "AIX" ]; then
+      :
+    elif [ "$_os" = "OS400" ] && [ "${IBMI_PROBES:-0}" = 1 ]; then
+      :
+    else
+      echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
+      return 2
+    fi
   fi
   standalone_initialize
   initialize_rc=$?
   [ "$initialize_rc" -eq 0 ] || return "$initialize_rc"
+  if [ "${IBMI_PROBES:-0}" = 1 ]; then
+    if ! ibmi_require_qsecofr; then
+      echo "$AIXRAY_TOOL requires SESSION_USER=QSECOFR and SYSTEM_USER=QSECOFR; no scan was run." >&2
+      return 2
+    fi
+  elif [ -z "${AIXRAY_FIXTURES:-}" ] && [ "${MYUID:-}" != 0 ]; then
+    echo "$AIXRAY_TOOL requires root; no scan was run." >&2
+    return 2
+  fi
   standalone_run
   run_rc=$?
   [ "$run_rc" -eq 0 ] || return 1
@@ -373,8 +389,8 @@ _AIXRAY_SESSION_KEYS=""
         RT_AUTOCONF6_STATUS=NOT_ASSESSED
         RT_AUTOCONF6_SEV=low
         RT_AUTOCONF6_OBS="not assessed - rc.tcpip probe returned rc=0 with no matching line"
-        RT_AUTOCONF6_MEAN="AIXray did not obtain trustworthy evidence for the autoconf6 boot state."
-        RT_AUTOCONF6_FIX="verify the autoconf6 '#start' entry in /etc/rc.tcpip, then rerun AIXray."
+        RT_AUTOCONF6_MEAN="PTxray did not obtain trustworthy evidence for the autoconf6 boot state."
+        RT_AUTOCONF6_FIX="verify the autoconf6 '#start' entry in /etc/rc.tcpip, then rerun PTxray."
       fi
       ;;
     1)
@@ -383,28 +399,28 @@ _AIXRAY_SESSION_KEYS=""
         RT_AUTOCONF6_SEV=med
         RT_AUTOCONF6_OBS="/etc/rc.tcpip has no uncommented '#start' entry for /usr/sbin/autoconf6"
         RT_AUTOCONF6_MEAN="The IPv6 stateless autoconfiguration daemon is not configured to start from /etc/rc.tcpip."
-        RT_AUTOCONF6_FIX="add the uncommented line 'start /usr/sbin/autoconf6 \"\"' to /etc/rc.tcpip and start the daemon for the current boot; AIXray only recommends these actions."
+        RT_AUTOCONF6_FIX="add the uncommented line 'start /usr/sbin/autoconf6 \"\"' to /etc/rc.tcpip and start the daemon for the current boot; PTxray only recommends these actions."
       else
         RT_AUTOCONF6_STATUS=NOT_ASSESSED
         RT_AUTOCONF6_SEV=low
         RT_AUTOCONF6_OBS="not assessed - rc.tcpip probe returned rc=1 with unexpected output"
-        RT_AUTOCONF6_MEAN="AIXray did not obtain trustworthy evidence for the autoconf6 boot state."
-        RT_AUTOCONF6_FIX="verify the autoconf6 '#start' entry in /etc/rc.tcpip, then rerun AIXray."
+        RT_AUTOCONF6_MEAN="PTxray did not obtain trustworthy evidence for the autoconf6 boot state."
+        RT_AUTOCONF6_FIX="verify the autoconf6 '#start' entry in /etc/rc.tcpip, then rerun PTxray."
       fi
       ;;
     2)
       RT_AUTOCONF6_STATUS=NOT_ASSESSED
       RT_AUTOCONF6_SEV=low
       RT_AUTOCONF6_OBS="not assessed - rc.tcpip probe failed (rc=2); /etc/rc.tcpip may be missing or unreadable"
-      RT_AUTOCONF6_MEAN="AIXray could not read /etc/rc.tcpip to determine the autoconf6 boot state."
-      RT_AUTOCONF6_FIX="make /etc/rc.tcpip present and readable, then rerun AIXray."
+      RT_AUTOCONF6_MEAN="PTxray could not read /etc/rc.tcpip to determine the autoconf6 boot state."
+      RT_AUTOCONF6_FIX="make /etc/rc.tcpip present and readable, then rerun PTxray."
       ;;
     *)
       RT_AUTOCONF6_STATUS=NOT_ASSESSED
       RT_AUTOCONF6_SEV=low
       RT_AUTOCONF6_OBS="not assessed - rc.tcpip probe returned unexpected rc=$RT_AUTOCONF6_RC"
-      RT_AUTOCONF6_MEAN="AIXray did not obtain a recognised result from the rc.tcpip probe."
-      RT_AUTOCONF6_FIX="verify the autoconf6 '#start' entry in /etc/rc.tcpip, then rerun AIXray."
+      RT_AUTOCONF6_MEAN="PTxray did not obtain a recognised result from the rc.tcpip probe."
+      RT_AUTOCONF6_FIX="verify the autoconf6 '#start' entry in /etc/rc.tcpip, then rerun PTxray."
       ;;
   esac
 

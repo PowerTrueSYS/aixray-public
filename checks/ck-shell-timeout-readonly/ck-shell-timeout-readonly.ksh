@@ -1,5 +1,5 @@
 #!/bin/ksh
-# Generated standalone AIXray check support. READ-ONLY: captures only; no
+# Generated standalone PTxray check support. READ-ONLY: captures only; no
 # remediation, service control, network access, or durable target-host writes.
 set -u
 
@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="1.2.0"
+AIXRAY_STANDALONE_VERSION="1.3.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -58,7 +58,7 @@ function aixv {
 # it". Live mode returns false (rc=1): a real box has no concept of a missing
 # fixture, and rc=127 there genuinely means the command was not found. Must be
 # called in the PARENT shell after the probe, not inside the $(aix ...)
-# substitution. Byte-for-byte the monolith's semantics (src/aixray-aix.sh.in);
+# substitution. Byte-for-byte the monolith's semantics (src/ptxray-aix.sh.in);
 # without it here, an undefined-command rc of 127 makes the guard read false and
 # the caller launders a missing capture into NOT_APPLICABLE.
 function aix_capture_missing {
@@ -324,13 +324,29 @@ function standalone_main {
     echo "usage: $0 --json" >&2
     return 2
   fi
-  if [ -z "${AIXRAY_FIXTURES:-}" ] && [ "$(uname -s 2>/dev/null)" != "AIX" ]; then
-    echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
-    return 2
+  if [ -z "${AIXRAY_FIXTURES:-}" ]; then
+    _os=$(uname -s 2>/dev/null)
+    if [ "$_os" = "AIX" ]; then
+      :
+    elif [ "$_os" = "OS400" ] && [ "${IBMI_PROBES:-0}" = 1 ]; then
+      :
+    else
+      echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
+      return 2
+    fi
   fi
   standalone_initialize
   initialize_rc=$?
   [ "$initialize_rc" -eq 0 ] || return "$initialize_rc"
+  if [ "${IBMI_PROBES:-0}" = 1 ]; then
+    if ! ibmi_require_qsecofr; then
+      echo "$AIXRAY_TOOL requires SESSION_USER=QSECOFR and SYSTEM_USER=QSECOFR; no scan was run." >&2
+      return 2
+    fi
+  elif [ -z "${AIXRAY_FIXTURES:-}" ] && [ "${MYUID:-}" != 0 ]; then
+    echo "$AIXRAY_TOOL requires root; no scan was run." >&2
+    return 2
+  fi
   standalone_run
   run_rc=$?
   [ "$run_rc" -eq 0 ] || return 1
@@ -368,12 +384,12 @@ _AIXRAY_SESSION_KEYS=""
         NOT_ASSESSED low \
         "not assessed — /etc/profile TMOUT/TIMEOUT capture failed (rc=$STR_RC)" \
         "Could not read TMOUT/TIMEOUT evidence from /etc/profile, so idle-shell readonly-timeout enforcement is unknown." \
-        "restore read access to /etc/profile, then rerun AIXray." "cis-l2"
+        "restore read access to /etc/profile, then rerun PTxray." "cis-l2"
   elif [ "$STR_RC" -eq 1 ]; then
     add security shell_timeout_readonly "Interactive shell inactivity timeout" FAIL high \
         "no TMOUT, TIMEOUT, or readonly declaration in /etc/profile (grep rc=1)" \
         "No idle-shell timeout is enforced; interactive shell sessions can remain open indefinitely." \
-        "set TMOUT=900, TIMEOUT=900, and readonly TMOUT TIMEOUT in /etc/profile, then rerun AIXray." "cis-l2"
+        "set TMOUT=900, TIMEOUT=900, and readonly TMOUT TIMEOUT in /etc/profile, then rerun PTxray." "cis-l2"
   else
     # Parse assignments and readonly declarations.  Comments are stripped;
     # inline trailing shell comments are removed from values.  Assignment
@@ -543,28 +559,28 @@ _AIXRAY_SESSION_KEYS=""
         add security shell_timeout_readonly "Interactive shell inactivity timeout" \
             NOT_ASSESSED low \
             "not assessed — /etc/profile TMOUT/TIMEOUT lines are not parseable" \
-            "AIXray found lines matching TMOUT/TIMEOUT in /etc/profile but none parse as an assignment or readonly declaration, so timeout enforcement cannot be established." \
-            "inspect TMOUT/TIMEOUT lines in /etc/profile, correct malformed entries, and rerun AIXray." "cis-l2"
+            "PTxray found lines matching TMOUT/TIMEOUT in /etc/profile but none parse as an assignment or readonly declaration, so timeout enforcement cannot be established." \
+            "inspect TMOUT/TIMEOUT lines in /etc/profile, correct malformed entries, and rerun PTxray." "cis-l2"
         ;;
       value_conflict)
         add security shell_timeout_readonly "Interactive shell inactivity timeout" \
             NOT_ASSESSED low \
             "not assessed — conflicting assignments for the same variable in /etc/profile" \
-            "AIXray observed different values assigned to TMOUT or TIMEOUT across multiple lines in /etc/profile; the effective value cannot be determined from grep output alone." \
-            "consolidate TMOUT and TIMEOUT to one assignment each in /etc/profile, then rerun AIXray." "cis-l2"
+            "PTxray observed different values assigned to TMOUT or TIMEOUT across multiple lines in /etc/profile; the effective value cannot be determined from grep output alone." \
+            "consolidate TMOUT and TIMEOUT to one assignment each in /etc/profile, then rerun PTxray." "cis-l2"
         ;;
       absent)
         add security shell_timeout_readonly "Interactive shell inactivity timeout" FAIL high \
             "no active TMOUT or TIMEOUT assignment in /etc/profile" \
             "No idle-shell timeout is enforced; interactive shell sessions can remain open indefinitely." \
-            "set TMOUT=900, TIMEOUT=900, and readonly TMOUT TIMEOUT in /etc/profile, then rerun AIXray." "cis-l2"
+            "set TMOUT=900, TIMEOUT=900, and readonly TMOUT TIMEOUT in /etc/profile, then rerun PTxray." "cis-l2"
         ;;
       missing)
         STR_MISSING=$STR_REST
         add security shell_timeout_readonly "Interactive shell inactivity timeout" FAIL high \
             "$STR_MISSING is not configured in /etc/profile; both TMOUT and TIMEOUT must be set" \
             "Only one timeout variable is configured in /etc/profile; both are required by the standard." \
-            "add a $STR_MISSING assignment (1–900) and a readonly declaration covering both variables in /etc/profile, then rerun AIXray." "cis-l2"
+            "add a $STR_MISSING assignment (1–900) and a readonly declaration covering both variables in /etc/profile, then rerun PTxray." "cis-l2"
         ;;
       no_readonly)
         STR_TMO_CLS=${STR_REST%%\|*}
@@ -576,7 +592,7 @@ _AIXRAY_SESSION_KEYS=""
         add security shell_timeout_readonly "Interactive shell inactivity timeout" FAIL high \
             "TMOUT and TIMEOUT are set but not readonly; the interactive user can alter or unset them" \
             "Without readonly, an interactive user can change or unset the timeout, defeating the inactivity lock." \
-            "add \"readonly TMOUT TIMEOUT\" as the last relevant statement in /etc/profile, then rerun AIXray." "cis-l2"
+            "add \"readonly TMOUT TIMEOUT\" as the last relevant statement in /etc/profile, then rerun PTxray." "cis-l2"
         ;;
       partial_readonly)
         STR_MISSING=${STR_REST%%\|*}
@@ -590,7 +606,7 @@ _AIXRAY_SESSION_KEYS=""
         add security shell_timeout_readonly "Interactive shell inactivity timeout" FAIL high \
             "$STR_MISSING is not readonly; both TMOUT and TIMEOUT must be readonly" \
             "Only one timeout variable carries the readonly marker; the other can still be altered or unset by the interactive user." \
-            "add $STR_MISSING to the readonly declaration in /etc/profile, then rerun AIXray." "cis-l2"
+            "add $STR_MISSING to the readonly declaration in /etc/profile, then rerun PTxray." "cis-l2"
         ;;
       order)
         STR_TMO_CLS=${STR_REST%%\|*}
@@ -602,7 +618,7 @@ _AIXRAY_SESSION_KEYS=""
         add security shell_timeout_readonly "Interactive shell inactivity timeout" FAIL high \
             "readonly declaration precedes TMOUT/TIMEOUT assignment; the standard requires readonly to be the last statement" \
             "A readonly declaration that appears before an assignment line is ineffective: the later assignment would fail at shell parse time, or the readonly would not cover it." \
-            "move \"readonly TMOUT TIMEOUT\" to be the last statement among the timeout lines in /etc/profile, then rerun AIXray." "cis-l2"
+            "move \"readonly TMOUT TIMEOUT\" to be the last statement among the timeout lines in /etc/profile, then rerun PTxray." "cis-l2"
         ;;
       both)
         STR_TMO_CLS=${STR_REST%%\|*}
@@ -620,7 +636,7 @@ _AIXRAY_SESSION_KEYS=""
           add security shell_timeout_readonly "Interactive shell inactivity timeout" WARN low \
               "${STR_BAD} above the 900-second cap" \
               "A readonly timeout above 900 seconds still leaves an idle session open for an excessive period." \
-              "lower TMOUT and TIMEOUT to 900 seconds or less, keep both readonly, and rerun AIXray." "cis-l2"
+              "lower TMOUT and TIMEOUT to 900 seconds or less, keep both readonly, and rerun PTxray." "cis-l2"
         elif [ "$STR_TMO_CLS" = empty ] || [ "$STR_TMO_CLS" = nonnum ] || [ "$STR_TMO_CLS" = zero ] ||
              [ "$STR_TO_CLS" = empty ] || [ "$STR_TO_CLS" = nonnum ] || [ "$STR_TO_CLS" = zero ]; then
           STR_BAD=""
@@ -638,7 +654,7 @@ _AIXRAY_SESSION_KEYS=""
           add security shell_timeout_readonly "Interactive shell inactivity timeout" FAIL high \
               "${STR_BAD}; idle-shell auto-logout is disabled or unreadable" \
               "A zero, empty, or non-numeric timeout value breaks the enforced inactivity logout even when readonly is set." \
-              "set TMOUT and TIMEOUT to a positive integer from 1 through 900, keep both readonly, and rerun AIXray." "cis-l2"
+              "set TMOUT and TIMEOUT to a positive integer from 1 through 900, keep both readonly, and rerun PTxray." "cis-l2"
         else
           add security shell_timeout_readonly "Interactive shell inactivity timeout" PASS low \
               "TMOUT=${STR_TMO_VAL} and TIMEOUT=${STR_TO_VAL}, both readonly" \
@@ -651,7 +667,7 @@ _AIXRAY_SESSION_KEYS=""
             NOT_ASSESSED low \
             "not assessed — /etc/profile TMOUT/TIMEOUT parse returned unrecognised state" \
             "The parsed TMOUT/TIMEOUT evidence from /etc/profile did not map to a known shape, so timeout enforcement is unknown." \
-            "inspect /etc/profile TMOUT/TIMEOUT configuration and rerun AIXray." "cis-l2"
+            "inspect /etc/profile TMOUT/TIMEOUT configuration and rerun PTxray." "cis-l2"
         ;;
     esac
   fi

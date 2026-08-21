@@ -1,5 +1,5 @@
 #!/bin/ksh
-# Generated standalone AIXray check support. READ-ONLY: captures only; no
+# Generated standalone PTxray check support. READ-ONLY: captures only; no
 # remediation, service control, network access, or durable target-host writes.
 set -u
 
@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="1.2.0"
+AIXRAY_STANDALONE_VERSION="1.3.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -58,7 +58,7 @@ function aixv {
 # it". Live mode returns false (rc=1): a real box has no concept of a missing
 # fixture, and rc=127 there genuinely means the command was not found. Must be
 # called in the PARENT shell after the probe, not inside the $(aix ...)
-# substitution. Byte-for-byte the monolith's semantics (src/aixray-aix.sh.in);
+# substitution. Byte-for-byte the monolith's semantics (src/ptxray-aix.sh.in);
 # without it here, an undefined-command rc of 127 makes the guard read false and
 # the caller launders a missing capture into NOT_APPLICABLE.
 function aix_capture_missing {
@@ -324,13 +324,29 @@ function standalone_main {
     echo "usage: $0 --json" >&2
     return 2
   fi
-  if [ -z "${AIXRAY_FIXTURES:-}" ] && [ "$(uname -s 2>/dev/null)" != "AIX" ]; then
-    echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
-    return 2
+  if [ -z "${AIXRAY_FIXTURES:-}" ]; then
+    _os=$(uname -s 2>/dev/null)
+    if [ "$_os" = "AIX" ]; then
+      :
+    elif [ "$_os" = "OS400" ] && [ "${IBMI_PROBES:-0}" = 1 ]; then
+      :
+    else
+      echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
+      return 2
+    fi
   fi
   standalone_initialize
   initialize_rc=$?
   [ "$initialize_rc" -eq 0 ] || return "$initialize_rc"
+  if [ "${IBMI_PROBES:-0}" = 1 ]; then
+    if ! ibmi_require_qsecofr; then
+      echo "$AIXRAY_TOOL requires SESSION_USER=QSECOFR and SYSTEM_USER=QSECOFR; no scan was run." >&2
+      return 2
+    fi
+  elif [ -z "${AIXRAY_FIXTURES:-}" ] && [ "${MYUID:-}" != 0 ]; then
+    echo "$AIXRAY_TOOL requires root; no scan was run." >&2
+    return 2
+  fi
   standalone_run
   run_rc=$?
   [ "$run_rc" -eq 0 ] || return 1
@@ -444,11 +460,11 @@ _AIXRAY_SESSION_KEYS=""
   if [ "$DAJM_REASON" = "absent" ]; then
     add security diracc_atjobs_mode "/var/spool/cron/atjobs mode" NOT_APPLICABLE med "/var/spool/cron/atjobs absent"         "The probe returned the determinate-absence signature ('/var/spool/cron/atjobs not found', exit $DAJM_RC); /var/spool/cron/atjobs need not exist, so the mode boundary does not apply."         "n/a" "cis-l1"
   elif [ -n "$DAJM_REASON" ]; then
-    add security diracc_atjobs_mode "/var/spool/cron/atjobs mode" NOT_ASSESSED med         "not assessed — /var/spool/cron/atjobs metadata $DAJM_REASON"         "AIXray did not obtain one trustworthy metadata row, so it cannot claim the mode boundary is satisfied."         "run 'ls -ldn /var/spool/cron/atjobs', correct the capture or path problem, and rerun AIXray." "cis-l1"
+    add security diracc_atjobs_mode "/var/spool/cron/atjobs mode" NOT_ASSESSED med         "not assessed — /var/spool/cron/atjobs metadata $DAJM_REASON"         "PTxray did not obtain one trustworthy metadata row, so it cannot claim the mode boundary is satisfied."         "run 'ls -ldn /var/spool/cron/atjobs', correct the capture or path problem, and rerun PTxray." "cis-l1"
   elif [ "$DAJM_OK" = "1" ]; then
     add security diracc_atjobs_mode "/var/spool/cron/atjobs mode" PASS med "/var/spool/cron/atjobs mode=$DAJM_MODE"         "/var/spool/cron/atjobs has the required mode boundary." "n/a" "cis-l1"
   else
-    add security diracc_atjobs_mode "/var/spool/cron/atjobs mode" FAIL med "/var/spool/cron/atjobs mode=$DAJM_MODE"         "/var/spool/cron/atjobs violates the required mode boundary and could let an unintended identity alter trusted configuration."         "remove only permissions beyond 0770 after validation: 'chmod 0770 /var/spool/cron/atjobs'; AIXray recommends this command and never executes it. if an extended ACL is reported, clear it after validation: 'echo | aclput /var/spool/cron/atjobs'." "cis-l1"
+    add security diracc_atjobs_mode "/var/spool/cron/atjobs mode" FAIL med "/var/spool/cron/atjobs mode=$DAJM_MODE"         "/var/spool/cron/atjobs violates the required mode boundary and could let an unintended identity alter trusted configuration."         "remove only permissions beyond 0770 after validation: 'chmod 0770 /var/spool/cron/atjobs'; PTxray recommends this command and never executes it. if an extended ACL is reported, clear it after validation: 'echo | aclput /var/spool/cron/atjobs'." "cis-l1"
   fi
 }
 

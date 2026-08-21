@@ -1,5 +1,5 @@
 #!/bin/ksh
-# Generated standalone AIXray check support. READ-ONLY: captures only; no
+# Generated standalone PTxray check support. READ-ONLY: captures only; no
 # remediation, service control, network access, or durable target-host writes.
 set -u
 
@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="1.2.0"
+AIXRAY_STANDALONE_VERSION="1.3.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -58,7 +58,7 @@ function aixv {
 # it". Live mode returns false (rc=1): a real box has no concept of a missing
 # fixture, and rc=127 there genuinely means the command was not found. Must be
 # called in the PARENT shell after the probe, not inside the $(aix ...)
-# substitution. Byte-for-byte the monolith's semantics (src/aixray-aix.sh.in);
+# substitution. Byte-for-byte the monolith's semantics (src/ptxray-aix.sh.in);
 # without it here, an undefined-command rc of 127 makes the guard read false and
 # the caller launders a missing capture into NOT_APPLICABLE.
 function aix_capture_missing {
@@ -324,13 +324,29 @@ function standalone_main {
     echo "usage: $0 --json" >&2
     return 2
   fi
-  if [ -z "${AIXRAY_FIXTURES:-}" ] && [ "$(uname -s 2>/dev/null)" != "AIX" ]; then
-    echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
-    return 2
+  if [ -z "${AIXRAY_FIXTURES:-}" ]; then
+    _os=$(uname -s 2>/dev/null)
+    if [ "$_os" = "AIX" ]; then
+      :
+    elif [ "$_os" = "OS400" ] && [ "${IBMI_PROBES:-0}" = 1 ]; then
+      :
+    else
+      echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
+      return 2
+    fi
   fi
   standalone_initialize
   initialize_rc=$?
   [ "$initialize_rc" -eq 0 ] || return "$initialize_rc"
+  if [ "${IBMI_PROBES:-0}" = 1 ]; then
+    if ! ibmi_require_qsecofr; then
+      echo "$AIXRAY_TOOL requires SESSION_USER=QSECOFR and SYSTEM_USER=QSECOFR; no scan was run." >&2
+      return 2
+    fi
+  elif [ -z "${AIXRAY_FIXTURES:-}" ] && [ "${MYUID:-}" != 0 ]; then
+    echo "$AIXRAY_TOOL requires root; no scan was run." >&2
+    return 2
+  fi
   standalone_run
   run_rc=$?
   [ "$run_rc" -eq 0 ] || return 1
@@ -365,8 +381,8 @@ _AIXRAY_SESSION_KEYS=""
     AUDC_STATUS=NOT_ASSESSED
     AUDC_SEVERITY=med
     AUDC_OBSERVED="not assessed - reading the audit classes config requires root"
-    AUDC_MEANING="AIXray did not obtain /etc/security/audit/config, so it cannot claim the default audit class set is compliant."
-    AUDC_FIX="re-run aixray as root, or inspect /etc/security/audit/config manually."
+    AUDC_MEANING="PTxray did not obtain /etc/security/audit/config, so it cannot claim the default audit class set is compliant."
+    AUDC_FIX="re-run ptxray as root, or inspect /etc/security/audit/config manually."
   else
     AUDC_RAW=$(aix cat_audit_config cat /etc/security/audit/config)
     AUDC_RC=$?
@@ -374,14 +390,14 @@ _AIXRAY_SESSION_KEYS=""
       AUDC_STATUS=NOT_ASSESSED
       AUDC_SEVERITY=med
       AUDC_OBSERVED="not assessed - cannot read /etc/security/audit/config (rc=$AUDC_RC)"
-      AUDC_MEANING="AIXray did not obtain /etc/security/audit/config, so it cannot claim the default audit class set is compliant."
-      AUDC_FIX="resolve the read error on /etc/security/audit/config and rerun AIXray."
+      AUDC_MEANING="PTxray did not obtain /etc/security/audit/config, so it cannot claim the default audit class set is compliant."
+      AUDC_FIX="resolve the read error on /etc/security/audit/config and rerun PTxray."
     elif [ -z "$AUDC_RAW" ]; then
       AUDC_STATUS=FAIL
       AUDC_SEVERITY=high
       AUDC_OBSERVED="/etc/security/audit/config is empty"
       AUDC_MEANING="An empty audit configuration cannot define the required default class set, so the requirement is not met."
-      AUDC_FIX="populate /etc/security/audit/config with a classes: stanza and its default = line; AIXray recommends the edit, it never writes it."
+      AUDC_FIX="populate /etc/security/audit/config with a classes: stanza and its default = line; PTxray recommends the edit, it never writes it."
     else
       AUDC_TOKEN=$(printf '%s\n' "$AUDC_RAW" | awk '
         BEGIN {
@@ -443,31 +459,31 @@ _AIXRAY_SESSION_KEYS=""
           AUDC_STATUS=FAIL; AUDC_SEVERITY=high
           AUDC_OBSERVED="audit classes default omits required class(es): $AUDC_MISSING"
           AUDC_MEANING="The audit default event set omits required classes, so events in those classes are not captured by default."
-          AUDC_FIX="add the omitted class(es) to the default = line inside the classes: stanza of /etc/security/audit/config; AIXray recommends the edit, it never writes it."
+          AUDC_FIX="add the omitted class(es) to the default = line inside the classes: stanza of /etc/security/audit/config; PTxray recommends the edit, it never writes it."
           ;;
         NO_DEFAULT)
           AUDC_STATUS=FAIL; AUDC_SEVERITY=high
           AUDC_OBSERVED="classes: stanza present but no default = line"
           AUDC_MEANING="The audit configuration has a classes: stanza without a default = line, so the required class set is never selected."
-          AUDC_FIX="add a default = line naming every required class inside the classes: stanza of /etc/security/audit/config; AIXray recommends the edit, it never writes it."
+          AUDC_FIX="add a default = line naming every required class inside the classes: stanza of /etc/security/audit/config; PTxray recommends the edit, it never writes it."
           ;;
         NO_STANZA)
           AUDC_STATUS=FAIL; AUDC_SEVERITY=high
           AUDC_OBSERVED="no classes: stanza in the audit config"
           AUDC_MEANING="The audit configuration does not define a classes: stanza, so the required default class set cannot be in effect."
-          AUDC_FIX="add a classes: stanza with a default = line naming every required class to /etc/security/audit/config; AIXray recommends the edit, it never writes it."
+          AUDC_FIX="add a classes: stanza with a default = line naming every required class to /etc/security/audit/config; PTxray recommends the edit, it never writes it."
           ;;
         "")
           AUDC_STATUS=FAIL; AUDC_SEVERITY=high
           AUDC_OBSERVED="audit config is empty or carries no stanzas"
-          AUDC_MEANING="The audit configuration carries no classes AIXray could interpret, so the required default class set is not established."
-          AUDC_FIX="review /etc/security/audit/config for a classes: stanza with a default = line naming every required class; AIXray recommends the edit, it never writes it."
+          AUDC_MEANING="The audit configuration carries no classes PTxray could interpret, so the required default class set is not established."
+          AUDC_FIX="review /etc/security/audit/config for a classes: stanza with a default = line naming every required class; PTxray recommends the edit, it never writes it."
           ;;
         *)
           AUDC_STATUS=NOT_ASSESSED; AUDC_SEVERITY=med
           AUDC_OBSERVED="unexpected discriminator result '$AUDC_TOKEN'"
-          AUDC_MEANING="AIXray could not interpret the audit config discriminator, so it cannot assess the default class set."
-          AUDC_FIX="capture /etc/security/audit/config, diagnose the discriminator, and rerun AIXray."
+          AUDC_MEANING="PTxray could not interpret the audit config discriminator, so it cannot assess the default class set."
+          AUDC_FIX="capture /etc/security/audit/config, diagnose the discriminator, and rerun PTxray."
           ;;
       esac
     fi

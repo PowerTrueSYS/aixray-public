@@ -1,5 +1,5 @@
 #!/bin/ksh
-# Generated standalone AIXray check support. READ-ONLY: captures only; no
+# Generated standalone PTxray check support. READ-ONLY: captures only; no
 # remediation, service control, network access, or durable target-host writes.
 set -u
 
@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="1.2.0"
+AIXRAY_STANDALONE_VERSION="1.3.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -58,7 +58,7 @@ function aixv {
 # it". Live mode returns false (rc=1): a real box has no concept of a missing
 # fixture, and rc=127 there genuinely means the command was not found. Must be
 # called in the PARENT shell after the probe, not inside the $(aix ...)
-# substitution. Byte-for-byte the monolith's semantics (src/aixray-aix.sh.in);
+# substitution. Byte-for-byte the monolith's semantics (src/ptxray-aix.sh.in);
 # without it here, an undefined-command rc of 127 makes the guard read false and
 # the caller launders a missing capture into NOT_APPLICABLE.
 function aix_capture_missing {
@@ -324,13 +324,29 @@ function standalone_main {
     echo "usage: $0 --json" >&2
     return 2
   fi
-  if [ -z "${AIXRAY_FIXTURES:-}" ] && [ "$(uname -s 2>/dev/null)" != "AIX" ]; then
-    echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
-    return 2
+  if [ -z "${AIXRAY_FIXTURES:-}" ]; then
+    _os=$(uname -s 2>/dev/null)
+    if [ "$_os" = "AIX" ]; then
+      :
+    elif [ "$_os" = "OS400" ] && [ "${IBMI_PROBES:-0}" = 1 ]; then
+      :
+    else
+      echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
+      return 2
+    fi
   fi
   standalone_initialize
   initialize_rc=$?
   [ "$initialize_rc" -eq 0 ] || return "$initialize_rc"
+  if [ "${IBMI_PROBES:-0}" = 1 ]; then
+    if ! ibmi_require_qsecofr; then
+      echo "$AIXRAY_TOOL requires SESSION_USER=QSECOFR and SYSTEM_USER=QSECOFR; no scan was run." >&2
+      return 2
+    fi
+  elif [ -z "${AIXRAY_FIXTURES:-}" ] && [ "${MYUID:-}" != 0 ]; then
+    echo "$AIXRAY_TOOL requires root; no scan was run." >&2
+    return 2
+  fi
   standalone_run
   run_rc=$?
   [ "$run_rc" -eq 0 ] || return 1
@@ -431,7 +447,7 @@ _AIXRAY_SESSION_KEYS=""
         *)
           add security trustchk_te_tep "Trusted Execution and Trusted Execution Path enabled" \
               NOT_ASSESSED med "not assessed — trustchk -p TE TEP output unparseable (rc=0)" \
-              "The successful capture did not have the expected shape (three lines: TE=, boolean TEP=, and a TEP= PATH), so AIXray cannot determine the TE/TEP state." \
+              "The successful capture did not have the expected shape (three lines: TE=, boolean TEP=, and a TEP= PATH), so PTxray cannot determine the TE/TEP state." \
               "as root, run 'trustchk -p TE TEP' manually and inspect the output shape." "cis-l2"
           ;;
       esac
@@ -439,13 +455,13 @@ _AIXRAY_SESSION_KEYS=""
     127)
       add security trustchk_te_tep "Trusted Execution and Trusted Execution Path enabled" \
           NOT_ASSESSED med "not assessed — trustchk not executable (rc=127)" \
-          "trustchk is mode 500 (owner root); a non-root run cannot execute it, and an absent binary also returns rc=127. AIXray cannot determine the TE/TEP state." \
-          "run AIXray as root, or run 'trustchk -p TE TEP' manually as root." "cis-l2"
+          "trustchk is mode 500 (owner root); a non-root run cannot execute it, and an absent binary also returns rc=127. PTxray cannot determine the TE/TEP state." \
+          "run PTxray as root, or run 'trustchk -p TE TEP' manually as root." "cis-l2"
       ;;
     *)
       add security trustchk_te_tep "Trusted Execution and Trusted Execution Path enabled" \
           NOT_ASSESSED med "not assessed — trustchk -p TE TEP capture failed (rc=$TCHK_RC)" \
-          "trustchk returned a non-zero exit status for an unknown reason, so AIXray cannot determine the TE/TEP state." \
+          "trustchk returned a non-zero exit status for an unknown reason, so PTxray cannot determine the TE/TEP state." \
           "as root, run 'trustchk -p TE TEP' manually and inspect the error." "cis-l2"
       ;;
   esac

@@ -1,5 +1,5 @@
 #!/bin/ksh
-# Generated standalone AIXray check support. READ-ONLY: captures only; no
+# Generated standalone PTxray check support. READ-ONLY: captures only; no
 # remediation, service control, network access, or durable target-host writes.
 set -u
 
@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="1.2.0"
+AIXRAY_STANDALONE_VERSION="1.3.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -58,7 +58,7 @@ function aixv {
 # it". Live mode returns false (rc=1): a real box has no concept of a missing
 # fixture, and rc=127 there genuinely means the command was not found. Must be
 # called in the PARENT shell after the probe, not inside the $(aix ...)
-# substitution. Byte-for-byte the monolith's semantics (src/aixray-aix.sh.in);
+# substitution. Byte-for-byte the monolith's semantics (src/ptxray-aix.sh.in);
 # without it here, an undefined-command rc of 127 makes the guard read false and
 # the caller launders a missing capture into NOT_APPLICABLE.
 function aix_capture_missing {
@@ -324,13 +324,29 @@ function standalone_main {
     echo "usage: $0 --json" >&2
     return 2
   fi
-  if [ -z "${AIXRAY_FIXTURES:-}" ] && [ "$(uname -s 2>/dev/null)" != "AIX" ]; then
-    echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
-    return 2
+  if [ -z "${AIXRAY_FIXTURES:-}" ]; then
+    _os=$(uname -s 2>/dev/null)
+    if [ "$_os" = "AIX" ]; then
+      :
+    elif [ "$_os" = "OS400" ] && [ "${IBMI_PROBES:-0}" = 1 ]; then
+      :
+    else
+      echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
+      return 2
+    fi
   fi
   standalone_initialize
   initialize_rc=$?
   [ "$initialize_rc" -eq 0 ] || return "$initialize_rc"
+  if [ "${IBMI_PROBES:-0}" = 1 ]; then
+    if ! ibmi_require_qsecofr; then
+      echo "$AIXRAY_TOOL requires SESSION_USER=QSECOFR and SYSTEM_USER=QSECOFR; no scan was run." >&2
+      return 2
+    fi
+  elif [ -z "${AIXRAY_FIXTURES:-}" ] && [ "${MYUID:-}" != 0 ]; then
+    echo "$AIXRAY_TOOL requires root; no scan was run." >&2
+    return 2
+  fi
   standalone_run
   run_rc=$?
   [ "$run_rc" -eq 0 ] || return 1
@@ -380,7 +396,7 @@ _AIXRAY_SESSION_KEYS=""
       FTRD_SEV=high
       FTRD_OBSERVED="/etc/ftpusers exists but contains no root line, so the FTP daemon permits root login"
       FTRD_MEANING="Without a root entry in the FTP deny list the daemon accepts root, exposing the account to remote password attacks."
-      FTRD_FIX="append a line reading 'root' to /etc/ftpusers; AIXray only recommends this action"
+      FTRD_FIX="append a line reading 'root' to /etc/ftpusers; PTxray only recommends this action"
       ;;
     2)
       # grep error: /etc/ftpusers does not exist (or is unreadable).  The deny
@@ -389,15 +405,15 @@ _AIXRAY_SESSION_KEYS=""
       FTRD_SEV=high
       FTRD_OBSERVED="/etc/ftpusers is absent (rc=2), so no FTP deny entry for root exists"
       FTRD_MEANING="With the deny mechanism missing there is no entry blocking root, so root login over FTP is permitted if the daemon runs."
-      FTRD_FIX="create /etc/ftpusers containing a line reading 'root'; AIXray only recommends this action"
+      FTRD_FIX="create /etc/ftpusers containing a line reading 'root'; PTxray only recommends this action"
       ;;
     *)
       # An rc the probe did not anticipate: the state is genuinely unknown.
       FTRD_STATUS=NOT_ASSESSED
       FTRD_SEV=med
       FTRD_OBSERVED="not assessed - /etc/ftpusers probe returned an unexpected status (rc=$FTRD_RC)"
-      FTRD_MEANING="AIXray did not obtain a determinate result from the FTP deny-list probe, so it cannot judge root FTP access."
-      FTRD_FIX="verify /etc/ftpusers exists and is readable, then rerun AIXray"
+      FTRD_MEANING="PTxray did not obtain a determinate result from the FTP deny-list probe, so it cannot judge root FTP access."
+      FTRD_FIX="verify /etc/ftpusers exists and is readable, then rerun PTxray"
       ;;
   esac
 

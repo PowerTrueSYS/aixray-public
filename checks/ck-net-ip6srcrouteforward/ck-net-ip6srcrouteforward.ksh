@@ -1,5 +1,5 @@
 #!/bin/ksh
-# Generated standalone AIXray check support. READ-ONLY: captures only; no
+# Generated standalone PTxray check support. READ-ONLY: captures only; no
 # remediation, service control, network access, or durable target-host writes.
 set -u
 
@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="1.2.0"
+AIXRAY_STANDALONE_VERSION="1.3.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -58,7 +58,7 @@ function aixv {
 # it". Live mode returns false (rc=1): a real box has no concept of a missing
 # fixture, and rc=127 there genuinely means the command was not found. Must be
 # called in the PARENT shell after the probe, not inside the $(aix ...)
-# substitution. Byte-for-byte the monolith's semantics (src/aixray-aix.sh.in);
+# substitution. Byte-for-byte the monolith's semantics (src/ptxray-aix.sh.in);
 # without it here, an undefined-command rc of 127 makes the guard read false and
 # the caller launders a missing capture into NOT_APPLICABLE.
 function aix_capture_missing {
@@ -324,13 +324,29 @@ function standalone_main {
     echo "usage: $0 --json" >&2
     return 2
   fi
-  if [ -z "${AIXRAY_FIXTURES:-}" ] && [ "$(uname -s 2>/dev/null)" != "AIX" ]; then
-    echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
-    return 2
+  if [ -z "${AIXRAY_FIXTURES:-}" ]; then
+    _os=$(uname -s 2>/dev/null)
+    if [ "$_os" = "AIX" ]; then
+      :
+    elif [ "$_os" = "OS400" ] && [ "${IBMI_PROBES:-0}" = 1 ]; then
+      :
+    else
+      echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
+      return 2
+    fi
   fi
   standalone_initialize
   initialize_rc=$?
   [ "$initialize_rc" -eq 0 ] || return "$initialize_rc"
+  if [ "${IBMI_PROBES:-0}" = 1 ]; then
+    if ! ibmi_require_qsecofr; then
+      echo "$AIXRAY_TOOL requires SESSION_USER=QSECOFR and SYSTEM_USER=QSECOFR; no scan was run." >&2
+      return 2
+    fi
+  elif [ -z "${AIXRAY_FIXTURES:-}" ] && [ "${MYUID:-}" != 0 ]; then
+    echo "$AIXRAY_TOOL requires root; no scan was run." >&2
+    return 2
+  fi
   standalone_run
   run_rc=$?
   [ "$run_rc" -eq 0 ] || return 1
@@ -360,13 +376,13 @@ _AIXRAY_SESSION_KEYS=""
     add security net_ip6srcrouteforward "Source-routed IPv6 forwarding" \
         NOT_ASSESSED high \
         "not assessed — ip6srcrouteforward capture failed (rc=$IP6SFR_RC)" \
-        "AIXray could not determine whether source-routed IPv6 packets are forwarded; the tunable may be absent on this AIX release." \
+        "PTxray could not determine whether source-routed IPv6 packets are forwarded; the tunable may be absent on this AIX release." \
         "run 'no -o ip6srcrouteforward' manually to check the current value." "cis-l1"
   elif [ -z "$IP6SFR_OUT" ]; then
     add security net_ip6srcrouteforward "Source-routed IPv6 forwarding" \
         NOT_ASSESSED high \
         "not assessed — ip6srcrouteforward capture empty (rc=0)" \
-        "The successful capture returned no ip6srcrouteforward value, so AIXray cannot determine whether source-routed IPv6 packets are forwarded." \
+        "The successful capture returned no ip6srcrouteforward value, so PTxray cannot determine whether source-routed IPv6 packets are forwarded." \
         "run 'no -o ip6srcrouteforward' manually and inspect the output." "cis-l1"
   else
     IP6SFR_PARSED=$(printf '%s\n' "$IP6SFR_OUT" | awk '
@@ -422,28 +438,28 @@ _AIXRAY_SESSION_KEYS=""
         add security net_ip6srcrouteforward "Source-routed IPv6 forwarding" \
             NOT_ASSESSED high \
             "not assessed — conflicting ip6srcrouteforward assignments (values: $IP6SFR_VAL)" \
-            "The capture contained disagreeing ip6srcrouteforward values, so AIXray cannot determine one effective tunable value." \
-            "run 'no -o ip6srcrouteforward' manually, resolve the contradictory output, and rerun AIXray." "cis-l1"
+            "The capture contained disagreeing ip6srcrouteforward values, so PTxray cannot determine one effective tunable value." \
+            "run 'no -o ip6srcrouteforward' manually, resolve the contradictory output, and rerun PTxray." "cis-l1"
         ;;
       multiple)
         add security net_ip6srcrouteforward "Source-routed IPv6 forwarding" \
             NOT_ASSESSED high \
             "not assessed — multiple ip6srcrouteforward assignments (values: $IP6SFR_VAL)" \
-            "The capture contained more than one ip6srcrouteforward assignment, so AIXray cannot establish one effective value." \
-            "run 'no -o ip6srcrouteforward' manually, resolve the duplicate output, and rerun AIXray." "cis-l1"
+            "The capture contained more than one ip6srcrouteforward assignment, so PTxray cannot establish one effective value." \
+            "run 'no -o ip6srcrouteforward' manually, resolve the duplicate output, and rerun PTxray." "cis-l1"
         ;;
       absent)
         add security net_ip6srcrouteforward "Source-routed IPv6 forwarding" \
             NOT_ASSESSED high \
             "not assessed — capture did not contain exactly one ip6srcrouteforward assignment (rc=0)" \
-            "The output did not contain the requested tunable assignment, so AIXray cannot determine whether source-routed IPv6 packets are forwarded." \
+            "The output did not contain the requested tunable assignment, so PTxray cannot determine whether source-routed IPv6 packets are forwarded." \
             "run 'no -o ip6srcrouteforward' manually and inspect the output shape." "cis-l1"
         ;;
       *)
         add security net_ip6srcrouteforward "Source-routed IPv6 forwarding" \
             NOT_ASSESSED high \
             "not assessed — ip6srcrouteforward capture unparseable (rc=0)" \
-            "The requested assignment had unmodelled syntax or trailing fields, so AIXray could not extract one numeric value." \
+            "The requested assignment had unmodelled syntax or trailing fields, so PTxray could not extract one numeric value." \
             "run 'no -o ip6srcrouteforward' manually and inspect the output shape." "cis-l1"
         ;;
     esac

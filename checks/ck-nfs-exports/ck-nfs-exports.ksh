@@ -1,5 +1,5 @@
 #!/bin/ksh
-# Generated standalone AIXray check support. READ-ONLY: captures only; no
+# Generated standalone PTxray check support. READ-ONLY: captures only; no
 # remediation, service control, network access, or durable target-host writes.
 set -u
 
@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="1.2.0"
+AIXRAY_STANDALONE_VERSION="1.3.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -58,7 +58,7 @@ function aixv {
 # it". Live mode returns false (rc=1): a real box has no concept of a missing
 # fixture, and rc=127 there genuinely means the command was not found. Must be
 # called in the PARENT shell after the probe, not inside the $(aix ...)
-# substitution. Byte-for-byte the monolith's semantics (src/aixray-aix.sh.in);
+# substitution. Byte-for-byte the monolith's semantics (src/ptxray-aix.sh.in);
 # without it here, an undefined-command rc of 127 makes the guard read false and
 # the caller launders a missing capture into NOT_APPLICABLE.
 function aix_capture_missing {
@@ -324,13 +324,29 @@ function standalone_main {
     echo "usage: $0 --json" >&2
     return 2
   fi
-  if [ -z "${AIXRAY_FIXTURES:-}" ] && [ "$(uname -s 2>/dev/null)" != "AIX" ]; then
-    echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
-    return 2
+  if [ -z "${AIXRAY_FIXTURES:-}" ]; then
+    _os=$(uname -s 2>/dev/null)
+    if [ "$_os" = "AIX" ]; then
+      :
+    elif [ "$_os" = "OS400" ] && [ "${IBMI_PROBES:-0}" = 1 ]; then
+      :
+    else
+      echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
+      return 2
+    fi
   fi
   standalone_initialize
   initialize_rc=$?
   [ "$initialize_rc" -eq 0 ] || return "$initialize_rc"
+  if [ "${IBMI_PROBES:-0}" = 1 ]; then
+    if ! ibmi_require_qsecofr; then
+      echo "$AIXRAY_TOOL requires SESSION_USER=QSECOFR and SYSTEM_USER=QSECOFR; no scan was run." >&2
+      return 2
+    fi
+  elif [ -z "${AIXRAY_FIXTURES:-}" ] && [ "${MYUID:-}" != 0 ]; then
+    echo "$AIXRAY_TOOL requires root; no scan was run." >&2
+    return 2
+  fi
   standalone_run
   run_rc=$?
   [ "$run_rc" -eq 0 ] || return 1
@@ -597,8 +613,8 @@ _AIXRAY_SESSION_KEYS=""
 ${NFS_GAP_EVIDENCE}"
     add security nfs_exports "NFS exports" NOT_ASSESSED high \
         "$NFS_OBS" \
-        "At least one non-comment evidence line was not exactly a /path [-options] export definition, or the same path had conflicting definitions, so AIXray cannot claim the export set was safely assessed." \
-        "inspect /etc/exports and the no-argument exportfs listing, resolve conflicting definitions or diagnostics, then rerun AIXray." "cis-l1"
+        "At least one non-comment evidence line was not exactly a /path [-options] export definition, or the same path had conflicting definitions, so PTxray cannot claim the export set was safely assessed." \
+        "inspect /etc/exports and the no-argument exportfs listing, resolve conflicting definitions or diagnostics, then rerun PTxray." "cis-l1"
   elif [ "$NFS_HIGH_COUNT" -gt 0 ]; then
     NFS_OBS=$NFS_EVIDENCE
     if [ -n "$NFS_PARTIAL_NOTE" ]; then
@@ -637,47 +653,47 @@ configured-but-not-live: $NFS_CONFIG_COUNT uncommented /etc/exports line(s); exp
     add security nfs_exports "NFS exports" NOT_ASSESSED high \
         "not assessed — both NFS evidence reads failed (/etc/exports exit=$NFS_CONFIG_RC; exportfs exit=$NFS_LIVE_RC)" \
         "Neither configured nor current NFS export evidence was readable, so absence of exports and safe export options cannot be established." \
-        "restore read access to /etc/exports and the no-argument exportfs listing, then re-run AIXray." "cis-l1"
+        "restore read access to /etc/exports and the no-argument exportfs listing, then re-run PTxray." "cis-l1"
   elif [ "$NFS_CONFIG_ABSENT" -eq 1 ] && [ "$NFS_LIVE_RC" -ne 0 ]; then
     add security nfs_exports "NFS exports" NOT_ASSESSED high \
         "not assessed — /etc/exports is absent and the current exportfs listing failed (exit=$NFS_LIVE_RC)" \
         "Neither dormant export definitions nor the active export set could be established." \
-        "determine whether this host should have an /etc/exports definition file, restore access to the no-argument exportfs listing, and re-run AIXray." "cis-l1"
+        "determine whether this host should have an /etc/exports definition file, restore access to the no-argument exportfs listing, and re-run PTxray." "cis-l1"
   elif [ "$NFS_CONFIG_RC" -ne 0 ] && [ "$NFS_LIVE_RC" -ne 0 ]; then
     add security nfs_exports "NFS exports" NOT_ASSESSED high \
         "not assessed — /etc/exports existence and read state could not be established (existence exit=$NFS_CONFIG_EXISTS_RC; read exit=$NFS_CONFIG_RC), and exportfs failed (exit=$NFS_LIVE_RC)" \
         "The definition-file state and current NFS export set are both unknown." \
-        "verify whether /etc/exports exists, establish the no-argument exportfs listing, and re-run AIXray." "cis-l1"
+        "verify whether /etc/exports exists, establish the no-argument exportfs listing, and re-run PTxray." "cis-l1"
   elif [ "$NFS_CONFIG_ABSENT" -eq 1 ] && [ "$NFS_LIVE_COUNT" -gt 0 ]; then
     add security nfs_exports "NFS exports" NOT_ASSESSED high \
         "not assessed — /etc/exports is absent while the current exportfs listing contains $NFS_LIVE_COUNT active export line(s)" \
-        "Active exports were observed, but without the definition file AIXray cannot establish whether dormant exports exist or whether definitions are managed elsewhere." \
-        "determine how this host's active NFS exports are managed; restore or recreate /etc/exports if appropriate, then re-run AIXray." "cis-l1"
+        "Active exports were observed, but without the definition file PTxray cannot establish whether dormant exports exist or whether definitions are managed elsewhere." \
+        "determine how this host's active NFS exports are managed; restore or recreate /etc/exports if appropriate, then re-run PTxray." "cis-l1"
   elif [ "$NFS_CONFIG_ABSENT" -eq 1 ]; then
     add security nfs_exports "NFS exports" NOT_ASSESSED high \
         "not assessed — /etc/exports is absent; the current exportfs evidence did not establish the exact no-export state" \
         "The definition file is missing and the live evidence was not sufficient to prove that this host exports no filesystems." \
-        "determine whether this host should have an /etc/exports definition file, verify the complete no-argument exportfs output, and re-run AIXray." "cis-l1"
+        "determine whether this host should have an /etc/exports definition file, verify the complete no-argument exportfs output, and re-run PTxray." "cis-l1"
   elif [ "$NFS_CONFIG_UNREADABLE" -eq 1 ]; then
     add security nfs_exports "NFS exports" NOT_ASSESSED high \
         "not assessed — /etc/exports read failed (exit=$NFS_CONFIG_RC); no unsafe option was established from the current exportfs listing" \
         "The live listing alone did not establish an unsafe export, but unreadable configuration can contain dormant definitions that later become active." \
-        "restore read access to /etc/exports and re-run AIXray." "cis-l1"
+        "restore read access to /etc/exports and re-run PTxray." "cis-l1"
   elif [ "$NFS_CONFIG_RC" -ne 0 ]; then
     add security nfs_exports "NFS exports" NOT_ASSESSED high \
         "not assessed — /etc/exports existence and read state could not be established (existence exit=$NFS_CONFIG_EXISTS_RC; read exit=$NFS_CONFIG_RC)" \
         "The live listing alone did not establish an unsafe export, and the configured export state remains unknown." \
-        "verify whether /etc/exports exists and can be captured, then re-run AIXray." "cis-l1"
+        "verify whether /etc/exports exists and can be captured, then re-run PTxray." "cis-l1"
   elif [ "$NFS_LIVE_RC" -ne 0 ]; then
     add security nfs_exports "NFS exports" NOT_ASSESSED high \
         "not assessed — current exportfs listing failed (exit=$NFS_LIVE_RC); no unsafe option was established from /etc/exports" \
         "The configuration alone did not establish an unsafe export, but the unreadable live listing can contain currently exported state not represented by that file." \
-        "restore access to the no-argument exportfs listing and re-run AIXray." "cis-l1"
+        "restore access to the no-argument exportfs listing and re-run PTxray." "cis-l1"
   elif [ "$NFS_LIVE_UNASSESSED" -eq 1 ]; then
     add security nfs_exports "NFS exports" NOT_ASSESSED high \
         "$NFS_LIVE_GAP_REASON; no unsafe option was established from /etc/exports" \
         "A successful live-listing capture must contain export rows or the exact AIX no-export sentinel before absence of current exports can be established." \
-        "rerun the no-argument exportfs listing, verify its complete stdout and return code, then re-run AIXray." "cis-l1"
+        "rerun the no-argument exportfs listing, verify its complete stdout and return code, then re-run PTxray." "cis-l1"
   elif [ "$NFS_CONFIGURED_ONLY" -eq 1 ]; then
     add security nfs_exports "NFS exports" WARN low \
         "configured-but-not-live: $NFS_CONFIG_COUNT uncommented /etc/exports line(s); exportfs listed no current exports" \

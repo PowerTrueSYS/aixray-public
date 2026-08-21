@@ -1,5 +1,5 @@
 #!/bin/ksh
-# Generated standalone AIXray check support. READ-ONLY: captures only; no
+# Generated standalone PTxray check support. READ-ONLY: captures only; no
 # remediation, service control, network access, or durable target-host writes.
 set -u
 
@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="1.2.0"
+AIXRAY_STANDALONE_VERSION="1.3.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -58,7 +58,7 @@ function aixv {
 # it". Live mode returns false (rc=1): a real box has no concept of a missing
 # fixture, and rc=127 there genuinely means the command was not found. Must be
 # called in the PARENT shell after the probe, not inside the $(aix ...)
-# substitution. Byte-for-byte the monolith's semantics (src/aixray-aix.sh.in);
+# substitution. Byte-for-byte the monolith's semantics (src/ptxray-aix.sh.in);
 # without it here, an undefined-command rc of 127 makes the guard read false and
 # the caller launders a missing capture into NOT_APPLICABLE.
 function aix_capture_missing {
@@ -324,13 +324,29 @@ function standalone_main {
     echo "usage: $0 --json" >&2
     return 2
   fi
-  if [ -z "${AIXRAY_FIXTURES:-}" ] && [ "$(uname -s 2>/dev/null)" != "AIX" ]; then
-    echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
-    return 2
+  if [ -z "${AIXRAY_FIXTURES:-}" ]; then
+    _os=$(uname -s 2>/dev/null)
+    if [ "$_os" = "AIX" ]; then
+      :
+    elif [ "$_os" = "OS400" ] && [ "${IBMI_PROBES:-0}" = 1 ]; then
+      :
+    else
+      echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
+      return 2
+    fi
   fi
   standalone_initialize
   initialize_rc=$?
   [ "$initialize_rc" -eq 0 ] || return "$initialize_rc"
+  if [ "${IBMI_PROBES:-0}" = 1 ]; then
+    if ! ibmi_require_qsecofr; then
+      echo "$AIXRAY_TOOL requires SESSION_USER=QSECOFR and SYSTEM_USER=QSECOFR; no scan was run." >&2
+      return 2
+    fi
+  elif [ -z "${AIXRAY_FIXTURES:-}" ] && [ "${MYUID:-}" != 0 ]; then
+    echo "$AIXRAY_TOOL requires root; no scan was run." >&2
+    return 2
+  fi
   standalone_run
   run_rc=$?
   [ "$run_rc" -eq 0 ] || return 1
@@ -366,17 +382,17 @@ _AIXRAY_SESSION_KEYS=""
     add security inetd_discard "Legacy inetd discard service" NOT_ASSESSED high \
         "not assessed — /etc/inetd.conf probe failed (rc=$IDISC_RC)" \
         "The grep probe returned an unexpected exit code ($IDISC_RC). On AIX the only other rc is 2 for invalid options; verify the file is readable and rerun." \
-        "inspect /etc/inetd.conf and rerun AIXray." "cis-l1"
+        "inspect /etc/inetd.conf and rerun PTxray." "cis-l1"
   elif [ "$IDISC_RC" -eq 0 ] && [ -n "$IDISC_LINE" ]; then
     add security inetd_discard "Legacy inetd discard service" FAIL high \
         "discard active in /etc/inetd.conf" \
         "This legacy inetd service adds avoidable remote attack surface." \
-        "after service-owner approval, comment the exact discard line and refresh inetd; AIXray only recommends these actions." "cis-l1"
+        "after service-owner approval, comment the exact discard line and refresh inetd; PTxray only recommends these actions." "cis-l1"
   elif [ "$IDISC_RC" -eq 0 ] && [ -z "$IDISC_LINE" ]; then
     add security inetd_discard "Legacy inetd discard service" NOT_ASSESSED high \
         "not assessed — grep returned 0 but produced no well-shaped discard line" \
         "The grep returned success (rc=0) but yielded output that does not contain a well-formed discard entry. This may indicate malformed /etc/inetd.conf content." \
-        "inspect /etc/inetd.conf and rerun AIXray." "cis-l1"
+        "inspect /etc/inetd.conf and rerun PTxray." "cis-l1"
   elif [ "$IDISC_RC" -eq 1 ] && [ -z "$IDISC" ]; then
     add security inetd_discard "Legacy inetd discard service" PASS high \
         "discard not active in /etc/inetd.conf" \
@@ -386,13 +402,13 @@ _AIXRAY_SESSION_KEYS=""
     add security inetd_discard "Legacy inetd discard service" NOT_ASSESSED high \
         "not assessed — grep rc=1 but produced output (contradictory signal)" \
         "The grep returned no-match (rc=1) yet captured stdout. This is an unexpected state." \
-        "inspect /etc/inetd.conf and rerun AIXray." "cis-l1"
+        "inspect /etc/inetd.conf and rerun PTxray." "cis-l1"
   else
     # rc=0, empty output — grep found no match but returned 0.
     add security inetd_discard "Legacy inetd discard service" NOT_ASSESSED high \
         "not assessed — /etc/inetd.conf probe returned rc=0 with empty output" \
         "The grep probe returned success (rc=0) but captured no output. This contradicts the normal no-match rc=1 behavior." \
-        "inspect /etc/inetd.conf and rerun AIXray." "cis-l1"
+        "inspect /etc/inetd.conf and rerun PTxray." "cis-l1"
   fi
 }
 

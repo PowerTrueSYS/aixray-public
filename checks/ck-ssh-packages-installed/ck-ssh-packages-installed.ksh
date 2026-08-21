@@ -1,5 +1,5 @@
 #!/bin/ksh
-# Generated standalone AIXray check support. READ-ONLY: captures only; no
+# Generated standalone PTxray check support. READ-ONLY: captures only; no
 # remediation, service control, network access, or durable target-host writes.
 set -u
 
@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="1.2.0"
+AIXRAY_STANDALONE_VERSION="1.3.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -58,7 +58,7 @@ function aixv {
 # it". Live mode returns false (rc=1): a real box has no concept of a missing
 # fixture, and rc=127 there genuinely means the command was not found. Must be
 # called in the PARENT shell after the probe, not inside the $(aix ...)
-# substitution. Byte-for-byte the monolith's semantics (src/aixray-aix.sh.in);
+# substitution. Byte-for-byte the monolith's semantics (src/ptxray-aix.sh.in);
 # without it here, an undefined-command rc of 127 makes the guard read false and
 # the caller launders a missing capture into NOT_APPLICABLE.
 function aix_capture_missing {
@@ -324,13 +324,29 @@ function standalone_main {
     echo "usage: $0 --json" >&2
     return 2
   fi
-  if [ -z "${AIXRAY_FIXTURES:-}" ] && [ "$(uname -s 2>/dev/null)" != "AIX" ]; then
-    echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
-    return 2
+  if [ -z "${AIXRAY_FIXTURES:-}" ]; then
+    _os=$(uname -s 2>/dev/null)
+    if [ "$_os" = "AIX" ]; then
+      :
+    elif [ "$_os" = "OS400" ] && [ "${IBMI_PROBES:-0}" = 1 ]; then
+      :
+    else
+      echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
+      return 2
+    fi
   fi
   standalone_initialize
   initialize_rc=$?
   [ "$initialize_rc" -eq 0 ] || return "$initialize_rc"
+  if [ "${IBMI_PROBES:-0}" = 1 ]; then
+    if ! ibmi_require_qsecofr; then
+      echo "$AIXRAY_TOOL requires SESSION_USER=QSECOFR and SYSTEM_USER=QSECOFR; no scan was run." >&2
+      return 2
+    fi
+  elif [ -z "${AIXRAY_FIXTURES:-}" ] && [ "${MYUID:-}" != 0 ]; then
+    echo "$AIXRAY_TOOL requires root; no scan was run." >&2
+    return 2
+  fi
   standalone_run
   run_rc=$?
   [ "$run_rc" -eq 0 ] || return 1
@@ -552,8 +568,8 @@ if [ "$SSHPKG_CLIENT_RESULT" = unknown ] || [ "$SSHPKG_SERVER_RESULT" = unknown 
   if [ -n "$SSHPKG_SERVER_REASON" ]; then
     SSHPKG_OBS="$SSHPKG_OBS; $SSHPKG_SERVER_REASON"
   fi
-  SSHPKG_MEAN="AIXray could not determine the installed and healthy state of the OpenSSH client and server filesets from the package inventory."
-  SSHPKG_FIX="restore a readable 'lslpp -L' query for both filesets and rerun AIXray."
+  SSHPKG_MEAN="PTxray could not determine the installed and healthy state of the OpenSSH client and server filesets from the package inventory."
+  SSHPKG_FIX="restore a readable 'lslpp -L' query for both filesets and rerun PTxray."
 elif [ "$SSHPKG_CLIENT_RESULT" = absent ] || [ "$SSHPKG_SERVER_RESULT" = absent ] ||
      [ "$SSHPKG_CLIENT_RESULT" = unhealthy ] || [ "$SSHPKG_SERVER_RESULT" = unhealthy ]; then
   SSHPKG_STATUS=FAIL
@@ -570,7 +586,7 @@ elif [ "$SSHPKG_CLIENT_RESULT" = absent ] || [ "$SSHPKG_SERVER_RESULT" = absent 
     fi
   fi
   SSHPKG_MEAN="The OpenSSH client and server filesets must both be installed and in a healthy state; a missing fileset or a broken, obsolete, inconsistent, or efix-locked state is non-compliant."
-  SSHPKG_FIX="install or repair the affected fileset(s) with 'installp' and rerun AIXray; AIXray only recommends these actions."
+  SSHPKG_FIX="install or repair the affected fileset(s) with 'installp' and rerun PTxray; PTxray only recommends these actions."
 else
   SSHPKG_STATUS=PASS
   SSHPKG_SEV=low

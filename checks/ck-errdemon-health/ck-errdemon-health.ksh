@@ -1,5 +1,5 @@
 #!/bin/ksh
-# Generated standalone AIXray check support. READ-ONLY: captures only; no
+# Generated standalone PTxray check support. READ-ONLY: captures only; no
 # remediation, service control, network access, or durable target-host writes.
 set -u
 
@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="1.2.0"
+AIXRAY_STANDALONE_VERSION="1.3.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -58,7 +58,7 @@ function aixv {
 # it". Live mode returns false (rc=1): a real box has no concept of a missing
 # fixture, and rc=127 there genuinely means the command was not found. Must be
 # called in the PARENT shell after the probe, not inside the $(aix ...)
-# substitution. Byte-for-byte the monolith's semantics (src/aixray-aix.sh.in);
+# substitution. Byte-for-byte the monolith's semantics (src/ptxray-aix.sh.in);
 # without it here, an undefined-command rc of 127 makes the guard read false and
 # the caller launders a missing capture into NOT_APPLICABLE.
 function aix_capture_missing {
@@ -324,13 +324,29 @@ function standalone_main {
     echo "usage: $0 --json" >&2
     return 2
   fi
-  if [ -z "${AIXRAY_FIXTURES:-}" ] && [ "$(uname -s 2>/dev/null)" != "AIX" ]; then
-    echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
-    return 2
+  if [ -z "${AIXRAY_FIXTURES:-}" ]; then
+    _os=$(uname -s 2>/dev/null)
+    if [ "$_os" = "AIX" ]; then
+      :
+    elif [ "$_os" = "OS400" ] && [ "${IBMI_PROBES:-0}" = 1 ]; then
+      :
+    else
+      echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
+      return 2
+    fi
   fi
   standalone_initialize
   initialize_rc=$?
   [ "$initialize_rc" -eq 0 ] || return "$initialize_rc"
+  if [ "${IBMI_PROBES:-0}" = 1 ]; then
+    if ! ibmi_require_qsecofr; then
+      echo "$AIXRAY_TOOL requires SESSION_USER=QSECOFR and SYSTEM_USER=QSECOFR; no scan was run." >&2
+      return 2
+    fi
+  elif [ -z "${AIXRAY_FIXTURES:-}" ] && [ "${MYUID:-}" != 0 ]; then
+    echo "$AIXRAY_TOOL requires root; no scan was run." >&2
+    return 2
+  fi
   standalone_run
   run_rc=$?
   [ "$run_rc" -eq 0 ] || return 1
@@ -388,8 +404,8 @@ _AIXRAY_SESSION_KEYS=""
 
   if [ "$PSE_OK" -ne 1 ]; then
     add errors errdemon_health "Error-logging daemon" NOT_ASSESSED high "$PSEWHY" \
-        "AIXray could not validate the process list, so it cannot determine whether errdemon is running or whether the AIX error log is recording new events." \
-        "make 'ps -e -o comm' return a complete process list, then re-run AIXray before relying on error-log findings."
+        "PTxray could not validate the process list, so it cannot determine whether errdemon is running or whether the AIX error log is recording new events." \
+        "make 'ps -e -o comm' return a complete process list, then re-run PTxray before relying on error-log findings."
   else
   ERDRUN=$(printf '%s\n' "$PSE" | awk 'NR>1 && $1=="errdemon"{n++} END{print n+0}')
   if [ "${ERDRUN:-0}" -eq 0 ]; then
@@ -407,14 +423,14 @@ _AIXRAY_SESSION_KEYS=""
       # NOT_ASSESSED, never PASS (the daemon-running fact alone is a WARN-worthy partial
       # read, not a clean bill of health for errlog sizing).
       add errors errdemon_health "Error-logging daemon" NOT_ASSESSED low "errdemon running; log-size configuration not read (needs root)" \
-          "The error-logging daemon is up, so errors are being captured. Its log-size configuration could not be read (needs root), so whether the errlog is capped below the 1 MB default is unknown — re-run as root to confirm." "re-run aixray as root, or inspect 'errdemon -l' manually."
+          "The error-logging daemon is up, so errors are being captured. Its log-size configuration could not be read (needs root), so whether the errlog is capped below the 1 MB default is unknown — re-run as root to confirm." "re-run ptxray as root, or inspect 'errdemon -l' manually."
     else
       ERDSZ=$(printf '%s\n' "$ERDL" | awk '/Log Size/{for(i=1;i<=NF;i++) if($i ~ /^[0-9]+$/){print $i; exit}}')
       ERDDUP=$(printf '%s\n' "$ERDL" | awk '/Duplicate Removal/{print $NF}')
       if [ -z "$ERDSZ" ]; then
         add errors errdemon_health "Error-logging daemon" NOT_ASSESSED low "errdemon running; Log Size row missing or unreadable" \
             "The error-logging daemon is up, but the Log Size row in 'errdemon -l' output was missing or unreadable, so whether the errlog is capped below the 1 MB default is unknown." \
-            "inspect '/usr/lib/errdemon -l' manually; if Log Size is missing or non-numeric, repair the errdemon configuration before re-running aixray."
+            "inspect '/usr/lib/errdemon -l' manually; if Log Size is missing or non-numeric, repair the errdemon configuration before re-running ptxray."
       elif [ "$ERDSZ" -lt "$ERRDEMON_LOG_MIN" ]; then
         add errors errdemon_health "Error-logging daemon" WARN low "errdemon running; errlog capped at ${ERDSZ} bytes (below the ${ERRDEMON_LOG_MIN}-byte default)" \
             "The error daemon is up, but the circular error log is capped below the 1 MB default — on a chatty box the oldest entries roll off sooner, so a fault that logged a few days ago may already be gone when you look." \

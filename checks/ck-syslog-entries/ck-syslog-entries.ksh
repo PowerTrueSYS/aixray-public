@@ -1,5 +1,5 @@
 #!/bin/ksh
-# Generated standalone AIXray check support. READ-ONLY: captures only; no
+# Generated standalone PTxray check support. READ-ONLY: captures only; no
 # remediation, service control, network access, or durable target-host writes.
 set -u
 
@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="1.2.0"
+AIXRAY_STANDALONE_VERSION="1.3.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -58,7 +58,7 @@ function aixv {
 # it". Live mode returns false (rc=1): a real box has no concept of a missing
 # fixture, and rc=127 there genuinely means the command was not found. Must be
 # called in the PARENT shell after the probe, not inside the $(aix ...)
-# substitution. Byte-for-byte the monolith's semantics (src/aixray-aix.sh.in);
+# substitution. Byte-for-byte the monolith's semantics (src/ptxray-aix.sh.in);
 # without it here, an undefined-command rc of 127 makes the guard read false and
 # the caller launders a missing capture into NOT_APPLICABLE.
 function aix_capture_missing {
@@ -324,13 +324,29 @@ function standalone_main {
     echo "usage: $0 --json" >&2
     return 2
   fi
-  if [ -z "${AIXRAY_FIXTURES:-}" ] && [ "$(uname -s 2>/dev/null)" != "AIX" ]; then
-    echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
-    return 2
+  if [ -z "${AIXRAY_FIXTURES:-}" ]; then
+    _os=$(uname -s 2>/dev/null)
+    if [ "$_os" = "AIX" ]; then
+      :
+    elif [ "$_os" = "OS400" ] && [ "${IBMI_PROBES:-0}" = 1 ]; then
+      :
+    else
+      echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
+      return 2
+    fi
   fi
   standalone_initialize
   initialize_rc=$?
   [ "$initialize_rc" -eq 0 ] || return "$initialize_rc"
+  if [ "${IBMI_PROBES:-0}" = 1 ]; then
+    if ! ibmi_require_qsecofr; then
+      echo "$AIXRAY_TOOL requires SESSION_USER=QSECOFR and SYSTEM_USER=QSECOFR; no scan was run." >&2
+      return 2
+    fi
+  elif [ -z "${AIXRAY_FIXTURES:-}" ] && [ "${MYUID:-}" != 0 ]; then
+    echo "$AIXRAY_TOOL requires root; no scan was run." >&2
+    return 2
+  fi
   standalone_run
   run_rc=$?
   [ "$run_rc" -eq 0 ] || return 1
@@ -411,14 +427,14 @@ _AIXRAY_SESSION_KEYS=""
     SE_STATUS=NOT_ASSESSED
     SE_SEV=low
     SE_OBS="not assessed - syslog.conf capture failed (rc=$SE_CFG_RC)"
-    SE_MEAN="AIXray could not read /etc/syslog.conf, so it cannot tell whether active logging rules exist."
-    SE_FIX="make /etc/syslog.conf readable, then re-run AIXray."
+    SE_MEAN="PTxray could not read /etc/syslog.conf, so it cannot tell whether active logging rules exist."
+    SE_FIX="make /etc/syslog.conf readable, then re-run PTxray."
   elif [ "$SE_TGT_STATE" = "failure" ]; then
     SE_STATUS=NOT_ASSESSED
     SE_SEV=low
     SE_OBS="not assessed - log-target capture failed (rc=$SE_TGT_RC)"
-    SE_MEAN="AIXray could not list the expected log destinations, so it cannot tell whether they exist on disk."
-    SE_FIX="make the log directory listable, then re-run AIXray."
+    SE_MEAN="PTxray could not list the expected log destinations, so it cannot tell whether they exist on disk."
+    SE_FIX="make the log directory listable, then re-run PTxray."
   elif [ "$SE_CONF_STATE" = "active" ] && [ "$SE_TGT_STATE" = "all" ]; then
     SE_STATUS=PASS
     SE_SEV=low
@@ -430,20 +446,20 @@ _AIXRAY_SESSION_KEYS=""
     SE_SEV=med
     SE_OBS="$SE_CFG_LINES active syslog.conf rule line(s); fewer than three expected log destinations present"
     SE_MEAN="syslog.conf defines logging rules but at least one of the expected log outputs is missing, so some logged events are not being collected."
-    SE_FIX="create the missing log destinations that syslog.conf expects, then re-run AIXray."
+    SE_FIX="create the missing log destinations that syslog.conf expects, then re-run PTxray."
   elif [ "$SE_CONF_STATE" = "none" ] && [ "$SE_TGT_STATE" = "all" ]; then
     SE_STATUS=FAIL
     SE_SEV=med
     SE_OBS="no active syslog.conf rule lines; all three expected log destinations present"
     SE_MEAN="syslog.conf has no active logging rules, so the syslog daemon is not collecting events even though the destinations exist."
-    SE_FIX="add at least one active logging rule to /etc/syslog.conf, then re-run AIXray."
+    SE_FIX="add at least one active logging rule to /etc/syslog.conf, then re-run PTxray."
   else
     # No active entries and at least one destination missing.
     SE_STATUS=FAIL
     SE_SEV=high
     SE_OBS="no active syslog.conf rule lines; fewer than three expected log destinations present"
     SE_MEAN="syslog.conf has no active logging rules and expected log outputs are missing, so the box is not collecting logs at all."
-    SE_FIX="add active logging rules to /etc/syslog.conf and create the missing log destinations, then re-run AIXray."
+    SE_FIX="add active logging rules to /etc/syslog.conf and create the missing log destinations, then re-run PTxray."
   fi
 
   add security syslog_entries "syslog logging rules and destinations" \

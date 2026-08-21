@@ -1,5 +1,5 @@
 #!/bin/ksh
-# Generated standalone AIXray check support. READ-ONLY: captures only; no
+# Generated standalone PTxray check support. READ-ONLY: captures only; no
 # remediation, service control, network access, or durable target-host writes.
 set -u
 
@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="1.2.0"
+AIXRAY_STANDALONE_VERSION="1.3.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -58,7 +58,7 @@ function aixv {
 # it". Live mode returns false (rc=1): a real box has no concept of a missing
 # fixture, and rc=127 there genuinely means the command was not found. Must be
 # called in the PARENT shell after the probe, not inside the $(aix ...)
-# substitution. Byte-for-byte the monolith's semantics (src/aixray-aix.sh.in);
+# substitution. Byte-for-byte the monolith's semantics (src/ptxray-aix.sh.in);
 # without it here, an undefined-command rc of 127 makes the guard read false and
 # the caller launders a missing capture into NOT_APPLICABLE.
 function aix_capture_missing {
@@ -324,13 +324,29 @@ function standalone_main {
     echo "usage: $0 --json" >&2
     return 2
   fi
-  if [ -z "${AIXRAY_FIXTURES:-}" ] && [ "$(uname -s 2>/dev/null)" != "AIX" ]; then
-    echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
-    return 2
+  if [ -z "${AIXRAY_FIXTURES:-}" ]; then
+    _os=$(uname -s 2>/dev/null)
+    if [ "$_os" = "AIX" ]; then
+      :
+    elif [ "$_os" = "OS400" ] && [ "${IBMI_PROBES:-0}" = 1 ]; then
+      :
+    else
+      echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
+      return 2
+    fi
   fi
   standalone_initialize
   initialize_rc=$?
   [ "$initialize_rc" -eq 0 ] || return "$initialize_rc"
+  if [ "${IBMI_PROBES:-0}" = 1 ]; then
+    if ! ibmi_require_qsecofr; then
+      echo "$AIXRAY_TOOL requires SESSION_USER=QSECOFR and SYSTEM_USER=QSECOFR; no scan was run." >&2
+      return 2
+    fi
+  elif [ -z "${AIXRAY_FIXTURES:-}" ] && [ "${MYUID:-}" != 0 ]; then
+    echo "$AIXRAY_TOOL requires root; no scan was run." >&2
+    return 2
+  fi
   standalone_run
   run_rc=$?
   [ "$run_rc" -eq 0 ] || return 1
@@ -422,7 +438,7 @@ _AIXRAY_SESSION_KEYS=""
     add storage jfs_legacy "Legacy JFS filesystems" NOT_ASSESSED low \
         "${LSFSQWHY:-not assessed — lsfs -q capture unavailable}" \
         "Legacy-JFS use could not be assessed because lsfs -q failed, returned no evidence, or did not contain complete filesystem/detail row pairs." \
-        "run 'lsfs -q' manually, then rerun AIXray before treating every filesystem as JFS2." "ffiec:II.C.11"
+        "run 'lsfs -q' manually, then rerun PTxray before treating every filesystem as JFS2." "ffiec:II.C.11"
   else
     JFSLEG=$(printf '%s\n' "$LSFSQ" | awk '$1 ~ /^\/dev\// && NF>=5 && $4=="jfs" {printf "%s%s",(n++?", ":""),$3}')
     JFSLEG_RC=$?
@@ -430,7 +446,7 @@ _AIXRAY_SESSION_KEYS=""
       add storage jfs_legacy "Legacy JFS filesystems" NOT_ASSESSED low \
           "not assessed — lsfs -q vfs-column scan failed (rc=$JFSLEG_RC)" \
           "Legacy-JFS use could not be assessed because the validated lsfs -q evidence could not be scanned for legacy jfs rows." \
-          "make the lsfs -q vfs-column scan complete successfully, then rerun AIXray before treating every filesystem as JFS2." "ffiec:II.C.11"
+          "make the lsfs -q vfs-column scan complete successfully, then rerun PTxray before treating every filesystem as JFS2." "ffiec:II.C.11"
     elif [ -n "$JFSLEG" ]; then
       add storage jfs_legacy "Legacy JFS filesystems" WARN low "jfs (not jfs2): $JFSLEG" \
           "One or more filesystems are still legacy JFS, not JFS2 — JFS caps at 2 TB, has no online shrink, weaker concurrency and no inline log. It still works, but it is a dead-end filesystem type on current AIX." \

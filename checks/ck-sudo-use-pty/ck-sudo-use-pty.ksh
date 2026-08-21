@@ -1,5 +1,5 @@
 #!/bin/ksh
-# Generated standalone AIXray check support. READ-ONLY: captures only; no
+# Generated standalone PTxray check support. READ-ONLY: captures only; no
 # remediation, service control, network access, or durable target-host writes.
 set -u
 
@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="1.2.0"
+AIXRAY_STANDALONE_VERSION="1.3.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -58,7 +58,7 @@ function aixv {
 # it". Live mode returns false (rc=1): a real box has no concept of a missing
 # fixture, and rc=127 there genuinely means the command was not found. Must be
 # called in the PARENT shell after the probe, not inside the $(aix ...)
-# substitution. Byte-for-byte the monolith's semantics (src/aixray-aix.sh.in);
+# substitution. Byte-for-byte the monolith's semantics (src/ptxray-aix.sh.in);
 # without it here, an undefined-command rc of 127 makes the guard read false and
 # the caller launders a missing capture into NOT_APPLICABLE.
 function aix_capture_missing {
@@ -324,13 +324,29 @@ function standalone_main {
     echo "usage: $0 --json" >&2
     return 2
   fi
-  if [ -z "${AIXRAY_FIXTURES:-}" ] && [ "$(uname -s 2>/dev/null)" != "AIX" ]; then
-    echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
-    return 2
+  if [ -z "${AIXRAY_FIXTURES:-}" ]; then
+    _os=$(uname -s 2>/dev/null)
+    if [ "$_os" = "AIX" ]; then
+      :
+    elif [ "$_os" = "OS400" ] && [ "${IBMI_PROBES:-0}" = 1 ]; then
+      :
+    else
+      echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
+      return 2
+    fi
   fi
   standalone_initialize
   initialize_rc=$?
   [ "$initialize_rc" -eq 0 ] || return "$initialize_rc"
+  if [ "${IBMI_PROBES:-0}" = 1 ]; then
+    if ! ibmi_require_qsecofr; then
+      echo "$AIXRAY_TOOL requires SESSION_USER=QSECOFR and SYSTEM_USER=QSECOFR; no scan was run." >&2
+      return 2
+    fi
+  elif [ -z "${AIXRAY_FIXTURES:-}" ] && [ "${MYUID:-}" != 0 ]; then
+    echo "$AIXRAY_TOOL requires root; no scan was run." >&2
+    return 2
+  fi
   standalone_run
   run_rc=$?
   [ "$run_rc" -eq 0 ] || return 1
@@ -355,8 +371,8 @@ _AIXRAY_SESSION_KEYS=""
   typeset SUDO_PTY_STATUS SUDO_PTY_OBSERVED SUDO_PTY_MEANING SUDO_PTY_FIX SUDO_PTY_REASON
   SUDO_PTY_STATUS=NOT_ASSESSED
   SUDO_PTY_OBSERVED=''
-  SUDO_PTY_MEANING='AIXray could not establish whether sudo runs each command inside an allocated pseudo-terminal.'
-  SUDO_PTY_FIX='make the sudoers tree readable and rerun AIXray.'
+  SUDO_PTY_MEANING='PTxray could not establish whether sudo runs each command inside an allocated pseudo-terminal.'
+  SUDO_PTY_FIX='make the sudoers tree readable and rerun PTxray.'
   SUDO_PTY_REASON=''
 
   SUDO_PTY_USE_OUT=$(aix sudoers_use_pty grep -Eir '^\s*Defaults\s+([^#]+,\s*)?use_pty(,\s+\S+\s*)*(\s+#.*)?$' /etc/sudoers*) # network-lint: allow -- reads the LOCAL sudoers tree only
@@ -372,7 +388,7 @@ _AIXRAY_SESSION_KEYS=""
       SUDO_PTY_STATUS=FAIL
       SUDO_PTY_OBSERVED='Defaults !use_pty present'
       SUDO_PTY_MEANING='sudoers explicitly disables pseudo-terminal allocation for sudo commands.'
-      SUDO_PTY_FIX="remove the '!use_pty' Defaults line and confirm 'use_pty' is declared in /etc/sudoers or an included fragment; AIXray only recommends these actions."
+      SUDO_PTY_FIX="remove the '!use_pty' Defaults line and confirm 'use_pty' is declared in /etc/sudoers or an included fragment; PTxray only recommends these actions."
       ;;
     0:*)
       SUDO_PTY_STATUS=PASS
@@ -384,7 +400,7 @@ _AIXRAY_SESSION_KEYS=""
       SUDO_PTY_STATUS=FAIL
       SUDO_PTY_OBSERVED='Defaults use_pty absent'
       SUDO_PTY_MEANING='sudoers does not require pseudo-terminal allocation for sudo commands.'
-      SUDO_PTY_FIX="declare 'Defaults use_pty' in /etc/sudoers or an included fragment; AIXray only recommends these actions."
+      SUDO_PTY_FIX="declare 'Defaults use_pty' in /etc/sudoers or an included fragment; PTxray only recommends these actions."
       ;;
     *)
       SUDO_PTY_REASON="unexpected probe result (use_pty rc=$SUDO_PTY_USE_RC, no_use_pty rc=$SUDO_PTY_NO_RC)"

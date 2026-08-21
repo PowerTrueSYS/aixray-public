@@ -1,5 +1,5 @@
 #!/bin/ksh
-# Generated standalone AIXray check support. READ-ONLY: captures only; no
+# Generated standalone PTxray check support. READ-ONLY: captures only; no
 # remediation, service control, network access, or durable target-host writes.
 set -u
 
@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="1.2.0"
+AIXRAY_STANDALONE_VERSION="1.3.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -58,7 +58,7 @@ function aixv {
 # it". Live mode returns false (rc=1): a real box has no concept of a missing
 # fixture, and rc=127 there genuinely means the command was not found. Must be
 # called in the PARENT shell after the probe, not inside the $(aix ...)
-# substitution. Byte-for-byte the monolith's semantics (src/aixray-aix.sh.in);
+# substitution. Byte-for-byte the monolith's semantics (src/ptxray-aix.sh.in);
 # without it here, an undefined-command rc of 127 makes the guard read false and
 # the caller launders a missing capture into NOT_APPLICABLE.
 function aix_capture_missing {
@@ -324,13 +324,29 @@ function standalone_main {
     echo "usage: $0 --json" >&2
     return 2
   fi
-  if [ -z "${AIXRAY_FIXTURES:-}" ] && [ "$(uname -s 2>/dev/null)" != "AIX" ]; then
-    echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
-    return 2
+  if [ -z "${AIXRAY_FIXTURES:-}" ]; then
+    _os=$(uname -s 2>/dev/null)
+    if [ "$_os" = "AIX" ]; then
+      :
+    elif [ "$_os" = "OS400" ] && [ "${IBMI_PROBES:-0}" = 1 ]; then
+      :
+    else
+      echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
+      return 2
+    fi
   fi
   standalone_initialize
   initialize_rc=$?
   [ "$initialize_rc" -eq 0 ] || return "$initialize_rc"
+  if [ "${IBMI_PROBES:-0}" = 1 ]; then
+    if ! ibmi_require_qsecofr; then
+      echo "$AIXRAY_TOOL requires SESSION_USER=QSECOFR and SYSTEM_USER=QSECOFR; no scan was run." >&2
+      return 2
+    fi
+  elif [ -z "${AIXRAY_FIXTURES:-}" ] && [ "${MYUID:-}" != 0 ]; then
+    echo "$AIXRAY_TOOL requires root; no scan was run." >&2
+    return 2
+  fi
   standalone_run
   run_rc=$?
   [ "$run_rc" -eq 0 ] || return 1
@@ -375,14 +391,14 @@ _AIXRAY_SESSION_KEYS=""
   if [ "$WWO_RC" -ne 0 ] && [ -z "$WWO_RAW" ]; then
     add security worldwrite_objects "group-writable admin-group objects" NOT_ASSESSED low \
         "not assessed — ww_objects failed (rc=$WWO_RC) and produced no listing" \
-        "The group-writable-object scan did not complete and returned nothing, so AIXray cannot enumerate the objects that would need group-write review." \
-        "Confirm the group-writable-object scan completes without error, then rerun AIXray." \
+        "The group-writable-object scan did not complete and returned nothing, so PTxray cannot enumerate the objects that would need group-write review." \
+        "Confirm the group-writable-object scan completes without error, then rerun PTxray." \
         "cis-l2"
   elif [ "$ADM_RC" -ne 0 ]; then
     add security worldwrite_objects "group-writable admin-group objects" NOT_ASSESSED low \
         "not assessed — admin_groups failed (rc=$ADM_RC)" \
-        "The administrative-group enumeration did not complete, so AIXray cannot identify which objects' group-write would require review." \
-        "Confirm the administrative-group enumeration completes without error, then rerun AIXray." \
+        "The administrative-group enumeration did not complete, so PTxray cannot identify which objects' group-write would require review." \
+        "Confirm the administrative-group enumeration completes without error, then rerun PTxray." \
         "cis-l2"
   elif [ -z "$WWO_RAW" ]; then
     # Reached only when the scan completed (rc=0), so empty output is a determinate
@@ -451,8 +467,8 @@ _AIXRAY_SESSION_KEYS=""
     if [ "$WWO_PARSE_RC" -ne 0 ]; then
       add security worldwrite_objects "group-writable admin-group objects" NOT_ASSESSED low \
           "not assessed — worldwrite_objects parse failed (rc=$WWO_PARSE_RC)" \
-          "The group-writable-object listing could not be parsed, so AIXray cannot enumerate the objects that would need group-write review." \
-          "Rerun AIXray and report the parse failure." \
+          "The group-writable-object listing could not be parsed, so PTxray cannot enumerate the objects that would need group-write review." \
+          "Rerun PTxray and report the parse failure." \
           "cis-l2"
     elif [ "$WWO_HITS" -eq 0 ] && [ "$WWO_RC" -ne 0 ]; then
       # Nothing found, but the traversal did not complete. Absence is exactly what an
@@ -460,7 +476,7 @@ _AIXRAY_SESSION_KEYS=""
       add security worldwrite_objects "group-writable admin-group objects" NOT_ASSESSED low \
           "not assessed — scan incomplete (rc=$WWO_RC) and no admin-group object was observed" \
           "No administratively-owned group-writable object was seen, but the filesystem traversal did not complete, so their absence is not established." \
-          "Resolve the traversal errors (commonly unreadable paths or dangling symlinks under 'find -L'), then rerun AIXray." \
+          "Resolve the traversal errors (commonly unreadable paths or dangling symlinks under 'find -L'), then rerun PTxray." \
           "cis-l2"
     elif [ "$WWO_HITS" -eq 0 ]; then
       add security worldwrite_objects "group-writable admin-group objects" PASS low \
@@ -471,7 +487,7 @@ _AIXRAY_SESSION_KEYS=""
       add security worldwrite_objects "group-writable admin-group objects" FAIL high \
           "$WWO_PATHS" \
           "$WWO_HITS group-writable non-directory object(s) on local jfs/jfs2 filesystems are owned by an administrative group; their group-write permission has not been shown reviewed and approved." \
-          "Review each listed object and either remove group-write where it is not required or record the approval. AIXray recommends the chmod command and never executes it." \
+          "Review each listed object and either remove group-write where it is not required or record the approval. PTxray recommends the chmod command and never executes it." \
           "cis-l2"
     fi
   fi

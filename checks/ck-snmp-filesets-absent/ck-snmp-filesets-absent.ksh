@@ -1,5 +1,5 @@
 #!/bin/ksh
-# Generated standalone AIXray check support. READ-ONLY: captures only; no
+# Generated standalone PTxray check support. READ-ONLY: captures only; no
 # remediation, service control, network access, or durable target-host writes.
 set -u
 
@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="1.2.0"
+AIXRAY_STANDALONE_VERSION="1.3.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -58,7 +58,7 @@ function aixv {
 # it". Live mode returns false (rc=1): a real box has no concept of a missing
 # fixture, and rc=127 there genuinely means the command was not found. Must be
 # called in the PARENT shell after the probe, not inside the $(aix ...)
-# substitution. Byte-for-byte the monolith's semantics (src/aixray-aix.sh.in);
+# substitution. Byte-for-byte the monolith's semantics (src/ptxray-aix.sh.in);
 # without it here, an undefined-command rc of 127 makes the guard read false and
 # the caller launders a missing capture into NOT_APPLICABLE.
 function aix_capture_missing {
@@ -324,13 +324,29 @@ function standalone_main {
     echo "usage: $0 --json" >&2
     return 2
   fi
-  if [ -z "${AIXRAY_FIXTURES:-}" ] && [ "$(uname -s 2>/dev/null)" != "AIX" ]; then
-    echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
-    return 2
+  if [ -z "${AIXRAY_FIXTURES:-}" ]; then
+    _os=$(uname -s 2>/dev/null)
+    if [ "$_os" = "AIX" ]; then
+      :
+    elif [ "$_os" = "OS400" ] && [ "${IBMI_PROBES:-0}" = 1 ]; then
+      :
+    else
+      echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
+      return 2
+    fi
   fi
   standalone_initialize
   initialize_rc=$?
   [ "$initialize_rc" -eq 0 ] || return "$initialize_rc"
+  if [ "${IBMI_PROBES:-0}" = 1 ]; then
+    if ! ibmi_require_qsecofr; then
+      echo "$AIXRAY_TOOL requires SESSION_USER=QSECOFR and SYSTEM_USER=QSECOFR; no scan was run." >&2
+      return 2
+    fi
+  elif [ -z "${AIXRAY_FIXTURES:-}" ] && [ "${MYUID:-}" != 0 ]; then
+    echo "$AIXRAY_TOOL requires root; no scan was run." >&2
+    return 2
+  fi
   standalone_run
   run_rc=$?
   [ "$run_rc" -eq 0 ] || return 1
@@ -388,26 +404,26 @@ _AIXRAY_SESSION_KEYS=""
     SNMP_STATUS=NOT_ASSESSED
     SNMP_SEV=low
     SNMP_OBSERVED="not assessed - SNMP client fileset probe returned rc=0 with no data row"
-    SNMP_MEANING="AIXray did not obtain trustworthy package-inventory evidence for the SNMP client fileset."
-    SNMP_FIX="run \"lslpp -Lcq bos.net.tcp.snmp\" as root, resolve the query problem, and rerun AIXray."
+    SNMP_MEANING="PTxray did not obtain trustworthy package-inventory evidence for the SNMP client fileset."
+    SNMP_FIX="run \"lslpp -Lcq bos.net.tcp.snmp\" as root, resolve the query problem, and rerun PTxray."
   elif [ "$SNMP_SERVER_RC" -eq 0 ] && [ -z "$SNMP_SERVER_RAW" ]; then
     SNMP_STATUS=NOT_ASSESSED
     SNMP_SEV=low
     SNMP_OBSERVED="not assessed - SNMP server fileset probe returned rc=0 with no data row"
-    SNMP_MEANING="AIXray did not obtain trustworthy package-inventory evidence for the SNMP server fileset."
-    SNMP_FIX="run \"lslpp -Lcq bos.net.tcp.snmpd\" as root, resolve the query problem, and rerun AIXray."
+    SNMP_MEANING="PTxray did not obtain trustworthy package-inventory evidence for the SNMP server fileset."
+    SNMP_FIX="run \"lslpp -Lcq bos.net.tcp.snmpd\" as root, resolve the query problem, and rerun PTxray."
   elif [ "$SNMP_CLIENT_RC" -ne 0 ] && [ "$SNMP_CLIENT_RC" -ne 1 ]; then
     SNMP_STATUS=NOT_ASSESSED
     SNMP_SEV=low
     SNMP_OBSERVED="not assessed - SNMP client fileset probe failed (rc=$SNMP_CLIENT_RC)"
-    SNMP_MEANING="AIXray did not obtain trustworthy package-inventory evidence for the SNMP client fileset."
-    SNMP_FIX="run \"lslpp -Lcq bos.net.tcp.snmp\" as root, resolve the query failure, and rerun AIXray."
+    SNMP_MEANING="PTxray did not obtain trustworthy package-inventory evidence for the SNMP client fileset."
+    SNMP_FIX="run \"lslpp -Lcq bos.net.tcp.snmp\" as root, resolve the query failure, and rerun PTxray."
   elif [ "$SNMP_SERVER_RC" -ne 0 ] && [ "$SNMP_SERVER_RC" -ne 1 ]; then
     SNMP_STATUS=NOT_ASSESSED
     SNMP_SEV=low
     SNMP_OBSERVED="not assessed - SNMP server fileset probe failed (rc=$SNMP_SERVER_RC)"
-    SNMP_MEANING="AIXray did not obtain trustworthy package-inventory evidence for the SNMP server fileset."
-    SNMP_FIX="run \"lslpp -Lcq bos.net.tcp.snmpd\" as root, resolve the query failure, and rerun AIXray."
+    SNMP_MEANING="PTxray did not obtain trustworthy package-inventory evidence for the SNMP server fileset."
+    SNMP_FIX="run \"lslpp -Lcq bos.net.tcp.snmpd\" as root, resolve the query failure, and rerun PTxray."
   elif [ "$SNMP_CLIENT_RC" -eq 0 ] || [ "$SNMP_SERVER_RC" -eq 0 ]; then
     SNMP_STATUS=FAIL
     SNMP_SEV=med
@@ -420,7 +436,7 @@ _AIXRAY_SESSION_KEYS=""
       SNMP_OBSERVED="SNMP server fileset bos.net.tcp.snmpd is installed"
     fi
     SNMP_MEANING="An SNMP package is registered in the package inventory, so the SNMP service is part of this host's exposed software surface."
-    SNMP_FIX="after confirming no workload needs SNMP, preview removal with 'installp -up <fileset>' and remove with 'installp -ug <fileset>' for each installed SNMP fileset; AIXray only recommends these actions."
+    SNMP_FIX="after confirming no workload needs SNMP, preview removal with 'installp -up <fileset>' and remove with 'installp -ug <fileset>' for each installed SNMP fileset; PTxray only recommends these actions."
   else
     SNMP_STATUS=PASS
     SNMP_SEV=low

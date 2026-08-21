@@ -1,5 +1,5 @@
 #!/bin/ksh
-# Generated standalone AIXray check support. READ-ONLY: captures only; no
+# Generated standalone PTxray check support. READ-ONLY: captures only; no
 # remediation, service control, network access, or durable target-host writes.
 set -u
 
@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="1.2.0"
+AIXRAY_STANDALONE_VERSION="1.3.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -58,7 +58,7 @@ function aixv {
 # it". Live mode returns false (rc=1): a real box has no concept of a missing
 # fixture, and rc=127 there genuinely means the command was not found. Must be
 # called in the PARENT shell after the probe, not inside the $(aix ...)
-# substitution. Byte-for-byte the monolith's semantics (src/aixray-aix.sh.in);
+# substitution. Byte-for-byte the monolith's semantics (src/ptxray-aix.sh.in);
 # without it here, an undefined-command rc of 127 makes the guard read false and
 # the caller launders a missing capture into NOT_APPLICABLE.
 function aix_capture_missing {
@@ -324,13 +324,29 @@ function standalone_main {
     echo "usage: $0 --json" >&2
     return 2
   fi
-  if [ -z "${AIXRAY_FIXTURES:-}" ] && [ "$(uname -s 2>/dev/null)" != "AIX" ]; then
-    echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
-    return 2
+  if [ -z "${AIXRAY_FIXTURES:-}" ]; then
+    _os=$(uname -s 2>/dev/null)
+    if [ "$_os" = "AIX" ]; then
+      :
+    elif [ "$_os" = "OS400" ] && [ "${IBMI_PROBES:-0}" = 1 ]; then
+      :
+    else
+      echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
+      return 2
+    fi
   fi
   standalone_initialize
   initialize_rc=$?
   [ "$initialize_rc" -eq 0 ] || return "$initialize_rc"
+  if [ "${IBMI_PROBES:-0}" = 1 ]; then
+    if ! ibmi_require_qsecofr; then
+      echo "$AIXRAY_TOOL requires SESSION_USER=QSECOFR and SYSTEM_USER=QSECOFR; no scan was run." >&2
+      return 2
+    fi
+  elif [ -z "${AIXRAY_FIXTURES:-}" ] && [ "${MYUID:-}" != 0 ]; then
+    echo "$AIXRAY_TOOL requires root; no scan was run." >&2
+    return 2
+  fi
   standalone_run
   run_rc=$?
   [ "$run_rc" -eq 0 ] || return 1
@@ -1212,16 +1228,16 @@ function check_network_inventory {
   if [ "$NI_CHECK_RC" -ne 0 ]; then
     NI_CHECK_OBS="not assessed — ifconfig -a interface inventory failed (rc=$NI_CHECK_RC)"
     NI_CHECK_MEAN="The interface inventory source was unavailable, so expected interfaces, addresses, routes, and resolvers could not be assessed."
-    NI_CHECK_FIX="restore access to 'ifconfig -a', provide the site-approved network baseline, and rerun AIXray."
+    NI_CHECK_FIX="restore access to 'ifconfig -a', provide the site-approved network baseline, and rerun PTxray."
   elif [ -z "$NI_CHECK_OUT" ]; then
     NI_CHECK_OBS="not assessed — ifconfig -a reported no interface inventory (rc=0)"
     NI_CHECK_MEAN="An empty interface capture cannot establish the system's network configuration or compare it with expected state."
-    NI_CHECK_FIX="verify the complete output of 'ifconfig -a', provide the site-approved network baseline, and rerun AIXray."
+    NI_CHECK_FIX="verify the complete output of 'ifconfig -a', provide the site-approved network baseline, and rerun PTxray."
   elif ! printf '%s\n' "$NI_CHECK_OUT" |
       network_inventory_ifconfig_shape; then
     NI_CHECK_OBS="not assessed — ifconfig -a interface inventory was unparseable (rc=0)"
     NI_CHECK_MEAN="The interface capture did not match the expected AIX ifconfig structure, so network configuration could not be assessed."
-    NI_CHECK_FIX="capture the complete output of 'ifconfig -a', correct the replay source if needed, provide the site-approved network baseline, and rerun AIXray."
+    NI_CHECK_FIX="capture the complete output of 'ifconfig -a', correct the replay source if needed, provide the site-approved network baseline, and rerun PTxray."
   else
     NI_CHECK_COUNT=$(printf '%s\n' "$NI_CHECK_OUT" |
       network_inventory_parse_ifconfig |
@@ -1234,7 +1250,7 @@ function check_network_inventory {
     fi
     NI_CHECK_OBS="not assessed — $NI_CHECK_COUNT $NI_CHECK_NOUN $NI_CHECK_VERB inventoried from ifconfig -a, but no site-approved expected interface, address, route, and DNS baseline was available"
     NI_CHECK_MEAN="Observed network inventory alone cannot distinguish an intended configuration from a missing, unexpected, or misaddressed interface, route, or resolver."
-    NI_CHECK_FIX="provide a site-approved expected interface, address, route, and DNS baseline, compare it with this inventory, and rerun AIXray."
+    NI_CHECK_FIX="provide a site-approved expected interface, address, route, and DNS baseline, compare it with this inventory, and rerun PTxray."
   fi
 
   add config network_inventory "Network inventory baseline" \

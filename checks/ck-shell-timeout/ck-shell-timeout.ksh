@@ -1,5 +1,5 @@
 #!/bin/ksh
-# Generated standalone AIXray check support. READ-ONLY: captures only; no
+# Generated standalone PTxray check support. READ-ONLY: captures only; no
 # remediation, service control, network access, or durable target-host writes.
 set -u
 
@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="1.2.0"
+AIXRAY_STANDALONE_VERSION="1.3.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -58,7 +58,7 @@ function aixv {
 # it". Live mode returns false (rc=1): a real box has no concept of a missing
 # fixture, and rc=127 there genuinely means the command was not found. Must be
 # called in the PARENT shell after the probe, not inside the $(aix ...)
-# substitution. Byte-for-byte the monolith's semantics (src/aixray-aix.sh.in);
+# substitution. Byte-for-byte the monolith's semantics (src/ptxray-aix.sh.in);
 # without it here, an undefined-command rc of 127 makes the guard read false and
 # the caller launders a missing capture into NOT_APPLICABLE.
 function aix_capture_missing {
@@ -324,13 +324,29 @@ function standalone_main {
     echo "usage: $0 --json" >&2
     return 2
   fi
-  if [ -z "${AIXRAY_FIXTURES:-}" ] && [ "$(uname -s 2>/dev/null)" != "AIX" ]; then
-    echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
-    return 2
+  if [ -z "${AIXRAY_FIXTURES:-}" ]; then
+    _os=$(uname -s 2>/dev/null)
+    if [ "$_os" = "AIX" ]; then
+      :
+    elif [ "$_os" = "OS400" ] && [ "${IBMI_PROBES:-0}" = 1 ]; then
+      :
+    else
+      echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
+      return 2
+    fi
   fi
   standalone_initialize
   initialize_rc=$?
   [ "$initialize_rc" -eq 0 ] || return "$initialize_rc"
+  if [ "${IBMI_PROBES:-0}" = 1 ]; then
+    if ! ibmi_require_qsecofr; then
+      echo "$AIXRAY_TOOL requires SESSION_USER=QSECOFR and SYSTEM_USER=QSECOFR; no scan was run." >&2
+      return 2
+    fi
+  elif [ -z "${AIXRAY_FIXTURES:-}" ] && [ "${MYUID:-}" != 0 ]; then
+    echo "$AIXRAY_TOOL requires root; no scan was run." >&2
+    return 2
+  fi
   standalone_run
   run_rc=$?
   [ "$run_rc" -eq 0 ] || return 1
@@ -364,12 +380,12 @@ _AIXRAY_SESSION_KEYS=""
         NOT_ASSESSED low \
         "not assessed — TMOUT/TIMEOUT capture failed (rc=$ST_RC)" \
         "Could not read TMOUT/TIMEOUT evidence from /etc/profile and /etc/environment, so idle-shell enforcement is unknown." \
-        "restore read access to /etc/profile and /etc/environment, then rerun AIXray." "cis-l1"
+        "restore read access to /etc/profile and /etc/environment, then rerun PTxray." "cis-l1"
   elif [ "$ST_RC" -eq 1 ]; then
     add security shell_timeout "Idle-shell auto-logout timeout" FAIL med \
         "no active TMOUT/TIMEOUT match (grep rc=1)" \
         "No idle-shell timeout is enforced; interactive shell sessions can remain open indefinitely." \
-        "set TMOUT=900 (or less) in /etc/profile (for example, TMOUT=900; export TMOUT), make TMOUT readonly with the approved AIX shell syntax, then rerun AIXray." "cis-l1"
+        "set TMOUT=900 (or less) in /etc/profile (for example, TMOUT=900; export TMOUT), make TMOUT readonly with the approved AIX shell syntax, then rerun PTxray." "cis-l1"
   else
     # A leading comment is not evidence; a shell-style trailing comment is
     # removed before the numeric shape check. Because assignments are
@@ -519,26 +535,26 @@ _AIXRAY_SESSION_KEYS=""
       assignment_unset_conflict)
         add security shell_timeout "Idle-shell auto-logout timeout" NOT_ASSESSED low \
             "not assessed — TMOUT/TIMEOUT assignment conflicts with unset directive" \
-            "AIXray observed both an assignment and an unset directive, but concatenated grep output from two files does not establish effective shell precedence." \
-            "inspect active TMOUT/TIMEOUT directives in /etc/profile and /etc/environment, remove the conflict, and rerun AIXray." "cis-l1"
+            "PTxray observed both an assignment and an unset directive, but concatenated grep output from two files does not establish effective shell precedence." \
+            "inspect active TMOUT/TIMEOUT directives in /etc/profile and /etc/environment, remove the conflict, and rerun PTxray." "cis-l1"
         ;;
       value_conflict)
         add security shell_timeout "Idle-shell auto-logout timeout" NOT_ASSESSED low \
             "not assessed — conflicting TMOUT/TIMEOUT assignments (values: $ST_DETAIL)" \
-            "AIXray observed different timeout values, but concatenated grep output from two files does not establish which assignment is effective." \
-            "converge /etc/profile and /etc/environment on one bounded value from 1 through 900, then rerun AIXray." "cis-l1"
+            "PTxray observed different timeout values, but concatenated grep output from two files does not establish which assignment is effective." \
+            "converge /etc/profile and /etc/environment on one bounded value from 1 through 900, then rerun PTxray." "cis-l1"
         ;;
       invalid)
         add security shell_timeout "Idle-shell auto-logout timeout" NOT_ASSESSED low \
             "not assessed — TMOUT/TIMEOUT capture unparseable (rc=0)" \
-            "AIXray did not obtain one active numeric TMOUT/TIMEOUT assignment, so it cannot claim an idle-shell timeout is enforced." \
-            "inspect active TMOUT/TIMEOUT assignments in /etc/profile and /etc/environment, correct malformed or commented settings, and rerun AIXray." "cis-l1"
+            "PTxray did not obtain one active numeric TMOUT/TIMEOUT assignment, so it cannot claim an idle-shell timeout is enforced." \
+            "inspect active TMOUT/TIMEOUT assignments in /etc/profile and /etc/environment, correct malformed or commented settings, and rerun PTxray." "cis-l1"
         ;;
       empty)
         add security shell_timeout "Idle-shell auto-logout timeout" FAIL med \
             "no active TMOUT/TIMEOUT directive in successful capture (rc=0)" \
             "No idle-shell timeout is enforced; interactive shell sessions can remain open indefinitely." \
-            "set TMOUT=900 (or less) in /etc/profile (for example, TMOUT=900; export TMOUT), make TMOUT readonly with the approved AIX shell syntax, then rerun AIXray." "cis-l1"
+            "set TMOUT=900 (or less) in /etc/profile (for example, TMOUT=900; export TMOUT), make TMOUT readonly with the approved AIX shell syntax, then rerun PTxray." "cis-l1"
         ;;
       unset)
         add security shell_timeout "Idle-shell auto-logout timeout" FAIL med \

@@ -1,5 +1,5 @@
 #!/bin/ksh
-# Generated standalone AIXray check support. READ-ONLY: captures only; no
+# Generated standalone PTxray check support. READ-ONLY: captures only; no
 # remediation, service control, network access, or durable target-host writes.
 set -u
 
@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="1.2.0"
+AIXRAY_STANDALONE_VERSION="1.3.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -58,7 +58,7 @@ function aixv {
 # it". Live mode returns false (rc=1): a real box has no concept of a missing
 # fixture, and rc=127 there genuinely means the command was not found. Must be
 # called in the PARENT shell after the probe, not inside the $(aix ...)
-# substitution. Byte-for-byte the monolith's semantics (src/aixray-aix.sh.in);
+# substitution. Byte-for-byte the monolith's semantics (src/ptxray-aix.sh.in);
 # without it here, an undefined-command rc of 127 makes the guard read false and
 # the caller launders a missing capture into NOT_APPLICABLE.
 function aix_capture_missing {
@@ -324,13 +324,29 @@ function standalone_main {
     echo "usage: $0 --json" >&2
     return 2
   fi
-  if [ -z "${AIXRAY_FIXTURES:-}" ] && [ "$(uname -s 2>/dev/null)" != "AIX" ]; then
-    echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
-    return 2
+  if [ -z "${AIXRAY_FIXTURES:-}" ]; then
+    _os=$(uname -s 2>/dev/null)
+    if [ "$_os" = "AIX" ]; then
+      :
+    elif [ "$_os" = "OS400" ] && [ "${IBMI_PROBES:-0}" = 1 ]; then
+      :
+    else
+      echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
+      return 2
+    fi
   fi
   standalone_initialize
   initialize_rc=$?
   [ "$initialize_rc" -eq 0 ] || return "$initialize_rc"
+  if [ "${IBMI_PROBES:-0}" = 1 ]; then
+    if ! ibmi_require_qsecofr; then
+      echo "$AIXRAY_TOOL requires SESSION_USER=QSECOFR and SYSTEM_USER=QSECOFR; no scan was run." >&2
+      return 2
+    fi
+  elif [ -z "${AIXRAY_FIXTURES:-}" ] && [ "${MYUID:-}" != 0 ]; then
+    echo "$AIXRAY_TOOL requires root; no scan was run." >&2
+    return 2
+  fi
   standalone_run
   run_rc=$?
   [ "$run_rc" -eq 0 ] || return 1
@@ -415,8 +431,8 @@ _AIXRAY_SESSION_KEYS=""
     NIM_MASTER_STATUS=NOT_ASSESSED
     NIM_MASTER_SEVERITY=low
     NIM_MASTER_OBSERVED="not assessed - lslpp -qcL $CIS_PACKAGE_REASON"
-    NIM_MASTER_MEANING="AIXray did not obtain a trustworthy installed-fileset inventory."
-    NIM_MASTER_FIX="make 'lslpp -qcL' return a complete readable inventory, then rerun AIXray."
+    NIM_MASTER_MEANING="PTxray did not obtain a trustworthy installed-fileset inventory."
+    NIM_MASTER_FIX="make 'lslpp -qcL' return a complete readable inventory, then rerun PTxray."
   else
     NIM_MASTER_MATCH_COUNT=$(printf '%s\n' "$CIS_PACKAGE_ROWS" |
       awk '$0=="bos.sysmgt.nim.master"{n++} END{print n+0}')
@@ -425,20 +441,20 @@ _AIXRAY_SESSION_KEYS=""
       NIM_MASTER_STATUS=NOT_ASSESSED
       NIM_MASTER_SEVERITY=low
       NIM_MASTER_OBSERVED="not assessed - NIM master inventory filter failed (rc=$NIM_MASTER_MATCH_RC)"
-      NIM_MASTER_MEANING="AIXray could not safely filter the normalized installed-fileset inventory."
-      NIM_MASTER_FIX="make 'awk' available and rerun AIXray."
+      NIM_MASTER_MEANING="PTxray could not safely filter the normalized installed-fileset inventory."
+      NIM_MASTER_FIX="make 'awk' available and rerun PTxray."
     elif [ "$NIM_MASTER_MATCH_COUNT" -gt 0 ]; then
       NIM_MASTER_STATUS=FAIL
       NIM_MASTER_SEVERITY=high
       NIM_MASTER_OBSERVED="bos.sysmgt.nim.master installed ($NIM_MASTER_MATCH_COUNT inventory row(s))"
       NIM_MASTER_MEANING="The NIM master fileset is present on this system."
-      NIM_MASTER_FIX="after infrastructure-owner approval, migrate any required NIM master role and remove the unused master fileset; AIXray only recommends these actions."
+      NIM_MASTER_FIX="after infrastructure-owner approval, migrate any required NIM master role and remove the unused master fileset; PTxray only recommends these actions."
     elif [ "$CIS_PACKAGE_CLEAN" -ne 1 ]; then
       NIM_MASTER_STATUS=NOT_ASSESSED
       NIM_MASTER_SEVERITY=low
       NIM_MASTER_OBSERVED="not assessed - lslpp -qcL $CIS_PACKAGE_REASON"
       NIM_MASTER_MEANING="Malformed inventory rows prevent a trustworthy absence result."
-      NIM_MASTER_FIX="capture complete, parseable 'lslpp -qcL' output and rerun AIXray."
+      NIM_MASTER_FIX="capture complete, parseable 'lslpp -qcL' output and rerun PTxray."
     else
       NIM_MASTER_STATUS=PASS
       NIM_MASTER_SEVERITY=low

@@ -1,5 +1,5 @@
 #!/bin/ksh
-# Generated standalone AIXray check support. READ-ONLY: captures only; no
+# Generated standalone PTxray check support. READ-ONLY: captures only; no
 # remediation, service control, network access, or durable target-host writes.
 set -u
 
@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="1.2.0"
+AIXRAY_STANDALONE_VERSION="1.3.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -58,7 +58,7 @@ function aixv {
 # it". Live mode returns false (rc=1): a real box has no concept of a missing
 # fixture, and rc=127 there genuinely means the command was not found. Must be
 # called in the PARENT shell after the probe, not inside the $(aix ...)
-# substitution. Byte-for-byte the monolith's semantics (src/aixray-aix.sh.in);
+# substitution. Byte-for-byte the monolith's semantics (src/ptxray-aix.sh.in);
 # without it here, an undefined-command rc of 127 makes the guard read false and
 # the caller launders a missing capture into NOT_APPLICABLE.
 function aix_capture_missing {
@@ -324,13 +324,29 @@ function standalone_main {
     echo "usage: $0 --json" >&2
     return 2
   fi
-  if [ -z "${AIXRAY_FIXTURES:-}" ] && [ "$(uname -s 2>/dev/null)" != "AIX" ]; then
-    echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
-    return 2
+  if [ -z "${AIXRAY_FIXTURES:-}" ]; then
+    _os=$(uname -s 2>/dev/null)
+    if [ "$_os" = "AIX" ]; then
+      :
+    elif [ "$_os" = "OS400" ] && [ "${IBMI_PROBES:-0}" = 1 ]; then
+      :
+    else
+      echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
+      return 2
+    fi
   fi
   standalone_initialize
   initialize_rc=$?
   [ "$initialize_rc" -eq 0 ] || return "$initialize_rc"
+  if [ "${IBMI_PROBES:-0}" = 1 ]; then
+    if ! ibmi_require_qsecofr; then
+      echo "$AIXRAY_TOOL requires SESSION_USER=QSECOFR and SYSTEM_USER=QSECOFR; no scan was run." >&2
+      return 2
+    fi
+  elif [ -z "${AIXRAY_FIXTURES:-}" ] && [ "${MYUID:-}" != 0 ]; then
+    echo "$AIXRAY_TOOL requires root; no scan was run." >&2
+    return 2
+  fi
   standalone_run
   run_rc=$?
   [ "$run_rc" -eq 0 ] || return 1
@@ -400,17 +416,17 @@ _AIXRAY_SESSION_KEYS=""
         IC_STATUS=FAIL
         IC_OBSERVED="chargen active in /etc/inetd.conf"
         IC_MEANING="This legacy inetd service adds avoidable remote attack surface."
-        IC_FIX="after service-owner approval, comment the exact chargen line and refresh inetd; AIXray only recommends these actions."
+        IC_FIX="after service-owner approval, comment the exact chargen line and refresh inetd; PTxray only recommends these actions."
       elif [ "$IC_MATCH" = "non-chargen-first" ]; then
         IC_STATUS=NOT_ASSESSED
         IC_OBSERVED="not assessed - chargen inetd probe captured output contains non-chargen-first rows"
-        IC_MEANING="AIXray did not obtain trustworthy service-definition evidence."
-        IC_FIX="inspect /etc/inetd.conf, resolve the read or shape problem, and rerun AIXray."
+        IC_MEANING="PTxray did not obtain trustworthy service-definition evidence."
+        IC_FIX="inspect /etc/inetd.conf, resolve the read or shape problem, and rerun PTxray."
       else
         IC_STATUS=NOT_ASSESSED
         IC_OBSERVED="not assessed - chargen inetd probe rc=0 but output was empty after grep"
-        IC_MEANING="AIXray did not obtain trustworthy service-definition evidence."
-        IC_FIX="inspect /etc/inetd.conf, resolve the read or shape problem, and rerun AIXray."
+        IC_MEANING="PTxray did not obtain trustworthy service-definition evidence."
+        IC_FIX="inspect /etc/inetd.conf, resolve the read or shape problem, and rerun PTxray."
       fi
       ;;
     1)
@@ -423,15 +439,15 @@ _AIXRAY_SESSION_KEYS=""
       else
         IC_STATUS=NOT_ASSESSED
         IC_OBSERVED="not assessed - chargen inetd probe rc=1 but output was non-empty (contradictory)"
-        IC_MEANING="AIXray did not obtain trustworthy service-definition evidence."
-        IC_FIX="inspect /etc/inetd.conf, resolve the read or shape problem, and rerun AIXray."
+        IC_MEANING="PTxray did not obtain trustworthy service-definition evidence."
+        IC_FIX="inspect /etc/inetd.conf, resolve the read or shape problem, and rerun PTxray."
       fi
       ;;
     *)
       IC_STATUS=NOT_ASSESSED
       IC_OBSERVED="not assessed - chargen inetd probe grep failed (rc=$IC_RC)"
-      IC_MEANING="AIXray did not obtain trustworthy service-definition evidence."
-      IC_FIX="inspect /etc/inetd.conf, resolve the read or shape problem, and rerun AIXray."
+      IC_MEANING="PTxray did not obtain trustworthy service-definition evidence."
+      IC_FIX="inspect /etc/inetd.conf, resolve the read or shape problem, and rerun PTxray."
       ;;
   esac
 

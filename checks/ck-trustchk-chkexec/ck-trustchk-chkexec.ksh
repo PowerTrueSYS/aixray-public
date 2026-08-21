@@ -1,5 +1,5 @@
 #!/bin/ksh
-# Generated standalone AIXray check support. READ-ONLY: captures only; no
+# Generated standalone PTxray check support. READ-ONLY: captures only; no
 # remediation, service control, network access, or durable target-host writes.
 set -u
 
@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="1.2.0"
+AIXRAY_STANDALONE_VERSION="1.3.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -58,7 +58,7 @@ function aixv {
 # it". Live mode returns false (rc=1): a real box has no concept of a missing
 # fixture, and rc=127 there genuinely means the command was not found. Must be
 # called in the PARENT shell after the probe, not inside the $(aix ...)
-# substitution. Byte-for-byte the monolith's semantics (src/aixray-aix.sh.in);
+# substitution. Byte-for-byte the monolith's semantics (src/ptxray-aix.sh.in);
 # without it here, an undefined-command rc of 127 makes the guard read false and
 # the caller launders a missing capture into NOT_APPLICABLE.
 function aix_capture_missing {
@@ -324,13 +324,29 @@ function standalone_main {
     echo "usage: $0 --json" >&2
     return 2
   fi
-  if [ -z "${AIXRAY_FIXTURES:-}" ] && [ "$(uname -s 2>/dev/null)" != "AIX" ]; then
-    echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
-    return 2
+  if [ -z "${AIXRAY_FIXTURES:-}" ]; then
+    _os=$(uname -s 2>/dev/null)
+    if [ "$_os" = "AIX" ]; then
+      :
+    elif [ "$_os" = "OS400" ] && [ "${IBMI_PROBES:-0}" = 1 ]; then
+      :
+    else
+      echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
+      return 2
+    fi
   fi
   standalone_initialize
   initialize_rc=$?
   [ "$initialize_rc" -eq 0 ] || return "$initialize_rc"
+  if [ "${IBMI_PROBES:-0}" = 1 ]; then
+    if ! ibmi_require_qsecofr; then
+      echo "$AIXRAY_TOOL requires SESSION_USER=QSECOFR and SYSTEM_USER=QSECOFR; no scan was run." >&2
+      return 2
+    fi
+  elif [ -z "${AIXRAY_FIXTURES:-}" ] && [ "${MYUID:-}" != 0 ]; then
+    echo "$AIXRAY_TOOL requires root; no scan was run." >&2
+    return 2
+  fi
   standalone_run
   run_rc=$?
   [ "$run_rc" -eq 0 ] || return 1
@@ -440,8 +456,8 @@ _AIXRAY_SESSION_KEYS=""
     uncaptured)
       TC_STATUS=NOT_ASSESSED; TC_SEV=low
       TC_OBS="not assessed - trustchk_te_chkexec probe was not captured for this system"
-      TC_MEAN="The trustchk -p TE CHKEXEC capture is absent from this scan fixture set, so AIXray cannot tell whether Trusted Execution is genuinely absent or merely unrecorded."
-      TC_FIX="capture '/usr/sbin/trustchk -p TE CHKEXEC' from a representative AIX host, then rerun AIXray."
+      TC_MEAN="The trustchk -p TE CHKEXEC capture is absent from this scan fixture set, so PTxray cannot tell whether Trusted Execution is genuinely absent or merely unrecorded."
+      TC_FIX="capture '/usr/sbin/trustchk -p TE CHKEXEC' from a representative AIX host, then rerun PTxray."
       ;;
     disabled)
       TC_STATUS=FAIL; TC_SEV=high
@@ -453,13 +469,13 @@ _AIXRAY_SESSION_KEYS=""
         TC_OBS="Trusted Execution disabled - CHKEXEC is off"
       fi
       TC_MEAN="Trusted Execution is not enforcing executable integrity with CHKEXEC; the control requires both attributes on."
-      TC_FIX="enable TE and CHKEXEC with trustchk, restart the trustchk daemon, and re-run AIXray."
+      TC_FIX="enable TE and CHKEXEC with trustchk, restart the trustchk daemon, and re-run PTxray."
       ;;
     failed)
       TC_STATUS=NOT_ASSESSED; TC_SEV=high
       TC_OBS="not assessed - trustchk -p TE CHKEXEC probe failed (rc=$TRUST_RC)"
-      TC_MEAN="AIXray could not read the Trusted Execution CHKEXEC state, so no enforcement verdict is possible."
-      TC_FIX="run /usr/sbin/trustchk -p TE CHKEXEC manually, resolve the failure, and re-run AIXray."
+      TC_MEAN="PTxray could not read the Trusted Execution CHKEXEC state, so no enforcement verdict is possible."
+      TC_FIX="run /usr/sbin/trustchk -p TE CHKEXEC manually, resolve the failure, and re-run PTxray."
       ;;
     enabled)
       case "$SYS_STATE" in
@@ -484,16 +500,16 @@ _AIXRAY_SESSION_KEYS=""
         *)
           TC_STATUS=NOT_ASSESSED; TC_SEV=low
           TC_OBS="not assessed - syslog kern.info probe returned an unanticipated rc ($SYS_RC)"
-          TC_MEAN="AIXray could not determine whether kern.info logging is configured."
-          TC_FIX="inspect /etc/syslog.conf and re-run AIXray."
+          TC_MEAN="PTxray could not determine whether kern.info logging is configured."
+          TC_FIX="inspect /etc/syslog.conf and re-run PTxray."
           ;;
       esac
       ;;
     *)
       TC_STATUS=NOT_ASSESSED; TC_SEV=high
       TC_OBS="not assessed - trustchk probe returned an unanticipated rc ($TRUST_RC)"
-      TC_MEAN="AIXray could not read the Trusted Execution CHKEXEC state."
-      TC_FIX="run /usr/sbin/trustchk -p TE CHKEXEC manually, resolve the failure, and re-run AIXray."
+      TC_MEAN="PTxray could not read the Trusted Execution CHKEXEC state."
+      TC_FIX="run /usr/sbin/trustchk -p TE CHKEXEC manually, resolve the failure, and re-run PTxray."
       ;;
   esac
 

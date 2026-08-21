@@ -1,5 +1,5 @@
 #!/bin/ksh
-# Generated standalone AIXray check support. READ-ONLY: captures only; no
+# Generated standalone PTxray check support. READ-ONLY: captures only; no
 # remediation, service control, network access, or durable target-host writes.
 set -u
 
@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="1.2.0"
+AIXRAY_STANDALONE_VERSION="1.3.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -58,7 +58,7 @@ function aixv {
 # it". Live mode returns false (rc=1): a real box has no concept of a missing
 # fixture, and rc=127 there genuinely means the command was not found. Must be
 # called in the PARENT shell after the probe, not inside the $(aix ...)
-# substitution. Byte-for-byte the monolith's semantics (src/aixray-aix.sh.in);
+# substitution. Byte-for-byte the monolith's semantics (src/ptxray-aix.sh.in);
 # without it here, an undefined-command rc of 127 makes the guard read false and
 # the caller launders a missing capture into NOT_APPLICABLE.
 function aix_capture_missing {
@@ -324,13 +324,29 @@ function standalone_main {
     echo "usage: $0 --json" >&2
     return 2
   fi
-  if [ -z "${AIXRAY_FIXTURES:-}" ] && [ "$(uname -s 2>/dev/null)" != "AIX" ]; then
-    echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
-    return 2
+  if [ -z "${AIXRAY_FIXTURES:-}" ]; then
+    _os=$(uname -s 2>/dev/null)
+    if [ "$_os" = "AIX" ]; then
+      :
+    elif [ "$_os" = "OS400" ] && [ "${IBMI_PROBES:-0}" = 1 ]; then
+      :
+    else
+      echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
+      return 2
+    fi
   fi
   standalone_initialize
   initialize_rc=$?
   [ "$initialize_rc" -eq 0 ] || return "$initialize_rc"
+  if [ "${IBMI_PROBES:-0}" = 1 ]; then
+    if ! ibmi_require_qsecofr; then
+      echo "$AIXRAY_TOOL requires SESSION_USER=QSECOFR and SYSTEM_USER=QSECOFR; no scan was run." >&2
+      return 2
+    fi
+  elif [ -z "${AIXRAY_FIXTURES:-}" ] && [ "${MYUID:-}" != 0 ]; then
+    echo "$AIXRAY_TOOL requires root; no scan was run." >&2
+    return 2
+  fi
   standalone_run
   run_rc=$?
   [ "$run_rc" -eq 0 ] || return 1
@@ -368,13 +384,13 @@ _AIXRAY_SESSION_KEYS=""
   elif [ "$CK_RC" -ne 0 ]; then
     add security diracc_clientmqueue "/var/spool/clientmqueue access" NOT_ASSESSED med \
         "probe failed (rc=$CK_RC)" \
-        "AIXray did not obtain a trustworthy ls record, so it cannot claim the directory access boundary is satisfied." \
-        "run 'ls -ld /var/spool/clientmqueue', correct the capture or path problem, and rerun AIXray." "cis-l1"
+        "PTxray did not obtain a trustworthy ls record, so it cannot claim the directory access boundary is satisfied." \
+        "run 'ls -ld /var/spool/clientmqueue', correct the capture or path problem, and rerun PTxray." "cis-l1"
   elif [ -z "$CK_RAW" ]; then
     add security diracc_clientmqueue "/var/spool/clientmqueue access" NOT_ASSESSED med \
         "probe returned no output" \
-        "AIXray did not obtain a trustworthy ls record, so it cannot claim the directory access boundary is satisfied." \
-        "run 'ls -ld /var/spool/clientmqueue' and confirm the path state, then rerun AIXray." "cis-l1"
+        "PTxray did not obtain a trustworthy ls record, so it cannot claim the directory access boundary is satisfied." \
+        "run 'ls -ld /var/spool/clientmqueue' and confirm the path state, then rerun PTxray." "cis-l1"
   else
     CK_REC=$(printf '%s\n' "$CK_RAW" | awk '{print $1 " " $3 " " $4 " " $9}')
     if [ "$CK_REC" = "drwxrwx--- smmsp smmsp /var/spool/clientmqueue" ]; then
@@ -401,8 +417,8 @@ _AIXRAY_SESSION_KEYS=""
       if [ "$CK_VALID_RC" -ne 0 ] || [ -z "$CK_VALID" ]; then
         add security diracc_clientmqueue "/var/spool/clientmqueue access" NOT_ASSESSED med \
             "ls output unparseable" \
-            "AIXray did not obtain one trustworthy metadata row, so it cannot claim the directory access boundary is satisfied." \
-            "run 'ls -ld /var/spool/clientmqueue', correct the capture or path problem, and rerun AIXray." "cis-l1"
+            "PTxray did not obtain one trustworthy metadata row, so it cannot claim the directory access boundary is satisfied." \
+            "run 'ls -ld /var/spool/clientmqueue', correct the capture or path problem, and rerun PTxray." "cis-l1"
       else
         CK_MODE=${CK_VALID%%\|*}
         CK_REMAIN=${CK_VALID#*\|}
@@ -425,7 +441,7 @@ _AIXRAY_SESSION_KEYS=""
         add security diracc_clientmqueue "/var/spool/clientmqueue access" FAIL med \
             "mode=$CK_MODE owner=$CK_OWNER group=$CK_GROUP" \
             "/var/spool/clientmqueue diverges from the required directory access boundary in: $CK_DIVERGED." \
-            "observed mode=$CK_MODE owner=$CK_OWNER group=$CK_GROUP; expected drwxrwx--- smmsp smmsp. after validation, run '$CK_REMEDIATE'; AIXray recommends this command and never executes it." "cis-l1"
+            "observed mode=$CK_MODE owner=$CK_OWNER group=$CK_GROUP; expected drwxrwx--- smmsp smmsp. after validation, run '$CK_REMEDIATE'; PTxray recommends this command and never executes it." "cis-l1"
       fi
     fi
   fi

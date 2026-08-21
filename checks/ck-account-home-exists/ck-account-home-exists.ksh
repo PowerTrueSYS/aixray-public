@@ -1,5 +1,5 @@
 #!/bin/ksh
-# Generated standalone AIXray check support. READ-ONLY: captures only; no
+# Generated standalone PTxray check support. READ-ONLY: captures only; no
 # remediation, service control, network access, or durable target-host writes.
 set -u
 
@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="1.2.0"
+AIXRAY_STANDALONE_VERSION="1.3.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -58,7 +58,7 @@ function aixv {
 # it". Live mode returns false (rc=1): a real box has no concept of a missing
 # fixture, and rc=127 there genuinely means the command was not found. Must be
 # called in the PARENT shell after the probe, not inside the $(aix ...)
-# substitution. Byte-for-byte the monolith's semantics (src/aixray-aix.sh.in);
+# substitution. Byte-for-byte the monolith's semantics (src/ptxray-aix.sh.in);
 # without it here, an undefined-command rc of 127 makes the guard read false and
 # the caller launders a missing capture into NOT_APPLICABLE.
 function aix_capture_missing {
@@ -324,13 +324,29 @@ function standalone_main {
     echo "usage: $0 --json" >&2
     return 2
   fi
-  if [ -z "${AIXRAY_FIXTURES:-}" ] && [ "$(uname -s 2>/dev/null)" != "AIX" ]; then
-    echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
-    return 2
+  if [ -z "${AIXRAY_FIXTURES:-}" ]; then
+    _os=$(uname -s 2>/dev/null)
+    if [ "$_os" = "AIX" ]; then
+      :
+    elif [ "$_os" = "OS400" ] && [ "${IBMI_PROBES:-0}" = 1 ]; then
+      :
+    else
+      echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
+      return 2
+    fi
   fi
   standalone_initialize
   initialize_rc=$?
   [ "$initialize_rc" -eq 0 ] || return "$initialize_rc"
+  if [ "${IBMI_PROBES:-0}" = 1 ]; then
+    if ! ibmi_require_qsecofr; then
+      echo "$AIXRAY_TOOL requires SESSION_USER=QSECOFR and SYSTEM_USER=QSECOFR; no scan was run." >&2
+      return 2
+    fi
+  elif [ -z "${AIXRAY_FIXTURES:-}" ] && [ "${MYUID:-}" != 0 ]; then
+    echo "$AIXRAY_TOOL requires root; no scan was run." >&2
+    return 2
+  fi
   standalone_run
   run_rc=$?
   [ "$run_rc" -eq 0 ] || return 1
@@ -365,8 +381,8 @@ AHE_REFUSE=0
 if [ "$AHE_RC" -ne 0 ]; then
   add security account_home_exists "account home directories exist" NOT_ASSESSED med \
       "lsuser capture failed (rc=$AHE_RC)" \
-      "AIXray could not enumerate local account home attributes, so it cannot assess whether every qualifying account has an existing home directory." \
-      "correct the lsuser capture failure and rerun AIXray." \
+      "PTxray could not enumerate local account home attributes, so it cannot assess whether every qualifying account has an existing home directory." \
+      "correct the lsuser capture failure and rerun PTxray." \
       "cis-l1"
 else
   AHE_CANDIDATES=$(printf '%s\n' "$AHE_RAW" | awk '
@@ -396,8 +412,8 @@ else
   if [ "$AHE_PARSE_RC" -ne 0 ]; then
     add security account_home_exists "account home directories exist" NOT_ASSESSED med \
         "capture unparseable" \
-        "AIXray obtained lsuser output that did not match the expected one-line-per-account format, so it cannot determine which home directories are present." \
-        "inspect the lsuser capture and rerun AIXray once the output is well-formed." \
+        "PTxray obtained lsuser output that did not match the expected one-line-per-account format, so it cannot determine which home directories are present." \
+        "inspect the lsuser capture and rerun PTxray once the output is well-formed." \
         "cis-l1"
   elif [ -z "$AHE_CANDIDATES" ]; then
     add security account_home_exists "account home directories exist" PASS med \
@@ -433,8 +449,8 @@ else
       else
         add security account_home_exists "account home directories exist" NOT_ASSESSED med \
             "home probe failed for $AHE_ACCT (rc=$AHE_HOME_RC)" \
-            "AIXray could not read the home directory of account $AHE_ACCT, so it cannot establish whether every qualifying account has an existing home directory." \
-            "resolve why the home directory of $AHE_ACCT could not be read, then rerun AIXray." \
+            "PTxray could not read the home directory of account $AHE_ACCT, so it cannot establish whether every qualifying account has an existing home directory." \
+            "resolve why the home directory of $AHE_ACCT could not be read, then rerun PTxray." \
             "cis-l1"
         AHE_REFUSE=1
         break
@@ -446,7 +462,7 @@ else
         add security account_home_exists "account home directories exist" FAIL med \
             "accounts_checked=$AHE_COUNT missing=$AHE_MISSING" \
             "At least one qualifying local account has a home directory that does not exist on the filesystem." \
-            "create the missing home directory or correct the account home attribute, then rerun AIXray." \
+            "create the missing home directory or correct the account home attribute, then rerun PTxray." \
             "cis-l1"
       else
         add security account_home_exists "account home directories exist" PASS med \

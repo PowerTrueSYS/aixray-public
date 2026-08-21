@@ -1,5 +1,5 @@
 #!/bin/ksh
-# Generated standalone AIXray check support. READ-ONLY: captures only; no
+# Generated standalone PTxray check support. READ-ONLY: captures only; no
 # remediation, service control, network access, or durable target-host writes.
 set -u
 
@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="1.2.0"
+AIXRAY_STANDALONE_VERSION="1.3.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -58,7 +58,7 @@ function aixv {
 # it". Live mode returns false (rc=1): a real box has no concept of a missing
 # fixture, and rc=127 there genuinely means the command was not found. Must be
 # called in the PARENT shell after the probe, not inside the $(aix ...)
-# substitution. Byte-for-byte the monolith's semantics (src/aixray-aix.sh.in);
+# substitution. Byte-for-byte the monolith's semantics (src/ptxray-aix.sh.in);
 # without it here, an undefined-command rc of 127 makes the guard read false and
 # the caller launders a missing capture into NOT_APPLICABLE.
 function aix_capture_missing {
@@ -324,13 +324,29 @@ function standalone_main {
     echo "usage: $0 --json" >&2
     return 2
   fi
-  if [ -z "${AIXRAY_FIXTURES:-}" ] && [ "$(uname -s 2>/dev/null)" != "AIX" ]; then
-    echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
-    return 2
+  if [ -z "${AIXRAY_FIXTURES:-}" ]; then
+    _os=$(uname -s 2>/dev/null)
+    if [ "$_os" = "AIX" ]; then
+      :
+    elif [ "$_os" = "OS400" ] && [ "${IBMI_PROBES:-0}" = 1 ]; then
+      :
+    else
+      echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
+      return 2
+    fi
   fi
   standalone_initialize
   initialize_rc=$?
   [ "$initialize_rc" -eq 0 ] || return "$initialize_rc"
+  if [ "${IBMI_PROBES:-0}" = 1 ]; then
+    if ! ibmi_require_qsecofr; then
+      echo "$AIXRAY_TOOL requires SESSION_USER=QSECOFR and SYSTEM_USER=QSECOFR; no scan was run." >&2
+      return 2
+    fi
+  elif [ -z "${AIXRAY_FIXTURES:-}" ] && [ "${MYUID:-}" != 0 ]; then
+    echo "$AIXRAY_TOOL requires root; no scan was run." >&2
+    return 2
+  fi
   standalone_run
   run_rc=$?
   [ "$run_rc" -eq 0 ] || return 1
@@ -628,7 +644,7 @@ _AIXRAY_SESSION_KEYS=""
     SBD_STATUS=FAIL
     SBD_OBS="$SBD_EVIDENCE"
     SBD_MEAN="Software that a Secure by Default installation never installs is present on this system, so this system was not installed with Secure by Default."
-    SBD_FIX="Secure by Default is an installation-time option and cannot be enabled afterwards: rebuild the system with Secure by Default selected, or remove the excluded software and apply /etc/security/aixpert/core/SbD.xml through the approved change process. AIXray recommends these actions and never performs them."
+    SBD_FIX="Secure by Default is an installation-time option and cannot be enabled afterwards: rebuild the system with Secure by Default selected, or remove the excluded software and apply /etc/security/aixpert/core/SbD.xml through the approved change process. PTxray recommends these actions and never performs them."
   elif [ "$SBD_CLASS1" = POSITIVE ]; then
     SBD_STATUS=PASS
     SBD_OBS="SbD applied at install: $SBD_CLASS1_WHY"
@@ -638,12 +654,12 @@ _AIXRAY_SESSION_KEYS=""
     SBD_STATUS=FAIL
     SBD_OBS="no SbD install evidence: $SBD_CLASS1_WHY"
     SBD_MEAN="No artifact of the Secure by Default first-boot step exists on this system, so Secure by Default was not selected when it was installed. Absence of the excluded binaries alone does not satisfy this control: a normal install hardened by hand looks identical."
-    SBD_FIX="Secure by Default is an installation-time option and cannot be enabled afterwards: rebuild the system with Secure by Default selected, or accept the residual risk on the record after confirming the excluded applications are removed and the AIX Security Expert high-level profile is applied. AIXray recommends these actions and never performs them."
+    SBD_FIX="Secure by Default is an installation-time option and cannot be enabled afterwards: rebuild the system with Secure by Default selected, or accept the residual risk on the record after confirming the excluded applications are removed and the AIX Security Expert high-level profile is applied. PTxray recommends these actions and never performs them."
   else
     SBD_STATUS=NOT_ASSESSED
     SBD_OBS="not assessed — SbD install evidence unreadable (aixpert log rc=$SBD_LOGDIR_RC, /etc/firstboot rc=$SBD_FIRSTBOOT_RC)"
     SBD_MEAN="Neither the aixpert first-boot log directory nor /etc/firstboot could be read, and no excluded software was found, so whether Secure by Default was selected at installation is unknown."
-    SBD_FIX="rerun AIXray with an identity that can read /etc/security/aixpert/log and /etc/firstboot, then rerun the check."
+    SBD_FIX="rerun PTxray with an identity that can read /etc/security/aixpert/log and /etc/firstboot, then rerun the check."
   fi
 
   add security secure_by_default "Secure by Default installation" \

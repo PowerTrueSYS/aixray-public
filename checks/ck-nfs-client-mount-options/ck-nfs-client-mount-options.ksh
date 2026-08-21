@@ -1,5 +1,5 @@
 #!/bin/ksh
-# Generated standalone AIXray check support. READ-ONLY: captures only; no
+# Generated standalone PTxray check support. READ-ONLY: captures only; no
 # remediation, service control, network access, or durable target-host writes.
 set -u
 
@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="1.2.0"
+AIXRAY_STANDALONE_VERSION="1.3.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -58,7 +58,7 @@ function aixv {
 # it". Live mode returns false (rc=1): a real box has no concept of a missing
 # fixture, and rc=127 there genuinely means the command was not found. Must be
 # called in the PARENT shell after the probe, not inside the $(aix ...)
-# substitution. Byte-for-byte the monolith's semantics (src/aixray-aix.sh.in);
+# substitution. Byte-for-byte the monolith's semantics (src/ptxray-aix.sh.in);
 # without it here, an undefined-command rc of 127 makes the guard read false and
 # the caller launders a missing capture into NOT_APPLICABLE.
 function aix_capture_missing {
@@ -324,13 +324,29 @@ function standalone_main {
     echo "usage: $0 --json" >&2
     return 2
   fi
-  if [ -z "${AIXRAY_FIXTURES:-}" ] && [ "$(uname -s 2>/dev/null)" != "AIX" ]; then
-    echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
-    return 2
+  if [ -z "${AIXRAY_FIXTURES:-}" ]; then
+    _os=$(uname -s 2>/dev/null)
+    if [ "$_os" = "AIX" ]; then
+      :
+    elif [ "$_os" = "OS400" ] && [ "${IBMI_PROBES:-0}" = 1 ]; then
+      :
+    else
+      echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
+      return 2
+    fi
   fi
   standalone_initialize
   initialize_rc=$?
   [ "$initialize_rc" -eq 0 ] || return "$initialize_rc"
+  if [ "${IBMI_PROBES:-0}" = 1 ]; then
+    if ! ibmi_require_qsecofr; then
+      echo "$AIXRAY_TOOL requires SESSION_USER=QSECOFR and SYSTEM_USER=QSECOFR; no scan was run." >&2
+      return 2
+    fi
+  elif [ -z "${AIXRAY_FIXTURES:-}" ] && [ "${MYUID:-}" != 0 ]; then
+    echo "$AIXRAY_TOOL requires root; no scan was run." >&2
+    return 2
+  fi
   standalone_run
   run_rc=$?
   [ "$run_rc" -eq 0 ] || return 1
@@ -377,12 +393,12 @@ _AIXRAY_SESSION_KEYS=""
       add security nfs_client_mount_options "NFS client mount options" NOT_ASSESSED high \
           "not assessed - /etc/filesystems read failed (exit=$NCO_RC)" \
           "The file exists but its NFS client mount options could not be read." \
-          "restore read access to /etc/filesystems and rerun AIXray." "cis-l1"
+          "restore read access to /etc/filesystems and rerun PTxray." "cis-l1"
     else
       add security nfs_client_mount_options "NFS client mount options" NOT_ASSESSED high \
           "not assessed - /etc/filesystems existence and read state could not be established (existence exit=$NCO_EXISTS_RC; read exit=$NCO_RC)" \
-          "AIXray could not distinguish an absent file from unreadable configuration." \
-          "verify that /etc/filesystems exists and is readable, then rerun AIXray." "cis-l1"
+          "PTxray could not distinguish an absent file from unreadable configuration." \
+          "verify that /etc/filesystems exists and is readable, then rerun PTxray." "cis-l1"
     fi
   else
     NCO_PARSE=$(printf '%s\n' "$NCO_RAW" | awk '
@@ -455,7 +471,7 @@ _AIXRAY_SESSION_KEYS=""
       add security nfs_client_mount_options "NFS client mount options" NOT_ASSESSED high \
           "not assessed - /etc/filesystems contained unparseable non-comment evidence" \
           "The complete NFS client option set could not be classified safely." \
-          "inspect malformed or conflicting /etc/filesystems stanzas and rerun AIXray." "cis-l1"
+          "inspect malformed or conflicting /etc/filesystems stanzas and rerun PTxray." "cis-l1"
     else
       NCO_TOTAL=$(printf '%s\n' "$NCO_PARSE" | awk -F '\t' '$1=="PASS" || $1=="FAIL"{n++} END{print n+0}')
       NCO_FAIL_COUNT=$(printf '%s\n' "$NCO_PARSE" | awk -F '\t' '$1=="FAIL"{n++} END{print n+0}')
@@ -467,7 +483,7 @@ _AIXRAY_SESSION_KEYS=""
         add security nfs_client_mount_options "NFS client mount options" FAIL high \
             "$NCO_OBS" \
             "One or more configured NFS client mounts allow device files or set-ID semantics." \
-            "add both nosuid and nodev to every NFS client stanza through the approved change process, then rerun AIXray." "cis-l1"
+            "add both nosuid and nodev to every NFS client stanza through the approved change process, then rerun PTxray." "cis-l1"
       elif [ "$NCO_TOTAL" -eq 0 ]; then
         add security nfs_client_mount_options "NFS client mount options" PASS high \
             "no NFS client mounts configured in /etc/filesystems" \

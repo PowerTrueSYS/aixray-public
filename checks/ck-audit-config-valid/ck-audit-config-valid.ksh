@@ -1,5 +1,5 @@
 #!/bin/ksh
-# Generated standalone AIXray check support. READ-ONLY: captures only; no
+# Generated standalone PTxray check support. READ-ONLY: captures only; no
 # remediation, service control, network access, or durable target-host writes.
 set -u
 
@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="1.2.0"
+AIXRAY_STANDALONE_VERSION="1.3.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -58,7 +58,7 @@ function aixv {
 # it". Live mode returns false (rc=1): a real box has no concept of a missing
 # fixture, and rc=127 there genuinely means the command was not found. Must be
 # called in the PARENT shell after the probe, not inside the $(aix ...)
-# substitution. Byte-for-byte the monolith's semantics (src/aixray-aix.sh.in);
+# substitution. Byte-for-byte the monolith's semantics (src/ptxray-aix.sh.in);
 # without it here, an undefined-command rc of 127 makes the guard read false and
 # the caller launders a missing capture into NOT_APPLICABLE.
 function aix_capture_missing {
@@ -324,13 +324,29 @@ function standalone_main {
     echo "usage: $0 --json" >&2
     return 2
   fi
-  if [ -z "${AIXRAY_FIXTURES:-}" ] && [ "$(uname -s 2>/dev/null)" != "AIX" ]; then
-    echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
-    return 2
+  if [ -z "${AIXRAY_FIXTURES:-}" ]; then
+    _os=$(uname -s 2>/dev/null)
+    if [ "$_os" = "AIX" ]; then
+      :
+    elif [ "$_os" = "OS400" ] && [ "${IBMI_PROBES:-0}" = 1 ]; then
+      :
+    else
+      echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
+      return 2
+    fi
   fi
   standalone_initialize
   initialize_rc=$?
   [ "$initialize_rc" -eq 0 ] || return "$initialize_rc"
+  if [ "${IBMI_PROBES:-0}" = 1 ]; then
+    if ! ibmi_require_qsecofr; then
+      echo "$AIXRAY_TOOL requires SESSION_USER=QSECOFR and SYSTEM_USER=QSECOFR; no scan was run." >&2
+      return 2
+    fi
+  elif [ -z "${AIXRAY_FIXTURES:-}" ] && [ "${MYUID:-}" != 0 ]; then
+    echo "$AIXRAY_TOOL requires root; no scan was run." >&2
+    return 2
+  fi
   standalone_run
   run_rc=$?
   [ "$run_rc" -eq 0 ] || return 1
@@ -452,22 +468,22 @@ _AIXRAY_SESSION_KEYS=""
           ACV_SEV=high
           ACV_OBS="/etc/security/audit/config $ACV_DETAIL"
           ACV_MEAN="The audit configuration departs from the prescribed bin(ary) event-collection settings, so audit events are not collected into the prescribed bin trail."
-          ACV_FIX="set the unmet stanza values in /etc/security/audit/config to the prescribed bin(ary) collection configuration and restart the audit subsystem; AIXray recommends the edit, it never writes it."
+          ACV_FIX="set the unmet stanza values in /etc/security/audit/config to the prescribed bin(ary) collection configuration and restart the audit subsystem; PTxray recommends the edit, it never writes it."
           ;;
         *)
           ACV_STATUS=NOT_ASSESSED
           ACV_SEV=med
           ACV_OBS="not assessed — /etc/security/audit/config carries no stanza values"
-          ACV_MEAN="AIXray could not parse any stanza value out of the audit configuration, so it cannot judge whether the prescribed settings are in effect."
-          ACV_FIX="inspect /etc/security/audit/config for a valid stanza layout, then rerun AIXray."
+          ACV_MEAN="PTxray could not parse any stanza value out of the audit configuration, so it cannot judge whether the prescribed settings are in effect."
+          ACV_FIX="inspect /etc/security/audit/config for a valid stanza layout, then rerun PTxray."
           ;;
       esac
     else
       ACV_STATUS=NOT_ASSESSED
       ACV_SEV=med
       ACV_OBS="not assessed — /etc/security/audit/config read back empty"
-      ACV_MEAN="AIXray read /etc/security/audit/config successfully but got no content, so it cannot judge the prescribed settings."
-      ACV_FIX="verify /etc/security/audit/config has content, then rerun AIXray."
+      ACV_MEAN="PTxray read /etc/security/audit/config successfully but got no content, so it cannot judge the prescribed settings."
+      ACV_FIX="verify /etc/security/audit/config has content, then rerun PTxray."
     fi
   else
     case "$ACV_RAW" in
@@ -480,13 +496,13 @@ _AIXRAY_SESSION_KEYS=""
       ACV_SEV=high
       ACV_OBS="/etc/security/audit/config is missing"
       ACV_MEAN="The audit subsystem configuration file does not exist, so the audit subsystem cannot be in the prescribed compliant state."
-      ACV_FIX="recreate /etc/security/audit/config with the compliant stanza values, then rerun AIXray."
+      ACV_FIX="recreate /etc/security/audit/config with the compliant stanza values, then rerun PTxray."
     else
       ACV_STATUS=NOT_ASSESSED
       ACV_SEV=med
       ACV_OBS="not assessed — /etc/security/audit/config unreadable (rc=$ACV_RC)"
-      ACV_MEAN="AIXray did not obtain a trustworthy read of the audit configuration file, so it cannot assess whether the configuration is compliant."
-      ACV_FIX="verify /etc/security/audit/config exists and is readable to the running identity, then rerun AIXray."
+      ACV_MEAN="PTxray did not obtain a trustworthy read of the audit configuration file, so it cannot assess whether the configuration is compliant."
+      ACV_FIX="verify /etc/security/audit/config exists and is readable to the running identity, then rerun PTxray."
     fi
   fi
 

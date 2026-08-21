@@ -1,5 +1,5 @@
 #!/bin/ksh
-# Generated standalone AIXray check support. READ-ONLY: captures only; no
+# Generated standalone PTxray check support. READ-ONLY: captures only; no
 # remediation, service control, network access, or durable target-host writes.
 set -u
 
@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="1.2.0"
+AIXRAY_STANDALONE_VERSION="1.3.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -58,7 +58,7 @@ function aixv {
 # it". Live mode returns false (rc=1): a real box has no concept of a missing
 # fixture, and rc=127 there genuinely means the command was not found. Must be
 # called in the PARENT shell after the probe, not inside the $(aix ...)
-# substitution. Byte-for-byte the monolith's semantics (src/aixray-aix.sh.in);
+# substitution. Byte-for-byte the monolith's semantics (src/ptxray-aix.sh.in);
 # without it here, an undefined-command rc of 127 makes the guard read false and
 # the caller launders a missing capture into NOT_APPLICABLE.
 function aix_capture_missing {
@@ -324,13 +324,29 @@ function standalone_main {
     echo "usage: $0 --json" >&2
     return 2
   fi
-  if [ -z "${AIXRAY_FIXTURES:-}" ] && [ "$(uname -s 2>/dev/null)" != "AIX" ]; then
-    echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
-    return 2
+  if [ -z "${AIXRAY_FIXTURES:-}" ]; then
+    _os=$(uname -s 2>/dev/null)
+    if [ "$_os" = "AIX" ]; then
+      :
+    elif [ "$_os" = "OS400" ] && [ "${IBMI_PROBES:-0}" = 1 ]; then
+      :
+    else
+      echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
+      return 2
+    fi
   fi
   standalone_initialize
   initialize_rc=$?
   [ "$initialize_rc" -eq 0 ] || return "$initialize_rc"
+  if [ "${IBMI_PROBES:-0}" = 1 ]; then
+    if ! ibmi_require_qsecofr; then
+      echo "$AIXRAY_TOOL requires SESSION_USER=QSECOFR and SYSTEM_USER=QSECOFR; no scan was run." >&2
+      return 2
+    fi
+  elif [ -z "${AIXRAY_FIXTURES:-}" ] && [ "${MYUID:-}" != 0 ]; then
+    echo "$AIXRAY_TOOL requires root; no scan was run." >&2
+    return 2
+  fi
   standalone_run
   run_rc=$?
   [ "$run_rc" -eq 0 ] || return 1
@@ -357,7 +373,7 @@ _AIXRAY_SESSION_KEYS=""
   # as an explicit '.'. The live runtime PATH is not obtainable honestly: opening
   # a root login shell through the su command (as the deleted probe did) would run
   # customer-authored login-shell code as root and would write /var/adm/sulog,
-  # both of which violate AIXray's read-only charter. Instead this check reads the
+  # both of which violate PTxray's read-only charter. Instead this check reads the
   # files that DECLARE root's login PATH —
   # /etc/environment, /etc/profile, and /.profile (root's home directory is /) —
   # with a plain grep that executes nothing and writes nothing. It therefore
@@ -377,7 +393,7 @@ _AIXRAY_SESSION_KEYS=""
   LS_RC=$?
 
   # Default to indeterminate: a declaration file the capture says nothing about
-  # is a file AIXray did not read, and that must refuse rather than be assumed
+  # is a file PTxray did not read, and that must refuse rather than be assumed
   # absent. The classification below only ever moves a path OFF this default on
   # positive evidence.
   ENV_PRESENT="indeterminate"
@@ -454,14 +470,14 @@ LPEOF
   if aix_capture_missing login_path_decl; then
     add security login_root_path "Root login PATH" NOT_ASSESSED med \
         "not assessed — no capture exists for the declared login PATH probe" \
-        "AIXray has no captured read of /etc/environment, /etc/profile, or /.profile, so the PATH declared for root's login shell is unknown." \
-        "capture /etc/environment, /etc/profile, and /.profile for this check, then re-run AIXray." "cis-l1"
+        "PTxray has no captured read of /etc/environment, /etc/profile, or /.profile, so the PATH declared for root's login shell is unknown." \
+        "capture /etc/environment, /etc/profile, and /.profile for this check, then re-run PTxray." "cis-l1"
 
   elif [ -n "$INDETERMINATE_PATHS" ]; then
     add security login_root_path "Root login PATH" NOT_ASSESSED med \
         "not assessed — cannot establish whether ${INDETERMINATE_PATHS} exists (ls probe rc=$LS_RC)" \
-        "AIXray cannot determine whether ${INDETERMINATE_PATHS} exists on this host; this file may declare a violating PATH that was not read. The ls -l probe returned rc $LS_RC." \
-        "verify the file exists and is readable, then re-run AIXray." "cis-l1"
+        "PTxray cannot determine whether ${INDETERMINATE_PATHS} exists on this host; this file may declare a violating PATH that was not read. The ls -l probe returned rc $LS_RC." \
+        "verify the file exists and is readable, then re-run PTxray." "cis-l1"
 
   elif [ "$LP_RC" -ge 2 ] && [ -z "$LP_RAW" ]; then
     # grep rc 2 means at least one named file could not be opened, but every
@@ -470,14 +486,14 @@ LPEOF
     # PATH lines captured, this is the same refusal as rc 1.
     add security login_root_path "Root login PATH" NOT_ASSESSED med \
         "not assessed — no PATH assignment found in the declaration files that exist${ABSENT_DISCLOSURE}" \
-        "The declaration files that exist on this host were read but no PATH assignment was captured; root's login shell would fall back to a default PATH that AIXray did not measure.${ABSENT_MEANING}" \
-        "add an explicit PATH assignment to /etc/environment or a login profile, then re-run AIXray." "cis-l1"
+        "The declaration files that exist on this host were read but no PATH assignment was captured; root's login shell would fall back to a default PATH that PTxray did not measure.${ABSENT_MEANING}" \
+        "add an explicit PATH assignment to /etc/environment or a login profile, then re-run PTxray." "cis-l1"
 
   elif [ "$LP_RC" -eq 1 ]; then
     add security login_root_path "Root login PATH" NOT_ASSESSED med \
         "not assessed — no PATH assignment found in the declaration files that exist${ABSENT_DISCLOSURE}" \
-        "The declaration files that exist on this host were read but no PATH assignment was captured; root's login shell would fall back to a default PATH that AIXray did not measure.${ABSENT_MEANING}" \
-        "add an explicit PATH assignment to /etc/environment or a login profile, then re-run AIXray." "cis-l1"
+        "The declaration files that exist on this host were read but no PATH assignment was captured; root's login shell would fall back to a default PATH that PTxray did not measure.${ABSENT_MEANING}" \
+        "add an explicit PATH assignment to /etc/environment or a login profile, then re-run PTxray." "cis-l1"
 
   else
     # LP_RC is 0 (grep matched at least one PATH line), or LP_RC >= 2
@@ -623,26 +639,26 @@ LPEOF
       2)
         add security login_root_path "Root login PATH" NOT_ASSESSED med \
             "not assessed — a declared PATH carries a ';' suffix that is not 'export PATH' and could not be judged${ABSENT_DISCLOSURE}" \
-            "A PATH declaration captured from /etc/environment, /etc/profile, or /.profile contains a ';' suffix that is not 'export PATH' (for example, an additional command on the same line). AIXray cannot tell whether the PATH value is clean, so the declared login PATH is not assessed.${ABSENT_MEANING}" \
-            "declare root's login PATH as a single assignment with no trailing command, then re-run AIXray." "cis-l1"
+            "A PATH declaration captured from /etc/environment, /etc/profile, or /.profile contains a ';' suffix that is not 'export PATH' (for example, an additional command on the same line). PTxray cannot tell whether the PATH value is clean, so the declared login PATH is not assessed.${ABSENT_MEANING}" \
+            "declare root's login PATH as a single assignment with no trailing command, then re-run PTxray." "cis-l1"
         ;;
       3)
         if [ -n "$UNRESOLVED_LINE" ]; then
           add security login_root_path "Root login PATH" NOT_ASSESSED med \
               "not assessed — declared PATH '${UNRESOLVED_LINE}' is built entirely from unresolved variable references${ABSENT_DISCLOSURE}" \
-              "The PATH declaration \"${UNRESOLVED_LINE}\" is composed only of variable references (\$VAR) that AIXray cannot statically resolve, so zero of its elements were adjudicated. PASS requires at least one adjudicated element; a declaration that reduces to none cannot be confirmed clean.${ABSENT_MEANING}" \
-              "declare a concrete absolute PATH for root's login shell, or include at least one absolute, non-variable component, then re-run AIXray." "cis-l1"
+              "The PATH declaration \"${UNRESOLVED_LINE}\" is composed only of variable references (\$VAR) that PTxray cannot statically resolve, so zero of its elements were adjudicated. PASS requires at least one adjudicated element; a declaration that reduces to none cannot be confirmed clean.${ABSENT_MEANING}" \
+              "declare a concrete absolute PATH for root's login shell, or include at least one absolute, non-variable component, then re-run PTxray." "cis-l1"
         else
           add security login_root_path "Root login PATH" NOT_ASSESSED med \
               "not assessed — no PATH element in the capture was adjudicated${ABSENT_DISCLOSURE}" \
               "No PATH element captured from /etc/environment, /etc/profile, and /.profile was adjudicated: every declaration reduced to unresolved variable references, or the capture carried no parseable declaration at all. PASS requires at least one adjudicated element, so the declared login PATH cannot be confirmed clean.${ABSENT_MEANING}" \
-              "declare a concrete absolute PATH for root's login shell, or include at least one absolute, non-variable component, then re-run AIXray." "cis-l1"
+              "declare a concrete absolute PATH for root's login shell, or include at least one absolute, non-variable component, then re-run PTxray." "cis-l1"
         fi
         ;;
       *)
         add security login_root_path "Root login PATH" NOT_ASSESSED med \
             "not assessed — declared PATH discriminator failed (awk rc=$AWK_RC)${ABSENT_DISCLOSURE}" \
-            "AIXray could not test the declared PATH assignments: the discriminator exited with an unexpected status, or a PATH line could not be parsed (for example, more than one command on the line).${ABSENT_MEANING}" \
+            "PTxray could not test the declared PATH assignments: the discriminator exited with an unexpected status, or a PATH line could not be parsed (for example, more than one command on the line).${ABSENT_MEANING}" \
             "re-run the check; if it persists, collect the captured PATH lines and inspect them manually." "cis-l1"
         ;;
     esac

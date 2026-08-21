@@ -1,5 +1,5 @@
 #!/bin/ksh
-# Generated standalone AIXray check support. READ-ONLY: captures only; no
+# Generated standalone PTxray check support. READ-ONLY: captures only; no
 # remediation, service control, network access, or durable target-host writes.
 set -u
 
@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="1.2.0"
+AIXRAY_STANDALONE_VERSION="1.3.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -58,7 +58,7 @@ function aixv {
 # it". Live mode returns false (rc=1): a real box has no concept of a missing
 # fixture, and rc=127 there genuinely means the command was not found. Must be
 # called in the PARENT shell after the probe, not inside the $(aix ...)
-# substitution. Byte-for-byte the monolith's semantics (src/aixray-aix.sh.in);
+# substitution. Byte-for-byte the monolith's semantics (src/ptxray-aix.sh.in);
 # without it here, an undefined-command rc of 127 makes the guard read false and
 # the caller launders a missing capture into NOT_APPLICABLE.
 function aix_capture_missing {
@@ -324,13 +324,29 @@ function standalone_main {
     echo "usage: $0 --json" >&2
     return 2
   fi
-  if [ -z "${AIXRAY_FIXTURES:-}" ] && [ "$(uname -s 2>/dev/null)" != "AIX" ]; then
-    echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
-    return 2
+  if [ -z "${AIXRAY_FIXTURES:-}" ]; then
+    _os=$(uname -s 2>/dev/null)
+    if [ "$_os" = "AIX" ]; then
+      :
+    elif [ "$_os" = "OS400" ] && [ "${IBMI_PROBES:-0}" = 1 ]; then
+      :
+    else
+      echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
+      return 2
+    fi
   fi
   standalone_initialize
   initialize_rc=$?
   [ "$initialize_rc" -eq 0 ] || return "$initialize_rc"
+  if [ "${IBMI_PROBES:-0}" = 1 ]; then
+    if ! ibmi_require_qsecofr; then
+      echo "$AIXRAY_TOOL requires SESSION_USER=QSECOFR and SYSTEM_USER=QSECOFR; no scan was run." >&2
+      return 2
+    fi
+  elif [ -z "${AIXRAY_FIXTURES:-}" ] && [ "${MYUID:-}" != 0 ]; then
+    echo "$AIXRAY_TOOL requires root; no scan was run." >&2
+    return 2
+  fi
   standalone_run
   run_rc=$?
   [ "$run_rc" -eq 0 ] || return 1
@@ -396,20 +412,20 @@ _AIXRAY_SESSION_KEYS=""
   if [ -n "$DRH_REASON" ]; then
     add security diracc_roothome "root dedicated home" NOT_ASSESSED med \
         "not assessed — $DRH_REASON" \
-        "AIXray did not obtain a trustworthy root home attribute, so it cannot claim the dedicated-home boundary is satisfied." \
-        "run 'lsuser -a home root', correct the capture problem, and rerun AIXray." \
+        "PTxray did not obtain a trustworthy root home attribute, so it cannot claim the dedicated-home boundary is satisfied." \
+        "run 'lsuser -a home root', correct the capture problem, and rerun PTxray." \
         "cis-l1"
   elif [ "$DRH_HOME" = "/" ]; then
     add security diracc_roothome "root dedicated home" FAIL med \
         "root home=/" \
         "The root account uses / as its home directory, exposing root dotfiles to every user on the system." \
-        "create a dedicated home and move root after validation: 'mkdir /root; chown root:system /root; chmod 0700 /root; chuser home=/root root'; AIXray recommends these commands and never executes them." \
+        "create a dedicated home and move root after validation: 'mkdir /root; chown root:system /root; chmod 0700 /root; chuser home=/root root'; PTxray recommends these commands and never executes them." \
         "cis-l1"
   elif [ "$DRH_HOME" != "/root" ]; then
     add security diracc_roothome "root dedicated home" NOT_ASSESSED med \
         "not assessed — root home=$DRH_HOME is non-standard; permissions not statically assessable" \
-        "AIXray only assesses the standard /root location; a non-standard dedicated home needs manual review." \
-        "review the ownership and mode of the configured root home manually, or relocate it to /root and rerun AIXray." \
+        "PTxray only assesses the standard /root location; a non-standard dedicated home needs manual review." \
+        "review the ownership and mode of the configured root home manually, or relocate it to /root and rerun PTxray." \
         "cis-l1"
   else
     DRH_LS_RAW=$(aixv diracc_roothome_ls ls -ldn /root)
@@ -509,13 +525,13 @@ _AIXRAY_SESSION_KEYS=""
       add security diracc_roothome "root dedicated home" FAIL med \
           "root home=/root but /root absent" \
           "The probe returned the determinate-absence signature ('/root not found', exit $DRH_LS_RC); root is configured with home=/root and that directory does not exist, so root has no dedicated home directory." \
-          "create the dedicated home after validation: 'mkdir /root; chown root:system /root; chmod 0700 /root'; AIXray recommends these commands and never executes them." \
+          "create the dedicated home after validation: 'mkdir /root; chown root:system /root; chmod 0700 /root'; PTxray recommends these commands and never executes them." \
           "cis-l1"
     elif [ -n "$DRH_REASON" ]; then
       add security diracc_roothome "root dedicated home" NOT_ASSESSED med \
           "not assessed — $DRH_REASON" \
-          "AIXray did not obtain one trustworthy metadata row for /root, so it cannot claim the dedicated-home boundary is satisfied." \
-          "run 'ls -ldn /root', correct the capture or path problem, and rerun AIXray." \
+          "PTxray did not obtain one trustworthy metadata row for /root, so it cannot claim the dedicated-home boundary is satisfied." \
+          "run 'ls -ldn /root', correct the capture or path problem, and rerun PTxray." \
           "cis-l1"
     elif [ "$DRH_UID" = "0" ] && [ "$DRH_GID" = "0" ] && [ "$DRH_MODE_OK" = "1" ]; then
       add security diracc_roothome "root dedicated home" PASS med \
@@ -526,7 +542,7 @@ _AIXRAY_SESSION_KEYS=""
       add security diracc_roothome "root dedicated home" FAIL med \
           "root home=/root owner_uid=$DRH_UID group_gid=$DRH_GID mode=$DRH_MODE" \
           "The dedicated root home directory permits access beyond root, weakening protection of root's configuration files." \
-          "correct after validation: 'chown root:system /root; chmod 0700 /root'; AIXray recommends these commands and never executes them." \
+          "correct after validation: 'chown root:system /root; chmod 0700 /root'; PTxray recommends these commands and never executes them." \
           "cis-l1"
     fi
   fi

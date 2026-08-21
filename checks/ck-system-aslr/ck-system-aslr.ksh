@@ -1,5 +1,5 @@
 #!/bin/ksh
-# Generated standalone AIXray check support. READ-ONLY: captures only; no
+# Generated standalone PTxray check support. READ-ONLY: captures only; no
 # remediation, service control, network access, or durable target-host writes.
 set -u
 
@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="1.2.0"
+AIXRAY_STANDALONE_VERSION="1.3.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -58,7 +58,7 @@ function aixv {
 # it". Live mode returns false (rc=1): a real box has no concept of a missing
 # fixture, and rc=127 there genuinely means the command was not found. Must be
 # called in the PARENT shell after the probe, not inside the $(aix ...)
-# substitution. Byte-for-byte the monolith's semantics (src/aixray-aix.sh.in);
+# substitution. Byte-for-byte the monolith's semantics (src/ptxray-aix.sh.in);
 # without it here, an undefined-command rc of 127 makes the guard read false and
 # the caller launders a missing capture into NOT_APPLICABLE.
 function aix_capture_missing {
@@ -324,13 +324,29 @@ function standalone_main {
     echo "usage: $0 --json" >&2
     return 2
   fi
-  if [ -z "${AIXRAY_FIXTURES:-}" ] && [ "$(uname -s 2>/dev/null)" != "AIX" ]; then
-    echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
-    return 2
+  if [ -z "${AIXRAY_FIXTURES:-}" ]; then
+    _os=$(uname -s 2>/dev/null)
+    if [ "$_os" = "AIX" ]; then
+      :
+    elif [ "$_os" = "OS400" ] && [ "${IBMI_PROBES:-0}" = 1 ]; then
+      :
+    else
+      echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
+      return 2
+    fi
   fi
   standalone_initialize
   initialize_rc=$?
   [ "$initialize_rc" -eq 0 ] || return "$initialize_rc"
+  if [ "${IBMI_PROBES:-0}" = 1 ]; then
+    if ! ibmi_require_qsecofr; then
+      echo "$AIXRAY_TOOL requires SESSION_USER=QSECOFR and SYSTEM_USER=QSECOFR; no scan was run." >&2
+      return 2
+    fi
+  elif [ -z "${AIXRAY_FIXTURES:-}" ] && [ "${MYUID:-}" != 0 ]; then
+    echo "$AIXRAY_TOOL requires root; no scan was run." >&2
+    return 2
+  fi
   standalone_run
   run_rc=$?
   [ "$run_rc" -eq 0 ] || return 1
@@ -361,11 +377,11 @@ ASLR=$(aix aslr_tunables /usr/sbin/vmo -aF); ASLRRC=$?
 if [ "$ASLRRC" -ne 0 ]; then
   add security system_aslr "System ASLR" NOT_ASSESSED med "not assessed - vmo probe failed (rc=$ASLRRC)" \
       "ASLR state could not be read because 'vmo -aF' failed (rc=$ASLRRC); without the six aslr tunables no strength verdict is possible." \
-      "run '/usr/sbin/vmo -aF' manually and confirm it succeeds, then rerun AIXray." "cis-l1"
+      "run '/usr/sbin/vmo -aF' manually and confirm it succeeds, then rerun PTxray." "cis-l1"
 elif [ -z "$ASLR" ]; then
   add security system_aslr "System ASLR" NOT_ASSESSED med "not assessed - vmo returned no output (rc=0)" \
       "ASLR state could not be read because 'vmo -aF' produced no output; the aslr tunables are not observable." \
-      "run '/usr/sbin/vmo -aF' manually and confirm it lists tunables, then rerun AIXray." "cis-l1"
+      "run '/usr/sbin/vmo -aF' manually and confirm it lists tunables, then rerun PTxray." "cis-l1"
 else
   ASLRV=$(printf '%s\n' "$ASLR" | awk '
     {
@@ -420,7 +436,7 @@ else
     *)
       add security system_aslr "System ASLR" NOT_ASSESSED med "not assessed - vmo output unparseable (rc=0)" \
           "ASLR state could not be assessed because 'vmo -aF' produced no parseable tunable lines; the output shape is unknown." \
-          "run '/usr/sbin/vmo -aF' manually and confirm it lists 'key = value' tunable lines, then rerun AIXray." "cis-l1"
+          "run '/usr/sbin/vmo -aF' manually and confirm it lists 'key = value' tunable lines, then rerun PTxray." "cis-l1"
       ;;
   esac
 fi

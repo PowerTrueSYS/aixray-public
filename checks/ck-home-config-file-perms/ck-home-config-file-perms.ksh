@@ -1,5 +1,5 @@
 #!/bin/ksh
-# Generated standalone AIXray check support. READ-ONLY: captures only; no
+# Generated standalone PTxray check support. READ-ONLY: captures only; no
 # remediation, service control, network access, or durable target-host writes.
 set -u
 
@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="1.2.0"
+AIXRAY_STANDALONE_VERSION="1.3.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -58,7 +58,7 @@ function aixv {
 # it". Live mode returns false (rc=1): a real box has no concept of a missing
 # fixture, and rc=127 there genuinely means the command was not found. Must be
 # called in the PARENT shell after the probe, not inside the $(aix ...)
-# substitution. Byte-for-byte the monolith's semantics (src/aixray-aix.sh.in);
+# substitution. Byte-for-byte the monolith's semantics (src/ptxray-aix.sh.in);
 # without it here, an undefined-command rc of 127 makes the guard read false and
 # the caller launders a missing capture into NOT_APPLICABLE.
 function aix_capture_missing {
@@ -324,13 +324,29 @@ function standalone_main {
     echo "usage: $0 --json" >&2
     return 2
   fi
-  if [ -z "${AIXRAY_FIXTURES:-}" ] && [ "$(uname -s 2>/dev/null)" != "AIX" ]; then
-    echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
-    return 2
+  if [ -z "${AIXRAY_FIXTURES:-}" ]; then
+    _os=$(uname -s 2>/dev/null)
+    if [ "$_os" = "AIX" ]; then
+      :
+    elif [ "$_os" = "OS400" ] && [ "${IBMI_PROBES:-0}" = 1 ]; then
+      :
+    else
+      echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
+      return 2
+    fi
   fi
   standalone_initialize
   initialize_rc=$?
   [ "$initialize_rc" -eq 0 ] || return "$initialize_rc"
+  if [ "${IBMI_PROBES:-0}" = 1 ]; then
+    if ! ibmi_require_qsecofr; then
+      echo "$AIXRAY_TOOL requires SESSION_USER=QSECOFR and SYSTEM_USER=QSECOFR; no scan was run." >&2
+      return 2
+    fi
+  elif [ -z "${AIXRAY_FIXTURES:-}" ] && [ "${MYUID:-}" != 0 ]; then
+    echo "$AIXRAY_TOOL requires root; no scan was run." >&2
+    return 2
+  fi
   standalone_run
   run_rc=$?
   [ "$run_rc" -eq 0 ] || return 1
@@ -377,8 +393,8 @@ _AIXRAY_SESSION_KEYS=""
   if [ "$HCFP_LSUSER_RC" -ne 0 ]; then
     HCFP_STATUS=NOT_ASSESSED
     HCFP_OBS="not assessed — user enumeration failed (rc=$HCFP_LSUSER_RC)"
-    HCFP_MEAN="AIXray could not enumerate local users, so it cannot tell which home directories hold user configuration files."
-    HCFP_FIX="run 'lsuser -a home ALL', correct the capture problem, and rerun AIXray."
+    HCFP_MEAN="PTxray could not enumerate local users, so it cannot tell which home directories hold user configuration files."
+    HCFP_FIX="run 'lsuser -a home ALL', correct the capture problem, and rerun PTxray."
   else
     HCFP_HOME_COUNT=$(printf '%s\n' "$HCFP_LSUSER_RAW" | awk '
       NF {
@@ -395,8 +411,8 @@ _AIXRAY_SESSION_KEYS=""
     if [ "$HCFP_HOME_PARSE_RC" -ne 0 ] || [ -z "$HCFP_HOME_COUNT" ]; then
       HCFP_STATUS=NOT_ASSESSED
       HCFP_OBS="not assessed — user home enumeration unparseable"
-      HCFP_MEAN="AIXray could not derive the set of qualifying home directories from the captured user list."
-      HCFP_FIX="run 'lsuser -a home ALL', correct the capture problem, and rerun AIXray."
+      HCFP_MEAN="PTxray could not derive the set of qualifying home directories from the captured user list."
+      HCFP_FIX="run 'lsuser -a home ALL', correct the capture problem, and rerun PTxray."
     elif [ "$HCFP_HOME_COUNT" -eq 0 ]; then
       HCFP_STATUS=NOT_APPLICABLE
       HCFP_OBS="not applicable — no qualifying home directories"
@@ -419,8 +435,8 @@ _AIXRAY_SESSION_KEYS=""
       if [ "$HCFP_CAND_RC" -ne 0 ] || [ -z "$HCFP_CANDIDATES" ]; then
         HCFP_STATUS=NOT_ASSESSED
         HCFP_OBS="not assessed — could not extract candidate homes from user list"
-        HCFP_MEAN="AIXray could not derive the set of qualifying home directories from the captured user list."
-        HCFP_FIX="run 'lsuser -a home ALL', correct the capture problem, and rerun AIXray."
+        HCFP_MEAN="PTxray could not derive the set of qualifying home directories from the captured user list."
+        HCFP_FIX="run 'lsuser -a home ALL', correct the capture problem, and rerun PTxray."
       else
         HCFP_PARSED_COUNT=0
         HCFP_VIOLATED=0
@@ -478,8 +494,8 @@ _AIXRAY_SESSION_KEYS=""
         if [ -n "$HCFP_REFUSAL" ]; then
           HCFP_STATUS=NOT_ASSESSED
           HCFP_OBS="not assessed — $HCFP_REFUSAL"
-          HCFP_MEAN="AIXray could not enumerate configuration files in every qualifying home directory, so it cannot render a trustworthy verdict."
-          HCFP_FIX="correct the home directory listing captures and rerun AIXray."
+          HCFP_MEAN="PTxray could not enumerate configuration files in every qualifying home directory, so it cannot render a trustworthy verdict."
+          HCFP_FIX="correct the home directory listing captures and rerun PTxray."
         elif [ "$HCFP_VIOLATED" -ne 0 ]; then
           HCFP_STATUS=FAIL
           if [ -n "$HCFP_UNLISTABLE" ]; then
@@ -488,7 +504,7 @@ _AIXRAY_SESSION_KEYS=""
             HCFP_OBS="$HCFP_VIOLATED of $HCFP_PARSED_COUNT user configuration files writable by group or other"
           fi
           HCFP_MEAN="At least one user configuration file is writable by group or other, letting an unauthorized local identity alter a user's shell environment or stored credentials."
-          HCFP_FIX="remove the group- and other-write bits after validation, e.g. 'chmod go-w <file>'; AIXray recommends this command and never executes it."
+          HCFP_FIX="remove the group- and other-write bits after validation, e.g. 'chmod go-w <file>'; PTxray recommends this command and never executes it."
         elif [ "$HCFP_PARSED_COUNT" -gt 0 ]; then
           HCFP_STATUS=PASS
           if [ -n "$HCFP_UNLISTABLE" ]; then
@@ -503,7 +519,7 @@ _AIXRAY_SESSION_KEYS=""
             HCFP_STATUS=PASS
             HCFP_OBS="no user configuration files found; home(s) not listable: $HCFP_UNLISTABLE"
             HCFP_MEAN="No regular dotfile exists in any listable qualifying home directory, so none can carry a group- or other-write bit. One or more home directories could not be listed; their contents were not inspected."
-            HCFP_FIX="verify the unlistable home directories exist and are accessible, then rerun AIXray."
+            HCFP_FIX="verify the unlistable home directories exist and are accessible, then rerun PTxray."
           else
             HCFP_STATUS=PASS
             HCFP_OBS="no user configuration files found in any qualifying home directory"

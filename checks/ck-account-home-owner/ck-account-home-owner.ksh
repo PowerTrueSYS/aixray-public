@@ -1,5 +1,5 @@
 #!/bin/ksh
-# Generated standalone AIXray check support. READ-ONLY: captures only; no
+# Generated standalone PTxray check support. READ-ONLY: captures only; no
 # remediation, service control, network access, or durable target-host writes.
 set -u
 
@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="1.2.0"
+AIXRAY_STANDALONE_VERSION="1.3.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -58,7 +58,7 @@ function aixv {
 # it". Live mode returns false (rc=1): a real box has no concept of a missing
 # fixture, and rc=127 there genuinely means the command was not found. Must be
 # called in the PARENT shell after the probe, not inside the $(aix ...)
-# substitution. Byte-for-byte the monolith's semantics (src/aixray-aix.sh.in);
+# substitution. Byte-for-byte the monolith's semantics (src/ptxray-aix.sh.in);
 # without it here, an undefined-command rc of 127 makes the guard read false and
 # the caller launders a missing capture into NOT_APPLICABLE.
 function aix_capture_missing {
@@ -324,13 +324,29 @@ function standalone_main {
     echo "usage: $0 --json" >&2
     return 2
   fi
-  if [ -z "${AIXRAY_FIXTURES:-}" ] && [ "$(uname -s 2>/dev/null)" != "AIX" ]; then
-    echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
-    return 2
+  if [ -z "${AIXRAY_FIXTURES:-}" ]; then
+    _os=$(uname -s 2>/dev/null)
+    if [ "$_os" = "AIX" ]; then
+      :
+    elif [ "$_os" = "OS400" ] && [ "${IBMI_PROBES:-0}" = 1 ]; then
+      :
+    else
+      echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
+      return 2
+    fi
   fi
   standalone_initialize
   initialize_rc=$?
   [ "$initialize_rc" -eq 0 ] || return "$initialize_rc"
+  if [ "${IBMI_PROBES:-0}" = 1 ]; then
+    if ! ibmi_require_qsecofr; then
+      echo "$AIXRAY_TOOL requires SESSION_USER=QSECOFR and SYSTEM_USER=QSECOFR; no scan was run." >&2
+      return 2
+    fi
+  elif [ -z "${AIXRAY_FIXTURES:-}" ] && [ "${MYUID:-}" != 0 ]; then
+    echo "$AIXRAY_TOOL requires root; no scan was run." >&2
+    return 2
+  fi
   standalone_run
   run_rc=$?
   [ "$run_rc" -eq 0 ] || return 1
@@ -399,8 +415,8 @@ _AIXRAY_SESSION_KEYS=""
   if [ -n "$AHO_REASON" ]; then
     add security account_home_owner "account home owner" NOT_ASSESSED high \
         "not assessed — $AHO_REASON" \
-        "AIXray did not obtain a trustworthy account inventory, so it cannot claim every non-system account's home boundary is satisfied." \
-        "run 'lsuser -R files -a id home account_locked ALL', correct the capture problem, and rerun AIXray." \
+        "PTxray did not obtain a trustworthy account inventory, so it cannot claim every non-system account's home boundary is satisfied." \
+        "run 'lsuser -R files -a id home account_locked ALL', correct the capture problem, and rerun PTxray." \
         "cis-l1"
   elif [ -z "$AHO_CANDIDATES" ]; then
     add security account_home_owner "account home owner" PASS med \
@@ -423,7 +439,7 @@ _AIXRAY_SESSION_KEYS=""
         add security account_home_owner "account home owner" FAIL high \
             "account=$AHO_ACCT home=$AHO_HOME missing" \
             "The home directory of account $AHO_ACCT does not exist on the filesystem, so that account has no home boundary." \
-            "create the missing home directory and set correct ownership after validation; AIXray recommends these commands and never executes them." \
+            "create the missing home directory and set correct ownership after validation; PTxray recommends these commands and never executes them." \
             "cis-l1"
         AHO_FAIL_COUNT=$(( AHO_FAIL_COUNT + 1 ))
       elif [ "$AHO_HOME_RC" -eq 0 ]; then
@@ -443,8 +459,8 @@ _AIXRAY_SESSION_KEYS=""
         if [ "$AHO_OWNER_RC" -ne 0 ] || [ -z "$AHO_OWNER" ]; then
           add security account_home_owner "account home owner" NOT_ASSESSED high \
               "not assessed — home metadata unparseable for account=$AHO_ACCT home=$AHO_HOME" \
-              "AIXray could not read a trustworthy owner for the home directory of account $AHO_ACCT, so it cannot assess that account's home boundary." \
-              "run 'ls -ldn <home>' for the named account, correct the metadata problem, and rerun AIXray." \
+              "PTxray could not read a trustworthy owner for the home directory of account $AHO_ACCT, so it cannot assess that account's home boundary." \
+              "run 'ls -ldn <home>' for the named account, correct the metadata problem, and rerun PTxray." \
               "cis-l1"
           AHO_ERR_COUNT=$(( AHO_ERR_COUNT + 1 ))
         elif [ "$AHO_OWNER" = "$AHO_ID" ] || [ "$AHO_OWNER" = "0" ]; then
@@ -453,15 +469,15 @@ _AIXRAY_SESSION_KEYS=""
           add security account_home_owner "account home owner" FAIL high \
               "account=$AHO_ACCT home=$AHO_HOME owner_uid=$AHO_OWNER" \
               "The home directory of account $AHO_ACCT is owned by uid $AHO_OWNER, which is neither the account's own uid ($AHO_ID) nor root." \
-              "change only the home directory owner after validation: 'chown <uid> <home>'; AIXray recommends this command and never executes it." \
+              "change only the home directory owner after validation: 'chown <uid> <home>'; PTxray recommends this command and never executes it." \
               "cis-l1"
           AHO_FAIL_COUNT=$(( AHO_FAIL_COUNT + 1 ))
         fi
       else
         add security account_home_owner "account home owner" NOT_ASSESSED high \
             "not assessed — home probe failed for account=$AHO_ACCT home=$AHO_HOME (rc=$AHO_HOME_RC)" \
-            "AIXray could not read the home directory of account $AHO_ACCT, so it cannot assess that account's home boundary." \
-            "run 'ls -ldn <home>' for the named account, correct the probe problem, and rerun AIXray." \
+            "PTxray could not read the home directory of account $AHO_ACCT, so it cannot assess that account's home boundary." \
+            "run 'ls -ldn <home>' for the named account, correct the probe problem, and rerun PTxray." \
             "cis-l1"
         AHO_ERR_COUNT=$(( AHO_ERR_COUNT + 1 ))
       fi

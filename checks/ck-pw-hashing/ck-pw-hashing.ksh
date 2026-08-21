@@ -1,5 +1,5 @@
 #!/bin/ksh
-# Generated standalone AIXray check support. READ-ONLY: captures only; no
+# Generated standalone PTxray check support. READ-ONLY: captures only; no
 # remediation, service control, network access, or durable target-host writes.
 set -u
 
@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="1.2.0"
+AIXRAY_STANDALONE_VERSION="1.3.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -58,7 +58,7 @@ function aixv {
 # it". Live mode returns false (rc=1): a real box has no concept of a missing
 # fixture, and rc=127 there genuinely means the command was not found. Must be
 # called in the PARENT shell after the probe, not inside the $(aix ...)
-# substitution. Byte-for-byte the monolith's semantics (src/aixray-aix.sh.in);
+# substitution. Byte-for-byte the monolith's semantics (src/ptxray-aix.sh.in);
 # without it here, an undefined-command rc of 127 makes the guard read false and
 # the caller launders a missing capture into NOT_APPLICABLE.
 function aix_capture_missing {
@@ -324,13 +324,29 @@ function standalone_main {
     echo "usage: $0 --json" >&2
     return 2
   fi
-  if [ -z "${AIXRAY_FIXTURES:-}" ] && [ "$(uname -s 2>/dev/null)" != "AIX" ]; then
-    echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
-    return 2
+  if [ -z "${AIXRAY_FIXTURES:-}" ]; then
+    _os=$(uname -s 2>/dev/null)
+    if [ "$_os" = "AIX" ]; then
+      :
+    elif [ "$_os" = "OS400" ] && [ "${IBMI_PROBES:-0}" = 1 ]; then
+      :
+    else
+      echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
+      return 2
+    fi
   fi
   standalone_initialize
   initialize_rc=$?
   [ "$initialize_rc" -eq 0 ] || return "$initialize_rc"
+  if [ "${IBMI_PROBES:-0}" = 1 ]; then
+    if ! ibmi_require_qsecofr; then
+      echo "$AIXRAY_TOOL requires SESSION_USER=QSECOFR and SYSTEM_USER=QSECOFR; no scan was run." >&2
+      return 2
+    fi
+  elif [ -z "${AIXRAY_FIXTURES:-}" ] && [ "${MYUID:-}" != 0 ]; then
+    echo "$AIXRAY_TOOL requires root; no scan was run." >&2
+    return 2
+  fi
   standalone_run
   run_rc=$?
   [ "$run_rc" -eq 0 ] || return 1
@@ -368,13 +384,13 @@ _AIXRAY_SESSION_KEYS=""
           NOT_ASSESSED high \
           "not assessed — pwd_algorithm capture not executed (requires root; rc=$PWH_RC)" \
           "The password hashing policy needs root access and no pwd_algorithm capture was executed." \
-          "re-run aixray as root, or inspect 'lssec -f /etc/security/login.cfg -s usw -a pwd_algorithm' manually." "cis-l1"
+          "re-run ptxray as root, or inspect 'lssec -f /etc/security/login.cfg -s usw -a pwd_algorithm' manually." "cis-l1"
     else
       add security pw_hashing "Password hashing algorithm" \
           NOT_ASSESSED high \
           "not assessed — pwd_algorithm capture failed (rc=$PWH_RC)" \
-          "The pwd_algorithm read failed, which is unexpected as root, so AIXray obtained no trustworthy password-hashing evidence." \
-          "run 'lssec -f /etc/security/login.cfg -s usw -a pwd_algorithm' manually, restore read access, then rerun AIXray." "cis-l1"
+          "The pwd_algorithm read failed, which is unexpected as root, so PTxray obtained no trustworthy password-hashing evidence." \
+          "run 'lssec -f /etc/security/login.cfg -s usw -a pwd_algorithm' manually, restore read access, then rerun PTxray." "cis-l1"
     fi
   else
     PWH_PARSED=$(printf '%s\n' "$PWH_RAW" | awk '
@@ -414,26 +430,26 @@ _AIXRAY_SESSION_KEYS=""
       empty)
         add security pw_hashing "Password hashing algorithm" NOT_ASSESSED high \
             "not assessed — pwd_algorithm capture empty (rc=0); read returned no assignment" \
-            "The successful read returned no pwd_algorithm assignment, so AIXray cannot claim the attribute is absent or select a release default." \
-            "run 'lssec -f /etc/security/login.cfg -s usw -a pwd_algorithm' manually, then rerun AIXray." "cis-l1"
+            "The successful read returned no pwd_algorithm assignment, so PTxray cannot claim the attribute is absent or select a release default." \
+            "run 'lssec -f /etc/security/login.cfg -s usw -a pwd_algorithm' manually, then rerun PTxray." "cis-l1"
         ;;
       multiple)
         add security pw_hashing "Password hashing algorithm" NOT_ASSESSED high \
             "not assessed — multiple pwd_algorithm assignments (values: $PWH_VALUE)" \
-            "The capture contained more than one pwd_algorithm assignment, so AIXray cannot determine one effective hashing policy." \
-            "remove duplicate or conflicting usw pwd_algorithm assignments, then rerun AIXray." "cis-l1"
+            "The capture contained more than one pwd_algorithm assignment, so PTxray cannot determine one effective hashing policy." \
+            "remove duplicate or conflicting usw pwd_algorithm assignments, then rerun PTxray." "cis-l1"
         ;;
       bad)
         add security pw_hashing "Password hashing algorithm" NOT_ASSESSED high \
             "not assessed — pwd_algorithm capture unparseable: output was not exactly one usw pwd_algorithm assignment" \
-            "The password hashing policy could not be parsed, so AIXray cannot claim that password hashes use an approved algorithm." \
-            "run 'lssec -f /etc/security/login.cfg -s usw -a pwd_algorithm' manually, then rerun AIXray." "cis-l1"
+            "The password hashing policy could not be parsed, so PTxray cannot claim that password hashes use an approved algorithm." \
+            "run 'lssec -f /etc/security/login.cfg -s usw -a pwd_algorithm' manually, then rerun PTxray." "cis-l1"
         ;;
       absent)
         add security pw_hashing "Password hashing algorithm" FAIL high \
             "/etc/security/login.cfg usw pwd_algorithm unset (defaults to legacy crypt); requires ssha256, ssha512 or bcrypt" \
             "An unset pwd_algorithm defaults to legacy DES crypt, which truncates passwords to 8 characters; characters after the eighth do not strengthen the stored hash." \
-            "set pwd_algorithm to ssha256 at minimum (for example, 'chsec -f /etc/security/login.cfg -s usw -a pwd_algorithm=ssha256'); AIXray only recommends this command and never executes it." "cis-l1"
+            "set pwd_algorithm to ssha256 at minimum (for example, 'chsec -f /etc/security/login.cfg -s usw -a pwd_algorithm=ssha256'); PTxray only recommends this command and never executes it." "cis-l1"
         ;;
       value)
         case "$PWH_VALUE" in
@@ -447,13 +463,13 @@ _AIXRAY_SESSION_KEYS=""
             add security pw_hashing "Password hashing algorithm" FAIL high \
                 "/etc/security/login.cfg usw pwd_algorithm=$PWH_VALUE; requires ssha256, ssha512 or bcrypt" \
                 "pwd_algorithm=crypt selects legacy DES crypt, which truncates passwords to 8 characters; characters after the eighth do not strengthen the stored hash." \
-                "set pwd_algorithm to ssha256 at minimum (for example, 'chsec -f /etc/security/login.cfg -s usw -a pwd_algorithm=ssha256'); AIXray only recommends this command and never executes it." "cis-l1"
+                "set pwd_algorithm to ssha256 at minimum (for example, 'chsec -f /etc/security/login.cfg -s usw -a pwd_algorithm=ssha256'); PTxray only recommends this command and never executes it." "cis-l1"
             ;;
           *)
             add security pw_hashing "Password hashing algorithm" FAIL high \
                 "/etc/security/login.cfg usw pwd_algorithm=$PWH_VALUE; requires ssha256, ssha512 or bcrypt" \
                 "The configured password hashing algorithm is not one of the accepted choices (ssha256, ssha512, or bcrypt); ssha256 is the minimum recommendation." \
-                "set pwd_algorithm to ssha256 at minimum (for example, 'chsec -f /etc/security/login.cfg -s usw -a pwd_algorithm=ssha256'); AIXray only recommends this command and never executes it." "cis-l1"
+                "set pwd_algorithm to ssha256 at minimum (for example, 'chsec -f /etc/security/login.cfg -s usw -a pwd_algorithm=ssha256'); PTxray only recommends this command and never executes it." "cis-l1"
             ;;
         esac
         ;;

@@ -1,5 +1,5 @@
 #!/bin/ksh
-# Generated standalone AIXray check support. READ-ONLY: captures only; no
+# Generated standalone PTxray check support. READ-ONLY: captures only; no
 # remediation, service control, network access, or durable target-host writes.
 set -u
 
@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="1.2.0"
+AIXRAY_STANDALONE_VERSION="1.3.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -58,7 +58,7 @@ function aixv {
 # it". Live mode returns false (rc=1): a real box has no concept of a missing
 # fixture, and rc=127 there genuinely means the command was not found. Must be
 # called in the PARENT shell after the probe, not inside the $(aix ...)
-# substitution. Byte-for-byte the monolith's semantics (src/aixray-aix.sh.in);
+# substitution. Byte-for-byte the monolith's semantics (src/ptxray-aix.sh.in);
 # without it here, an undefined-command rc of 127 makes the guard read false and
 # the caller launders a missing capture into NOT_APPLICABLE.
 function aix_capture_missing {
@@ -324,13 +324,29 @@ function standalone_main {
     echo "usage: $0 --json" >&2
     return 2
   fi
-  if [ -z "${AIXRAY_FIXTURES:-}" ] && [ "$(uname -s 2>/dev/null)" != "AIX" ]; then
-    echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
-    return 2
+  if [ -z "${AIXRAY_FIXTURES:-}" ]; then
+    _os=$(uname -s 2>/dev/null)
+    if [ "$_os" = "AIX" ]; then
+      :
+    elif [ "$_os" = "OS400" ] && [ "${IBMI_PROBES:-0}" = 1 ]; then
+      :
+    else
+      echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
+      return 2
+    fi
   fi
   standalone_initialize
   initialize_rc=$?
   [ "$initialize_rc" -eq 0 ] || return "$initialize_rc"
+  if [ "${IBMI_PROBES:-0}" = 1 ]; then
+    if ! ibmi_require_qsecofr; then
+      echo "$AIXRAY_TOOL requires SESSION_USER=QSECOFR and SYSTEM_USER=QSECOFR; no scan was run." >&2
+      return 2
+    fi
+  elif [ -z "${AIXRAY_FIXTURES:-}" ] && [ "${MYUID:-}" != 0 ]; then
+    echo "$AIXRAY_TOOL requires root; no scan was run." >&2
+    return 2
+  fi
   standalone_run
   run_rc=$?
   [ "$run_rc" -eq 0 ] || return 1
@@ -811,11 +827,11 @@ function check_software_inventory {
   if [ "$SI_CHECK_CONFIRMED" -ne 1 ]; then
     SI_CHECK_OBS="not assessed — lslpp -qcL capture return code was not confirmed"
     SI_CHECK_MEAN="Without a confirmed inventory-source result, installed software cannot be assessed for completeness, support, active use, or business criticality."
-    SI_CHECK_FIX="capture 'lslpp -qcL' with its return code and rerun AIXray."
+    SI_CHECK_FIX="capture 'lslpp -qcL' with its return code and rerun PTxray."
   elif [ "$SI_CHECK_RC" -ne 0 ]; then
     SI_CHECK_OBS="not assessed — lslpp -qcL capture failed (rc=$SI_CHECK_RC)"
     SI_CHECK_MEAN="The installed-fileset inventory source failed, so software currency and workload coverage could not be assessed."
-    SI_CHECK_FIX="restore access to 'lslpp -qcL' and rerun AIXray."
+    SI_CHECK_FIX="restore access to 'lslpp -qcL' and rerun PTxray."
   else
     SI_CHECK_PROFILE=$(printf '%s\n' "${LSLPPQ:-}" | awk -F: '
       function usable(value) {
@@ -843,11 +859,11 @@ function check_software_inventory {
         SI_CHECK_OBS="not assessed — lslpp -qcL capture had no structurally valid rows"
       fi
       SI_CHECK_MEAN="No trustworthy installed-fileset inventory was available, so software currency and workload coverage could not be assessed."
-      SI_CHECK_FIX="capture the complete colon-delimited output of 'lslpp -qcL' and rerun AIXray."
+      SI_CHECK_FIX="capture the complete colon-delimited output of 'lslpp -qcL' and rerun PTxray."
     elif [ "$SI_CHECK_VALID" -lt 50 ] || [ "$SI_CHECK_BOS" -lt 3 ]; then
       SI_CHECK_OBS="not assessed — lslpp -qcL capture was implausibly small ($SI_CHECK_VALID structurally valid rows; minimum 50, $SI_CHECK_BOS distinct bos.rte filesets)"
       SI_CHECK_MEAN="The capture is too small to represent a normal AIX installed-fileset inventory, so absence of software or workload components cannot be trusted."
-      SI_CHECK_FIX="supply a complete 'lslpp -qcL' capture and rerun AIXray."
+      SI_CHECK_FIX="supply a complete 'lslpp -qcL' capture and rerun PTxray."
     else
       SI_CHECK_OBS="not assessed — $SI_CHECK_VALID installed filesets were inventoried, but unmanaged software, active use, support entitlement, and business criticality were not established"
       SI_CHECK_MEAN="A package inventory does not identify software installed outside lslpp, prove which workloads are active, or establish their support and business requirements."

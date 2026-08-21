@@ -1,5 +1,5 @@
 #!/bin/ksh
-# Generated standalone AIXray check support. READ-ONLY: captures only; no
+# Generated standalone PTxray check support. READ-ONLY: captures only; no
 # remediation, service control, network access, or durable target-host writes.
 set -u
 
@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="1.2.0"
+AIXRAY_STANDALONE_VERSION="1.3.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -58,7 +58,7 @@ function aixv {
 # it". Live mode returns false (rc=1): a real box has no concept of a missing
 # fixture, and rc=127 there genuinely means the command was not found. Must be
 # called in the PARENT shell after the probe, not inside the $(aix ...)
-# substitution. Byte-for-byte the monolith's semantics (src/aixray-aix.sh.in);
+# substitution. Byte-for-byte the monolith's semantics (src/ptxray-aix.sh.in);
 # without it here, an undefined-command rc of 127 makes the guard read false and
 # the caller launders a missing capture into NOT_APPLICABLE.
 function aix_capture_missing {
@@ -324,13 +324,29 @@ function standalone_main {
     echo "usage: $0 --json" >&2
     return 2
   fi
-  if [ -z "${AIXRAY_FIXTURES:-}" ] && [ "$(uname -s 2>/dev/null)" != "AIX" ]; then
-    echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
-    return 2
+  if [ -z "${AIXRAY_FIXTURES:-}" ]; then
+    _os=$(uname -s 2>/dev/null)
+    if [ "$_os" = "AIX" ]; then
+      :
+    elif [ "$_os" = "OS400" ] && [ "${IBMI_PROBES:-0}" = 1 ]; then
+      :
+    else
+      echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
+      return 2
+    fi
   fi
   standalone_initialize
   initialize_rc=$?
   [ "$initialize_rc" -eq 0 ] || return "$initialize_rc"
+  if [ "${IBMI_PROBES:-0}" = 1 ]; then
+    if ! ibmi_require_qsecofr; then
+      echo "$AIXRAY_TOOL requires SESSION_USER=QSECOFR and SYSTEM_USER=QSECOFR; no scan was run." >&2
+      return 2
+    fi
+  elif [ -z "${AIXRAY_FIXTURES:-}" ] && [ "${MYUID:-}" != 0 ]; then
+    echo "$AIXRAY_TOOL requires root; no scan was run." >&2
+    return 2
+  fi
   standalone_run
   run_rc=$?
   [ "$run_rc" -eq 0 ] || return 1
@@ -363,7 +379,7 @@ _AIXRAY_SESSION_KEYS=""
     add security system_accounts_ftpusers "system accounts blocked from FTP" FAIL high \
       "/etc/ftpusers absent (ls rc=$SAF_LS_RC): no account is denied FTP access" \
       "Without /etc/ftpusers no account is denied FTP access, so root and the system accounts may authenticate over FTP wherever an FTP daemon is enabled." \
-      "create /etc/ftpusers listing root, adm, bin, daemon, guest, lpd, nobody, nuucp, sys, and uucp, one account per line; AIXray only recommends this change." \
+      "create /etc/ftpusers listing root, adm, bin, daemon, guest, lpd, nobody, nuucp, sys, and uucp, one account per line; PTxray only recommends this change." \
       "cis-l1"
   elif [ "$SAF_LS_RC" -ne 0 ]; then
     nr_warn security system_accounts_ftpusers "system accounts blocked from FTP" \
@@ -381,7 +397,7 @@ _AIXRAY_SESSION_KEYS=""
       add security system_accounts_ftpusers "system accounts blocked from FTP" FAIL high \
         "/etc/ftpusers is empty: all 10 required accounts are missing" \
         "An empty /etc/ftpusers denies no account, so root and the system accounts may authenticate over FTP wherever an FTP daemon is enabled." \
-        "list root, adm, bin, daemon, guest, lpd, nobody, nuucp, sys, and uucp in /etc/ftpusers, one account per line; AIXray only recommends this change." \
+        "list root, adm, bin, daemon, guest, lpd, nobody, nuucp, sys, and uucp in /etc/ftpusers, one account per line; PTxray only recommends this change." \
         "cis-l1"
     else
       SAF_PARSED=$(printf '%s\n' "$SAF_RAW" | awk '
@@ -416,7 +432,7 @@ _AIXRAY_SESSION_KEYS=""
           add security system_accounts_ftpusers "system accounts blocked from FTP" FAIL high \
             "missing from /etc/ftpusers: $SAF_DETAIL" \
             "Each account named here is not denied by /etc/ftpusers and may authenticate over FTP wherever an FTP daemon is enabled." \
-            "add each named missing account to /etc/ftpusers, one account per line; AIXray only recommends this change." \
+            "add each named missing account to /etc/ftpusers, one account per line; PTxray only recommends this change." \
             "cis-l1"
           ;;
         *)

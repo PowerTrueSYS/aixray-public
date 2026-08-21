@@ -1,5 +1,5 @@
 #!/bin/ksh
-# Generated standalone AIXray check support. READ-ONLY: captures only; no
+# Generated standalone PTxray check support. READ-ONLY: captures only; no
 # remediation, service control, network access, or durable target-host writes.
 set -u
 
@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="1.2.0"
+AIXRAY_STANDALONE_VERSION="1.3.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -58,7 +58,7 @@ function aixv {
 # it". Live mode returns false (rc=1): a real box has no concept of a missing
 # fixture, and rc=127 there genuinely means the command was not found. Must be
 # called in the PARENT shell after the probe, not inside the $(aix ...)
-# substitution. Byte-for-byte the monolith's semantics (src/aixray-aix.sh.in);
+# substitution. Byte-for-byte the monolith's semantics (src/ptxray-aix.sh.in);
 # without it here, an undefined-command rc of 127 makes the guard read false and
 # the caller launders a missing capture into NOT_APPLICABLE.
 function aix_capture_missing {
@@ -324,13 +324,29 @@ function standalone_main {
     echo "usage: $0 --json" >&2
     return 2
   fi
-  if [ -z "${AIXRAY_FIXTURES:-}" ] && [ "$(uname -s 2>/dev/null)" != "AIX" ]; then
-    echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
-    return 2
+  if [ -z "${AIXRAY_FIXTURES:-}" ]; then
+    _os=$(uname -s 2>/dev/null)
+    if [ "$_os" = "AIX" ]; then
+      :
+    elif [ "$_os" = "OS400" ] && [ "${IBMI_PROBES:-0}" = 1 ]; then
+      :
+    else
+      echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
+      return 2
+    fi
   fi
   standalone_initialize
   initialize_rc=$?
   [ "$initialize_rc" -eq 0 ] || return "$initialize_rc"
+  if [ "${IBMI_PROBES:-0}" = 1 ]; then
+    if ! ibmi_require_qsecofr; then
+      echo "$AIXRAY_TOOL requires SESSION_USER=QSECOFR and SYSTEM_USER=QSECOFR; no scan was run." >&2
+      return 2
+    fi
+  elif [ -z "${AIXRAY_FIXTURES:-}" ] && [ "${MYUID:-}" != 0 ]; then
+    echo "$AIXRAY_TOOL requires root; no scan was run." >&2
+    return 2
+  fi
   standalone_run
   run_rc=$?
   [ "$run_rc" -eq 0 ] || return 1
@@ -369,13 +385,13 @@ _AIXRAY_SESSION_KEYS=""
   if aix_capture_missing lsuser_id_home; then
     add security account_home "Account home existence and permissions" NOT_ASSESSED med \
         "not assessed — lsuser_id_home probe was not captured for this system" \
-        "The lsuser -R files -a id home ALL capture is absent from this scan's fixture set, so AIXray cannot enumerate the home directories that must be constrained." \
-        "capture 'lsuser -R files -a id home ALL' from a representative AIX host, then rerun AIXray." "cis-l1"
+        "The lsuser -R files -a id home ALL capture is absent from this scan's fixture set, so PTxray cannot enumerate the home directories that must be constrained." \
+        "capture 'lsuser -R files -a id home ALL' from a representative AIX host, then rerun PTxray." "cis-l1"
   elif [ "$AHM_LSUSER_RC" -ne 0 ]; then
     add security account_home "Account home existence and permissions" NOT_ASSESSED med \
         "not assessed — local user enumeration failed (rc=$AHM_LSUSER_RC)" \
-        "AIXray could not read the local user table, so it cannot enumerate the home directories that must be constrained." \
-        "restore read access to the local user database, then rerun AIXray." "cis-l1"
+        "PTxray could not read the local user table, so it cannot enumerate the home directories that must be constrained." \
+        "restore read access to the local user database, then rerun PTxray." "cis-l1"
   else
     AHM_SCOPE=$(printf '%s\n' "$AHM_LSUSER" | awk '
       NF {
@@ -417,7 +433,7 @@ _AIXRAY_SESSION_KEYS=""
           add security account_home_missing "non-system account home missing" FAIL low \
               "home $AHM_HOME of $AHM_NAME is absent" \
               "The home directory of a non-system account does not exist, so the account has no constrained, usable home." \
-              "create the home with the intended owner, mode, and ACL, then rerun AIXray." "cis-l1"
+              "create the home with the intended owner, mode, and ACL, then rerun PTxray." "cis-l1"
         elif [ "$AHM_LS_RC" -eq 0 ]; then
           AHM_MODE=$(printf '%s\n' "$AHM_LS" | awk 'NF { print $1; exit }')
           AHM_MODELEN=${#AHM_MODE}
@@ -436,13 +452,13 @@ _AIXRAY_SESSION_KEYS=""
               add security account_home_mode "non-system account home permissions" FAIL med \
                   "home $AHM_HOME of $AHM_NAME is group- or world-writable" \
                   "The home directory of a non-system account grants group or other users write access, so another identity can alter the account's files." \
-                  "remove group and world write permission from the home, then rerun AIXray." "cis-l1"
+                  "remove group and world write permission from the home, then rerun PTxray." "cis-l1"
             elif [ "$AHM_ACL" -eq 1 ]; then
               AHM_ANYFAIL=1
               add security account_home_acl "non-system account home ACL" FAIL med \
                   "home $AHM_HOME of $AHM_NAME carries an access control list" \
                   "The home directory of a non-system account carries an extended ACL, so the mode string alone does not bound who can access the account's files." \
-                  "clear the extended ACL from the home, then rerun AIXray." "cis-l1"
+                  "clear the extended ACL from the home, then rerun PTxray." "cis-l1"
             fi
           fi
         else
@@ -455,8 +471,8 @@ AHM_SCOPE_EOF
         if [ "$AHM_UNASSESSED" -eq 1 ]; then
           add security account_home "Account home existence and permissions" NOT_ASSESSED med \
               "not assessed — at least one in-scope home could not be probed" \
-              "AIXray could not obtain trustworthy metadata for every in-scope home, so it cannot claim the constrained-home boundary is satisfied." \
-              "confirm the missing or unreadable home directories exist, then rerun AIXray." "cis-l1"
+              "PTxray could not obtain trustworthy metadata for every in-scope home, so it cannot claim the constrained-home boundary is satisfied." \
+              "confirm the missing or unreadable home directories exist, then rerun PTxray." "cis-l1"
         else
           add security account_home "Account home existence and permissions" PASS low \
               "every in-scope non-system account home exists and grants no group or world write and carries no ACL" \

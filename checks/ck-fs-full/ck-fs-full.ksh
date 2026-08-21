@@ -1,5 +1,5 @@
 #!/bin/ksh
-# Generated standalone AIXray check support. READ-ONLY: captures only; no
+# Generated standalone PTxray check support. READ-ONLY: captures only; no
 # remediation, service control, network access, or durable target-host writes.
 set -u
 
@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="1.2.0"
+AIXRAY_STANDALONE_VERSION="1.3.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -58,7 +58,7 @@ function aixv {
 # it". Live mode returns false (rc=1): a real box has no concept of a missing
 # fixture, and rc=127 there genuinely means the command was not found. Must be
 # called in the PARENT shell after the probe, not inside the $(aix ...)
-# substitution. Byte-for-byte the monolith's semantics (src/aixray-aix.sh.in);
+# substitution. Byte-for-byte the monolith's semantics (src/ptxray-aix.sh.in);
 # without it here, an undefined-command rc of 127 makes the guard read false and
 # the caller launders a missing capture into NOT_APPLICABLE.
 function aix_capture_missing {
@@ -324,13 +324,29 @@ function standalone_main {
     echo "usage: $0 --json" >&2
     return 2
   fi
-  if [ -z "${AIXRAY_FIXTURES:-}" ] && [ "$(uname -s 2>/dev/null)" != "AIX" ]; then
-    echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
-    return 2
+  if [ -z "${AIXRAY_FIXTURES:-}" ]; then
+    _os=$(uname -s 2>/dev/null)
+    if [ "$_os" = "AIX" ]; then
+      :
+    elif [ "$_os" = "OS400" ] && [ "${IBMI_PROBES:-0}" = 1 ]; then
+      :
+    else
+      echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
+      return 2
+    fi
   fi
   standalone_initialize
   initialize_rc=$?
   [ "$initialize_rc" -eq 0 ] || return "$initialize_rc"
+  if [ "${IBMI_PROBES:-0}" = 1 ]; then
+    if ! ibmi_require_qsecofr; then
+      echo "$AIXRAY_TOOL requires SESSION_USER=QSECOFR and SYSTEM_USER=QSECOFR; no scan was run." >&2
+      return 2
+    fi
+  elif [ -z "${AIXRAY_FIXTURES:-}" ] && [ "${MYUID:-}" != 0 ]; then
+    echo "$AIXRAY_TOOL requires root; no scan was run." >&2
+    return 2
+  fi
   standalone_run
   run_rc=$?
   [ "$run_rc" -eq 0 ] || return 1
@@ -461,16 +477,16 @@ function checks_storage {
       add storage "fs_$M" "Filesystem $M" NOT_ASSESSED high \
           "$OBS" \
           "Filesystem use could not be assessed because $DFNOTE." \
-          "rerun 'df -g' successfully, then rerun AIXray before treating filesystem capacity as healthy."
+          "rerun 'df -g' successfully, then rerun PTxray before treating filesystem capacity as healthy."
     done
     add storage fs_other "Other filesystems" NOT_ASSESSED med \
         "$OBS" \
         "Other-filesystem use could not be assessed because $DFNOTE." \
-        "rerun 'df -g' successfully, then rerun AIXray before treating other filesystems as healthy."
+        "rerun 'df -g' successfully, then rerun PTxray before treating other filesystems as healthy."
     add storage fs_inodes "Inode usage (JFS2)" NOT_ASSESSED med \
         "$OBS" \
         "Inode use could not be assessed because $DFNOTE." \
-        "rerun 'df -g' successfully, then rerun AIXray before relying on inode headroom."
+        "rerun 'df -g' successfully, then rerun PTxray before relying on inode headroom."
   else
   for M in / /var /tmp; do
     U=$(printf '%s\n' "$DFG" | awk -v m="$M" '
@@ -484,7 +500,7 @@ function checks_storage {
       add storage "fs_$M" "Filesystem $M" NOT_ASSESSED high \
           "not assessed — no complete df -g row for $M" \
           "Filesystem use could not be assessed because df -g did not contain a complete row for $M; the capture may be incomplete or the mount may be absent." \
-          "verify 'df -g $M' returns a complete row, then rerun AIXray before relying on this filesystem assessment."
+          "verify 'df -g $M' returns a complete row, then rerun PTxray before relying on this filesystem assessment."
       continue
     fi
     UCLASS=$(printf '%s\n' "$U" | awk -v max_pct="$STOR_FACT_MAX_USED_PCT" '

@@ -1,5 +1,5 @@
 #!/bin/ksh
-# Generated standalone AIXray check support. READ-ONLY: captures only; no
+# Generated standalone PTxray check support. READ-ONLY: captures only; no
 # remediation, service control, network access, or durable target-host writes.
 set -u
 
@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="1.2.0"
+AIXRAY_STANDALONE_VERSION="1.3.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -58,7 +58,7 @@ function aixv {
 # it". Live mode returns false (rc=1): a real box has no concept of a missing
 # fixture, and rc=127 there genuinely means the command was not found. Must be
 # called in the PARENT shell after the probe, not inside the $(aix ...)
-# substitution. Byte-for-byte the monolith's semantics (src/aixray-aix.sh.in);
+# substitution. Byte-for-byte the monolith's semantics (src/ptxray-aix.sh.in);
 # without it here, an undefined-command rc of 127 makes the guard read false and
 # the caller launders a missing capture into NOT_APPLICABLE.
 function aix_capture_missing {
@@ -324,13 +324,29 @@ function standalone_main {
     echo "usage: $0 --json" >&2
     return 2
   fi
-  if [ -z "${AIXRAY_FIXTURES:-}" ] && [ "$(uname -s 2>/dev/null)" != "AIX" ]; then
-    echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
-    return 2
+  if [ -z "${AIXRAY_FIXTURES:-}" ]; then
+    _os=$(uname -s 2>/dev/null)
+    if [ "$_os" = "AIX" ]; then
+      :
+    elif [ "$_os" = "OS400" ] && [ "${IBMI_PROBES:-0}" = 1 ]; then
+      :
+    else
+      echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
+      return 2
+    fi
   fi
   standalone_initialize
   initialize_rc=$?
   [ "$initialize_rc" -eq 0 ] || return "$initialize_rc"
+  if [ "${IBMI_PROBES:-0}" = 1 ]; then
+    if ! ibmi_require_qsecofr; then
+      echo "$AIXRAY_TOOL requires SESSION_USER=QSECOFR and SYSTEM_USER=QSECOFR; no scan was run." >&2
+      return 2
+    fi
+  elif [ -z "${AIXRAY_FIXTURES:-}" ] && [ "${MYUID:-}" != 0 ]; then
+    echo "$AIXRAY_TOOL requires root; no scan was run." >&2
+    return 2
+  fi
   standalone_run
   run_rc=$?
   [ "$run_rc" -eq 0 ] || return 1
@@ -375,17 +391,17 @@ _AIXRAY_SESSION_KEYS=""
     add security net_icmpaddressmask "ICMP address mask reply" NOT_ASSESSED med \
         "not assessed — no -o icmpaddressmask capture failed (rc=$ICMPAM_RC)" \
         "The 'no' tunable subsystem did not return the icmpaddressmask value. On AIX 7.x this is unexpected — verify the command and rerun." \
-        "run 'no -o icmpaddressmask' manually and verify the tunable is supported before rerunning AIXray." "cis-l1"
+        "run 'no -o icmpaddressmask' manually and verify the tunable is supported before rerunning PTxray." "cis-l1"
   elif [ -z "$ICMPAM" ]; then
     add security net_icmpaddressmask "ICMP address mask reply" NOT_ASSESSED med \
         "not assessed — no -o icmpaddressmask capture empty (rc=0)" \
         "The tunable returned no output. This suggests icmpaddressmask is not present on this AIX release or the output was empty." \
-        "run 'no -o icmpaddressmask' manually and inspect the returned value before rerunning AIXray." "cis-l1"
+        "run 'no -o icmpaddressmask' manually and inspect the returned value before rerunning PTxray." "cis-l1"
   elif [ "$ICMPAM_SHAPE" -eq 0 ] || [ -z "$ICMPAM_VAL" ]; then
     add security net_icmpaddressmask "ICMP address mask reply" NOT_ASSESSED med \
         "not assessed — no -o icmpaddressmask capture unparseable (rc=0)" \
         "The tunable returned output that could not be parsed as 'icmpaddressmask = <numeric value>'. The line shape does not evidence the expected tunable." \
-        "run 'no -o icmpaddressmask' manually and inspect the output shape before rerunning AIXray." "cis-l1"
+        "run 'no -o icmpaddressmask' manually and inspect the output shape before rerunning PTxray." "cis-l1"
   elif [ "$ICMPAM_VAL" -eq 0 ]; then
     add security net_icmpaddressmask "ICMP address mask reply" PASS low "icmpaddressmask = 0" \
         "ICMP address mask replies are disabled — the host will not disclose the local subnet mask to ICMP requests." "n/a" "cis-l1"

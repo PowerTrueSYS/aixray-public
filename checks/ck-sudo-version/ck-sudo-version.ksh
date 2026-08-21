@@ -1,5 +1,5 @@
 #!/bin/ksh
-# Generated standalone AIXray check support. READ-ONLY: captures only; no
+# Generated standalone PTxray check support. READ-ONLY: captures only; no
 # remediation, service control, network access, or durable target-host writes.
 set -u
 
@@ -9,7 +9,7 @@ export PATH
 LC_ALL=C
 export LC_ALL
 
-AIXRAY_STANDALONE_VERSION="1.2.0"
+AIXRAY_STANDALONE_VERSION="1.3.0"
 
 # aix <key> <command> [args...] — fixture-aware, read-only capture boundary.
 function aix {
@@ -58,7 +58,7 @@ function aixv {
 # it". Live mode returns false (rc=1): a real box has no concept of a missing
 # fixture, and rc=127 there genuinely means the command was not found. Must be
 # called in the PARENT shell after the probe, not inside the $(aix ...)
-# substitution. Byte-for-byte the monolith's semantics (src/aixray-aix.sh.in);
+# substitution. Byte-for-byte the monolith's semantics (src/ptxray-aix.sh.in);
 # without it here, an undefined-command rc of 127 makes the guard read false and
 # the caller launders a missing capture into NOT_APPLICABLE.
 function aix_capture_missing {
@@ -324,13 +324,29 @@ function standalone_main {
     echo "usage: $0 --json" >&2
     return 2
   fi
-  if [ -z "${AIXRAY_FIXTURES:-}" ] && [ "$(uname -s 2>/dev/null)" != "AIX" ]; then
-    echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
-    return 2
+  if [ -z "${AIXRAY_FIXTURES:-}" ]; then
+    _os=$(uname -s 2>/dev/null)
+    if [ "$_os" = "AIX" ]; then
+      :
+    elif [ "$_os" = "OS400" ] && [ "${IBMI_PROBES:-0}" = 1 ]; then
+      :
+    else
+      echo "$AIXRAY_TOOL: this standalone check runs on AIX/VIOS" >&2
+      return 2
+    fi
   fi
   standalone_initialize
   initialize_rc=$?
   [ "$initialize_rc" -eq 0 ] || return "$initialize_rc"
+  if [ "${IBMI_PROBES:-0}" = 1 ]; then
+    if ! ibmi_require_qsecofr; then
+      echo "$AIXRAY_TOOL requires SESSION_USER=QSECOFR and SYSTEM_USER=QSECOFR; no scan was run." >&2
+      return 2
+    fi
+  elif [ -z "${AIXRAY_FIXTURES:-}" ] && [ "${MYUID:-}" != 0 ]; then
+    echo "$AIXRAY_TOOL requires root; no scan was run." >&2
+    return 2
+  fi
   standalone_run
   run_rc=$?
   [ "$run_rc" -eq 0 ] || return 1
@@ -374,13 +390,13 @@ _AIXRAY_SESSION_KEYS=""
       if [ "$SU_VER_RC" -ne 0 ]; then
         add security sudo_version "sudo version currency" NOT_ASSESSED low \
           "not assessed — sudo --version probe failed (rc=$SU_VER_RC)" \
-          "AIXray could not read the installed sudo release, so it cannot judge whether the version requirement is met." \
-          "run /usr/bin/sudo --version to confirm the installed release, then rerun AIXray." "cis-l2"
+          "PTxray could not read the installed sudo release, so it cannot judge whether the version requirement is met." \
+          "run /usr/bin/sudo --version to confirm the installed release, then rerun PTxray." "cis-l2"
       elif [ -z "$SU_VER_RAW" ]; then
         add security sudo_version "sudo version currency" NOT_ASSESSED low \
           "not assessed — sudo --version returned no version text (rc=0)" \
-          "AIXray obtained no version line from the sudo binary, so the installed release is unknown." \
-          "run /usr/bin/sudo --version to confirm the installed release, then rerun AIXray." "cis-l2"
+          "PTxray obtained no version line from the sudo binary, so the installed release is unknown." \
+          "run /usr/bin/sudo --version to confirm the installed release, then rerun PTxray." "cis-l2"
       else
         SU_VER_STATE=$(printf '%s\n' "$SU_VER_RAW" | awk '
           {
@@ -442,13 +458,13 @@ _AIXRAY_SESSION_KEYS=""
             add security sudo_version "sudo version currency" FAIL high \
               "installed sudo $SU_VER_DETAIL is older than the required release" \
               "The installed sudo command reports a release below the required baseline, so defects corrected in later releases are not covered by this build." \
-              "update the sudo package to the required release or later, then rerun AIXray." "cis-l2"
+              "update the sudo package to the required release or later, then rerun PTxray." "cis-l2"
             ;;
           *)
             add security sudo_version "sudo version currency" NOT_ASSESSED low \
               "not assessed — sudo --version output unparseable (rc=0)" \
-              "AIXray found no recognizable version line in the sudo --version output, so the installed release is unknown." \
-              "run /usr/bin/sudo --version to confirm the installed release, then rerun AIXray." "cis-l2"
+              "PTxray found no recognizable version line in the sudo --version output, so the installed release is unknown." \
+              "run /usr/bin/sudo --version to confirm the installed release, then rerun PTxray." "cis-l2"
             ;;
         esac
       fi
@@ -456,8 +472,8 @@ _AIXRAY_SESSION_KEYS=""
     *)
       add security sudo_version "sudo version currency" NOT_ASSESSED low \
         "not assessed — sudo presence probe failed (rc=$SU_BIN_RC)" \
-        "AIXray could not determine whether the sudo command is installed, so the version requirement is unassessed." \
-        "confirm /usr/bin/sudo is accessible and readable, then rerun AIXray." "cis-l2"
+        "PTxray could not determine whether the sudo command is installed, so the version requirement is unassessed." \
+        "confirm /usr/bin/sudo is accessible and readable, then rerun PTxray." "cis-l2"
       ;;
   esac
 }
