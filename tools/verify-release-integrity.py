@@ -12,10 +12,10 @@ import sys
 from typing import Any
 
 
-SCANNER_PATH = "aixray-aix.sh"
-SITE_SCANNER_PATH = "site/aixray-aix.sh"
-REVIEW_HELPER_PATH = "aixray-review-pack.sh"
-REVIEW_VALIDATOR_PATH = "aixray-review-validate.awk"
+SCANNER_PATH = "ptxray-aix.sh"
+SITE_SCANNER_PATH = "site/ptxray-aix.sh"
+REVIEW_HELPER_PATH = "ptxray-review-pack.sh"
+REVIEW_VALIDATOR_PATH = "ptxray-review-validate.awk"
 CHECKSUM_MANIFEST_PATH = "SHA256SUMS"
 CURRENT_PAYLOAD_ARTIFACTS = (
     SCANNER_PATH,

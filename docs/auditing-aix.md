@@ -87,7 +87,7 @@ What makes it safe to run on a production system you care about:
 - **One inspectable file, no install.** It is a single ksh88-compatible shell script that runs under the AIX `/bin/sh` you already have — no bash, no Python, no package installation, no agent left behind.
 - **It refuses to guess.** When evidence is missing, unreadable, or ambiguous, PTxray reports `NOT_ASSESSED` rather than quietly converting it to a `PASS`. An audit tool that invents reassurance is worse than no tool; PTxray is honest about what it could and could not see.
 
-Because it is open source, you do not have to take any of that on faith — the source, the per-check manifests, and the SHA-256 hashes are all public on [GitHub](https://github.com/PowerTrueSYS/ptxray-public), so a cautious admin can read exactly what runs before it runs.
+Because it is open source, you do not have to take any of that on faith — the source, the per-check manifests, and the SHA-256 hashes are all public on [GitHub](https://github.com/PowerTrueSYS/aixray-public), so a cautious admin can read exactly what runs before it runs.
 
 Download it, review it, copy it to your AIX host, and run:
 

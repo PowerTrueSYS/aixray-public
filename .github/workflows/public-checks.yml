@@ -31,9 +31,9 @@ jobs:
         run: sh tests/run-tests.sh
       - name: Enforce zero-egress assessment and review surface
         run: |
-          set -- aixray-aix.sh aixray-review-pack.sh checks/*/*.ksh
-          if [ -f aixray-review-validate.awk ]; then
-            set -- "$@" aixray-review-validate.awk
+          set -- ptxray-aix.sh ptxray-review-pack.sh checks/*/*.ksh
+          if [ -f ptxray-review-validate.awk ]; then
+            set -- "$@" ptxray-review-validate.awk
           fi
           sh tools/ci/egress-lint.sh "$@"
       - name: Reject redistributed IBM delivery data

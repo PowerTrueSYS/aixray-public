@@ -266,15 +266,16 @@ class PublicFunnelTests(unittest.TestCase):
         for relative in (
             "README.md",
             "catalog.json",
-            "aixray-aix.sh",
-            "aixray-review-pack.sh",
-            "aixray-review-validate.awk",
+            "ptxray-aix.sh",
+            "ptxray-ibmi.sh",
+            "ptxray-review-pack.sh",
+            "ptxray-review-validate.awk",
             "SHA256SUMS",
-            "site/aixray-aix.sh",
+            "site/ptxray-aix.sh",
         ):
             source = ROOT / relative
             if not source.exists() and relative in (
-                "aixray-review-validate.awk",
+                "ptxray-review-validate.awk",
                 "SHA256SUMS",
             ):
                 continue
@@ -297,9 +298,10 @@ class PublicFunnelTests(unittest.TestCase):
             (candidate / "catalog.json").read_text(encoding="utf-8")
         )
         artifacts = [
-            "aixray-aix.sh",
-            "aixray-review-pack.sh",
-            "aixray-review-validate.awk",
+            "ptxray-aix.sh",
+            "ptxray-ibmi.sh",
+            "ptxray-review-pack.sh",
+            "ptxray-review-validate.awk",
         ] + [entry["artifact"] for entry in catalog["checks"]]
         overrides = overrides or {}
         (candidate / "SHA256SUMS").write_text(
@@ -384,14 +386,14 @@ class PublicFunnelTests(unittest.TestCase):
         ) as temporary:
             candidate = Path(temporary)
             self.copy_verification_inputs(candidate)
-            (candidate / "aixray-review-pack.sh").unlink()
+            (candidate / "ptxray-review-pack.sh").unlink()
             result = self.run_verification_block(candidate)
 
         combined = result.stdout + result.stderr
         self.assertNotEqual(0, result.returncode, combined)
         self.assertIn(
             "artifact verification failed: missing required file "
-            "aixray-review-pack.sh",
+            "ptxray-review-pack.sh",
             combined,
         )
         self.assertIn(
@@ -407,7 +409,7 @@ class PublicFunnelTests(unittest.TestCase):
         ) as temporary:
             candidate = Path(temporary)
             self.copy_verification_inputs(candidate)
-            with (candidate / "site" / "aixray-aix.sh").open("ab") as stream:
+            with (candidate / "site" / "ptxray-aix.sh").open("ab") as stream:
                 stream.write(b"\n# deliberately different test bytes\n")
             result = self.run_verification_block(candidate)
 
@@ -415,7 +417,7 @@ class PublicFunnelTests(unittest.TestCase):
         self.assertNotEqual(0, result.returncode, combined)
         self.assertIn(
             "artifact verification failed: byte mismatch between "
-            "aixray-aix.sh and site/aixray-aix.sh",
+            "ptxray-aix.sh and site/ptxray-aix.sh",
             combined,
         )
         self.assertIn(
@@ -439,11 +441,11 @@ class PublicFunnelTests(unittest.TestCase):
                 json.dumps(catalog, indent=2) + "\n",
                 encoding="utf-8",
             )
-            validator = candidate / "aixray-review-validate.awk"
+            validator = candidate / "ptxray-review-validate.awk"
             validator.write_text('BEGIN { print "validated" }\n', encoding="utf-8")
             self.write_release_checksums(
                 candidate,
-                {"aixray-review-validate.awk": "0" * 64},
+                {"ptxray-review-validate.awk": "0" * 64},
             )
 
             result = self.run_verification_block(candidate)
@@ -451,7 +453,7 @@ class PublicFunnelTests(unittest.TestCase):
         combined = result.stdout + result.stderr
         self.assertNotEqual(0, result.returncode, combined)
         self.assertIn(
-            "SHA256SUMS digest mismatch for aixray-review-validate.awk",
+            "SHA256SUMS digest mismatch for ptxray-review-validate.awk",
             combined,
         )
         self.assertNotIn("Traceback", combined)
@@ -470,7 +472,7 @@ class PublicFunnelTests(unittest.TestCase):
                 json.dumps(catalog, indent=2) + "\n",
                 encoding="utf-8",
             )
-            validator = candidate / "aixray-review-validate.awk"
+            validator = candidate / "ptxray-review-validate.awk"
             validator.write_text('BEGIN { print "validated" }\n', encoding="utf-8")
             self.write_release_checksums(candidate)
             readme_path = candidate / "README.md"
@@ -994,7 +996,7 @@ class PublicFunnelTests(unittest.TestCase):
     def test_readme_documents_safe_send_limits_and_hashes(self) -> None:
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
         normalized = " ".join(readme.lower().split())
-        self.assertIn("aixray-review-pack.sh", readme)
+        self.assertIn("ptxray-review-pack.sh", readme)
         self.assertIn("aixray-review-", readme)
         self.assertIn("aixray-local-key-", readme)
         self.assertIn("never leaves this machine", normalized)
@@ -1009,7 +1011,7 @@ class PublicFunnelTests(unittest.TestCase):
                 self.assertIn(sha256(REVIEW_HELPER), readme)
         else:
             self.assertIn("SHA256SUMS", readme)
-            self.assertTrue((ROOT / "aixray-review-validate.awk").is_file())
+            self.assertTrue((ROOT / "ptxray-review-validate.awk").is_file())
             self.assertTrue((ROOT / "SHA256SUMS").is_file())
             self.assertNotRegex(readme, r"\b[0-9A-Fa-f]{64}\b")
 
@@ -1632,11 +1634,11 @@ START_HERE_ITEMS=""
         self.assertIn("python3 tools/sync-release-shape.py --check", workflow)
         self.assertIn("sh tests/run-tests.sh", workflow)
         self.assertIn(
-            "set -- aixray-aix.sh aixray-review-pack.sh checks/*/*.ksh",
+            "set -- ptxray-aix.sh ptxray-review-pack.sh checks/*/*.ksh",
             workflow,
         )
-        self.assertIn("if [ -f aixray-review-validate.awk ]; then", workflow)
-        self.assertIn('set -- "$@" aixray-review-validate.awk', workflow)
+        self.assertIn("if [ -f ptxray-review-validate.awk ]; then", workflow)
+        self.assertIn('set -- "$@" ptxray-review-validate.awk', workflow)
         self.assertIn('sh tools/ci/egress-lint.sh "$@"', workflow)
         self.assertIn(
             "python3 tools/check-no-ibm-redistribution.py",

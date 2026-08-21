@@ -3,10 +3,10 @@
 > PTxray is an open-source, read-only IBM AIX and IBM i posture assessment. Version 1.3.0 runs under the ksh88-compatible AIX /bin/sh runtime (and IBM i PASE), makes zero network calls during assessment execution, and uses NOT_ASSESSED when evidence is unavailable rather than inventing a result.
 
 Canonical page: https://powertruesystems.com/aixray
-Source repository: https://github.com/PowerTrueSYS/ptxray-public
+Source repository: https://github.com/PowerTrueSYS/aixray-public
 Download: https://powertruesystems.com/aixray/
 Audit guide: https://powertruesystems.com/aixray/docs/auditing-aix (source: docs/auditing-aix.md)
-Catalog: https://github.com/PowerTrueSYS/ptxray-public/blob/master/catalog.json
+Catalog: https://github.com/PowerTrueSYS/aixray-public/blob/master/catalog.json
 Version: 1.3.0
 License: Apache-2.0
 License text: https://www.apache.org/licenses/LICENSE-2.0
@@ -22,7 +22,7 @@ License text: https://www.apache.org/licenses/LICENSE-2.0
 ## Verifiable facts
 
 - ptxray-aix.sh is the complete v1 AIX tool and declares version 1.3.0; ptxray-ibmi.sh is the IBM i edition.
-- checks/ contains 387 standalone ksh tools. Every tool is paired with a manifest.json.
+- checks/ contains 388 standalone ksh tools. Every tool is paired with a manifest.json.
 - catalog.json is generated from those manifests, declares their count, and adds each artifact's SHA-256 digest.
 - Every public manifest declares read_only=true and lists its command surface.
 - The assessment is read-only with respect to system configuration. Requested reports and documented temporary scratch data are local writes.

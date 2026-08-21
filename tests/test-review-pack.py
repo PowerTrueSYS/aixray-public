@@ -13,9 +13,9 @@ import unittest
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SCANNER = ROOT / "aixray-aix.sh"
-REVIEW_HELPER = ROOT / "aixray-review-pack.sh"
-REVIEW_VALIDATOR = ROOT / "aixray-review-validate.awk"
+SCANNER = ROOT / "ptxray-aix.sh"
+REVIEW_HELPER = ROOT / "ptxray-review-pack.sh"
+REVIEW_VALIDATOR = ROOT / "ptxray-review-validate.awk"
 FIXTURE_ROOT = os.environ.get("AIXRAY_FIXTURE_ROOT")
 FIXTURE = Path(FIXTURE_ROOT) if FIXTURE_ROOT else None
 REVIEW_FIXTURES = ROOT / "tests" / "fixtures" / "review-pack"
@@ -43,8 +43,8 @@ def profile_report() -> str:
 <meta name="aixray-privacy-schema" content="1">
 <meta name="aixray-report-date" content="2026-07-20">
 <meta name="aixray-report-host" content="prod-aix01">
-<title>AIXray — prod-aix01</title>
-<style>@page{{@top-left{{content:"AIXray · prod-aix01"}}@top-right{{content:"2026-07-20"}}}}</style>
+<title>PTxray — prod-aix01</title>
+<style>@page{{@top-left{{content:"PTxray · prod-aix01"}}@top-right{{content:"2026-07-20"}}}}</style>
 </head><body>
 <div class="meta" data-aixray-field="observed" data-aixray-location="report:host"><b>Host:</b> prod-aix01; hostname=prod-aix01; Node name: node-west-02; LPAR name: finance-lpar-7</div>
 <table><tbody>
@@ -561,7 +561,7 @@ class ReviewPackTests(unittest.TestCase):
                 # both cases below (absent marker, duplicated marker) must still
                 # be rejected before any artifact is written.
                 self.assertIn(
-                    "expected AIXray report version 1 exactly once",
+                    "expected PTxray report version 1 exactly once",
                     result.stderr,
                 )
                 self.assertEqual([report], sorted(directory.iterdir()))
