@@ -17,6 +17,7 @@ TAG = "v0.2.0"
 VERSION = "0.2.0"
 PAYLOAD_ARTIFACTS = (
     "ptxray-aix.sh",
+    "ptxray-ibmi.sh",
     "ptxray-review-pack.sh",
     "ptxray-review-validate.awk",
 )
@@ -48,6 +49,12 @@ class ReleaseIntegrityTests(unittest.TestCase):
             f'AIXRAY_REVIEW_PACK_VERSION="{VERSION}"\n'
             "exit 0\n"
         ).encode()
+        ibmi = (
+            "#!/bin/sh\n"
+            f"PTXRAY_VERSION={VERSION}\n"
+            "# CIS IBM i V7R5M0/V7R4M0 Benchmark v2.1.0\n"
+            "exit 0\n"
+        ).encode()
         validator = b'BEGIN { print "validated" }\n'
         check = (
             "#!/bin/ksh\n"
@@ -57,12 +64,14 @@ class ReleaseIntegrityTests(unittest.TestCase):
 
         (self.tree / "ptxray-aix.sh").write_bytes(scanner)
         (self.tree / "site" / "ptxray-aix.sh").write_bytes(scanner)
+        (self.tree / "ptxray-ibmi.sh").write_bytes(ibmi)
         (self.tree / "ptxray-review-pack.sh").write_bytes(review)
         (self.tree / "ptxray-review-validate.awk").write_bytes(validator)
         (
             self.tree / "checks" / "ck-example" / "ck-example.ksh"
         ).write_bytes(check)
         (self.assets / "ptxray-aix.sh").write_bytes(scanner)
+        (self.assets / "ptxray-ibmi.sh").write_bytes(ibmi)
         (self.assets / "ptxray-review-pack.sh").write_bytes(review)
         (self.assets / "ptxray-review-validate.awk").write_bytes(validator)
         self.write_catalog()
@@ -313,6 +322,9 @@ class ReleaseIntegrityTests(unittest.TestCase):
         for directory in (self.tree, self.assets):
             (directory / "ptxray-aix.sh").write_bytes(scanner)
             (directory / "ptxray-review-pack.sh").write_bytes(review)
+            # The immutable v0.1.0 surface predates the IBM i edition, the
+            # validator, and SHA256SUMS; none of them belong in that release.
+            (directory / "ptxray-ibmi.sh").unlink()
             (directory / "ptxray-review-validate.awk").unlink()
             (directory / "SHA256SUMS").unlink()
         (self.tree / "site" / "ptxray-aix.sh").write_bytes(scanner)

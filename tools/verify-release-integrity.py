@@ -13,12 +13,14 @@ from typing import Any
 
 
 SCANNER_PATH = "ptxray-aix.sh"
+IBMI_SCANNER_PATH = "ptxray-ibmi.sh"
 SITE_SCANNER_PATH = "site/ptxray-aix.sh"
 REVIEW_HELPER_PATH = "ptxray-review-pack.sh"
 REVIEW_VALIDATOR_PATH = "ptxray-review-validate.awk"
 CHECKSUM_MANIFEST_PATH = "SHA256SUMS"
 CURRENT_PAYLOAD_ARTIFACTS = (
     SCANNER_PATH,
+    IBMI_SCANNER_PATH,
     REVIEW_HELPER_PATH,
     REVIEW_VALIDATOR_PATH,
 )

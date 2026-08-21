@@ -3,10 +3,10 @@
 > PTxray is an open-source, read-only IBM AIX and IBM i posture assessment. Version 1.3.0 runs under the ksh88-compatible AIX /bin/sh runtime (and IBM i PASE), makes zero network calls during assessment execution, and uses NOT_ASSESSED when evidence is unavailable rather than inventing a result.
 
 Canonical page: https://powertruesystems.com/aixray
-Source repository: https://github.com/PowerTrueSYS/aixray-public
+Source repository: https://github.com/PowerTrueSYS/ptxray-public
 Download: https://powertruesystems.com/aixray/
 Audit guide: https://powertruesystems.com/aixray/docs/auditing-aix (source: docs/auditing-aix.md)
-Catalog: https://github.com/PowerTrueSYS/aixray-public/blob/master/catalog.json
+Catalog: https://github.com/PowerTrueSYS/ptxray-public/blob/master/catalog.json
 Version: 1.3.0
 License: Apache-2.0
 License text: https://www.apache.org/licenses/LICENSE-2.0
@@ -33,7 +33,7 @@ License text: https://www.apache.org/licenses/LICENSE-2.0
 
 - DISA STIG for IBM AIX 7.x coverage is partial: 66 distinct rule V-IDs receive an engine verdict. This count is not a single-release coverage fraction. The count is the distinct V-IDs in the four live rule tables that the security pass evaluates. V-215399 covers the clean_partial_conns tunable verdict but not the rule's package-commit condition; deferred V-215429 is not counted.
 - PTxray has 260 CIS L1-aligned checks across NFS exports, password hashing, file ownership and permissions, and network tunables, plus login policy, auditing, cron and at, home directories, system accounts and the r-command services. They resolve to 209 distinct Level 1 control numbers of the 212 in CIS IBM AIX 7 Benchmark v1.2.0; 5.1.4, 5.1.5 and 7.1 have no mapping and are not claimed. This is a numeric alignment cross-check, not a completeness claim; unavailable evidence does not produce a numeric verdict, it produces NOT_ASSESSED.
-- The IBM i edition aligns to the CIS IBM i v2.1.0 benchmark on IBM i 7.4 and 7.5; other releases report release-independent evidence without borrowed control numbers. There is no DISA STIG for IBM i.
+- The IBM i edition (ptxray-ibmi.sh) is graded against the CIS IBM i V7R4M0 / V7R5M0 Benchmark v2.1.0 on IBM i 7.4 and 7.5. On IBM i 7.5, 76 of 89 CIS Level 1 controls receive an automated verdict; on IBM i 7.4, 73 of 88. Uncovered Level 1 controls are CIS-manual or not-yet-implemented and are disclosed by the scanner rather than silently dropped (registry as_of 2026-08-19). There is no DISA STIG for IBM i. Download it from https://github.com/PowerTrueSYS/ptxray-public/releases/latest/download/ptxray-ibmi.sh and verify it against SHA256SUMS; it ships as a single self-contained monolith.
 
 ## Language guardrails
 

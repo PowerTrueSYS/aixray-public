@@ -15,8 +15,8 @@ Do not run it first on a production AIX/VIOS target.
 ## Pin the public revision
 
 ```sh
-git clone https://github.com/PowerTrueSYS/aixray-public
-cd aixray-public
+git clone https://github.com/PowerTrueSYS/ptxray-public
+cd ptxray-public
 git rev-parse HEAD
 git status --short
 ```
@@ -34,7 +34,7 @@ candidate revision. Replace `v0.1.0` with the tag being prepared:
 python3 tools/verify-release-integrity.py --tag v0.1.0
 ```
 
-For `v1.0.0` and later, place exactly `ptxray-aix.sh`,
+For `v1.0.0` and later, place exactly `ptxray-aix.sh`, `ptxray-ibmi.sh`,
 `ptxray-review-pack.sh`, `ptxray-review-validate.awk`, and `SHA256SUMS` in a
 separate directory and compare them with the same candidate tree. The immutable
 `v0.1.0` release retains its historical two-asset contract (`ptxray-aix.sh` and

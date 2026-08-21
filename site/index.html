@@ -24,7 +24,7 @@
   "alternateName": "PTxray AIX and VIOS posture assessment",
   "description": "An open-source, read-only IBM AIX and VIOS posture assessment delivered as a single ksh88-compatible shell file with zero egress during assessment execution and explicit NOT_ASSESSED results when evidence is unavailable.",
   "url": "https://powertruesystems.com/aixray",
-  "codeRepository": "https://github.com/PowerTrueSYS/aixray-public",
+  "codeRepository": "https://github.com/PowerTrueSYS/ptxray-public",
   "downloadUrl": "https://powertruesystems.com/aixray/",
   "softwareVersion": "1.3.0",
   "applicationCategory": "System administration and security assessment",
@@ -310,7 +310,7 @@
     <div class="wrap">
       <nav aria-label="Primary">
         <a class="brand" href="https://powertruesystems.com">Power<span>True</span> Systems</a>
-        <a class="nav-link" href="https://github.com/PowerTrueSYS/aixray-public">Inspect the source</a>
+        <a class="nav-link" href="https://github.com/PowerTrueSYS/ptxray-public">Inspect the source</a>
       </nav>
       <div class="hero-grid">
         <div>
@@ -377,14 +377,15 @@
           <section class="panel" aria-labelledby="get-title">
             <h3 id="get-title">Get PTxray v1</h3>
             <p>One inspectable ksh88 file. Download it straight from the public GitHub release, review the source, then copy it to an AIX, IBM i, or VIOS host.</p>
-            <p><a class="button" href="https://github.com/PowerTrueSYS/aixray-public/releases/latest/download/aixray-aix.sh">Download aixray-aix.sh</a></p>
-            <p class="fine">Version 1.3.0 · Apache-2.0. <a class="text-link" href="https://github.com/PowerTrueSYS/aixray-public">Read every line of the source on GitHub</a> and verify the published SHA-256 before you run it.</p>
+            <p><a class="button" href="https://github.com/PowerTrueSYS/ptxray-public/releases/latest/download/ptxray-aix.sh">Download ptxray-aix.sh</a></p>
+            <p class="fine">Version 1.3.0 · Apache-2.0. <a class="text-link" href="https://github.com/PowerTrueSYS/ptxray-public">Read every line of the source on GitHub</a> and verify the published SHA-256 before you run it.</p>
+            <p class="fine">On IBM i 7.4 / 7.5? Download the single self-contained monolith <a class="text-link" href="https://github.com/PowerTrueSYS/ptxray-public/releases/latest/download/ptxray-ibmi.sh">ptxray-ibmi.sh</a>, graded against the CIS IBM i V7R4M0 / V7R5M0 Benchmark v2.1.0. On 7.5, 76 of 89 CIS Level 1 controls receive an automated verdict; on 7.4, 73 of 88. There is no DISA STIG for IBM i. Verify it against SHA256SUMS before you run it.</p>
             <ul class="mini-proof">
               <li>No email, no gate — read before you run</li>
               <li>Read-only on system configuration</li>
               <li>Zero network egress during the assessment</li>
             </ul>
-            <p class="soft-cta">Make it better: <a class="text-link" href="https://github.com/PowerTrueSYS/aixray-public">star the repo</a>, <a class="text-link" href="https://github.com/PowerTrueSYS/aixray-public/issues">suggest a check</a>, or contribute one.</p>
+            <p class="soft-cta">Make it better: <a class="text-link" href="https://github.com/PowerTrueSYS/ptxray-public">star the repo</a>, <a class="text-link" href="https://github.com/PowerTrueSYS/ptxray-public/issues">suggest a check</a>, or contribute one.</p>
             <p class="teaser">Coming soon: run PTxray straight from your AI agent (MCP).</p>
             <form class="notify" action="https://formsubmit.co/hello@powertruesystems.com" method="POST">
               <input type="hidden" name="_subject" value="PTxray — notify me when new checks ship">
@@ -426,7 +427,7 @@
           <p class="eyebrow">Trust through inspection</p>
           <h2 id="inspect-title">The claims are in the files.</h2>
           <p>The repository includes the assembled v1 script, 388 standalone checks with adjacent command manifests, and a catalog with SHA-256 hashes. Read the exact command surface before anything runs.</p>
-          <a class="text-link" href="https://github.com/PowerTrueSYS/aixray-public">Inspect PTxray on GitHub →</a>
+          <a class="text-link" href="https://github.com/PowerTrueSYS/ptxray-public">Inspect PTxray on GitHub →</a>
         </div>
         <pre aria-label="PTxray example commands"><code># easiest run — writes a named HTML report
 chmod 700 aixray-aix.sh

@@ -31,7 +31,7 @@ jobs:
         run: sh tests/run-tests.sh
       - name: Enforce zero-egress assessment and review surface
         run: |
-          set -- ptxray-aix.sh ptxray-review-pack.sh checks/*/*.ksh
+          set -- ptxray-aix.sh ptxray-ibmi.sh ptxray-review-pack.sh checks/*/*.ksh
           if [ -f ptxray-review-validate.awk ]; then
             set -- "$@" ptxray-review-validate.awk
           fi

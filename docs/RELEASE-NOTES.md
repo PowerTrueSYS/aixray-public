@@ -9,9 +9,13 @@ edition alongside the existing AIX assessment.
 ### IBM i edition
 
 `ptxray-ibmi.sh` is a new read-only IBM i assessment that runs from PASE
-(`/QOpenSys/usr/bin/ksh`). On IBM i 7.4 and 7.5 it aligns to the CIS IBM i
-v2.1.0 benchmark; on other releases it reports the release-independent evidence
-it can assess and omits borrowed control numbers. Like the AIX edition it
+(`/QOpenSys/usr/bin/ksh`). On IBM i 7.4 and 7.5 it is graded against the CIS
+IBM i V7R4M0 / V7R5M0 Benchmark v2.1.0: 76 of 89 CIS Level 1 controls receive
+an automated verdict on 7.5, and 73 of 88 on 7.4. Uncovered Level 1 controls
+are CIS-manual or not-yet-implemented and are disclosed by the scanner rather
+than dropped (registry as_of 2026-08-19); on other releases it reports the
+release-independent evidence it can assess and omits borrowed control numbers.
+Like the AIX edition it
 changes nothing, installs nothing, and makes no network calls during
 assessment, and it reports `NOT_ASSESSED` when evidence is unavailable rather
 than inventing a result. There is no DISA STIG for IBM i, so none is claimed.

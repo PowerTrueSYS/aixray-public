@@ -24,6 +24,7 @@ import urllib.request
 ROOT = Path(__file__).resolve().parents[1]
 SITE = ROOT / "site"
 SCANNER = ROOT / "ptxray-aix.sh"
+SCANNER_IBMI = ROOT / "ptxray-ibmi.sh"
 REVIEW_HELPER = ROOT / "ptxray-review-pack.sh"
 FIXTURE_ROOT = os.environ.get("AIXRAY_FIXTURE_ROOT")
 FIXTURE = Path(FIXTURE_ROOT) if FIXTURE_ROOT else None
@@ -36,7 +37,10 @@ VERIFY_GUIDE = ROOT / "docs" / "VERIFY.md"
 RELEASE_NOTES = ROOT / "docs" / "RELEASE-NOTES.md"
 DOWNLOAD_PAGE_URL = "https://powertruesystems.com/aixray/"
 RELEASE_ASSET_URL = (
-    "https://github.com/PowerTrueSYS/aixray-public/releases/latest/download/aixray-aix.sh"
+    "https://github.com/PowerTrueSYS/ptxray-public/releases/latest/download/ptxray-aix.sh"
+)
+RELEASE_ASSET_URL_IBMI = (
+    "https://github.com/PowerTrueSYS/ptxray-public/releases/latest/download/ptxray-ibmi.sh"
 )
 # Tracks the shipped artifact, not the v0.1.0 one this file was written
 # against. Private commit 93c14326 ("remove review CTA response-time promise")
@@ -553,7 +557,7 @@ class PublicFunnelTests(unittest.TestCase):
         )
 
         # A soft, non-blocking call to action points at the repo and its issues.
-        self.assertIn("https://github.com/PowerTrueSYS/aixray-public/issues", site_html)
+        self.assertIn("https://github.com/PowerTrueSYS/ptxray-public/issues", site_html)
 
         # The optional notify field exists and is never required to download.
         notify = re.search(
@@ -584,6 +588,78 @@ class PublicFunnelTests(unittest.TestCase):
         retired_headline = "".join(("Ga", "ted download"))
         self.assertNotIn(retired_headline, readme)
         self.assertNotIn(retired_headline, llms)
+
+    def test_ibmi_asset_is_advertised_with_download_and_hashes(self) -> None:
+        # The IBM i monolith ships as its own downloadable release asset. The
+        # public surface must advertise it directly and point at SHA256SUMS for
+        # verification, exactly as the AIX scanner is advertised.
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        site_html = (SITE / "index.html").read_text(encoding="utf-8")
+        for surface, text in (("README.md", readme), ("site/index.html", site_html)):
+            with self.subTest(surface=surface, contract="ibmi download link"):
+                self.assertIn(RELEASE_ASSET_URL_IBMI, text)
+            with self.subTest(surface=surface, contract="ibmi hash verification"):
+                self.assertIn("SHA256SUMS", text)
+            with self.subTest(surface=surface, contract="ibmi scanner named"):
+                self.assertIn("ptxray-ibmi.sh", text)
+
+    def test_ibmi_coverage_claim_is_sourced_and_bounded(self) -> None:
+        # Only the registry-sourced numbers may be stated, and the coverage
+        # claim must be release-scoped to 7.4/7.5. The benchmark identity is
+        # BOUND to the shipped binary: its component strings must be present in
+        # the real ptxray-ibmi.sh, so the claim is anchored to the bytes that
+        # ship, not merely pinned in prose.
+        self.assertTrue(
+            SCANNER_IBMI.is_file(),
+            "the overlaid IBM i scanner ptxray-ibmi.sh is missing",
+        )
+        ibmi_source = SCANNER_IBMI.read_text(encoding="utf-8")
+        for token in ("CIS IBM i", "V7R4M0", "V7R5M0", "Benchmark v2.1.0"):
+            with self.subTest(bound_token=token):
+                self.assertIn(
+                    token,
+                    ibmi_source,
+                    f"benchmark token {token!r} is not embedded in ptxray-ibmi.sh",
+                )
+
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        llms = (ROOT / "llms.txt").read_text(encoding="utf-8")
+        jsonld = (ROOT / "aixray.jsonld").read_text(encoding="utf-8")
+        # The exact CIS Level 1 coverage counts are computed by the scanner at
+        # run time from the registry, not embedded as literals, so they are
+        # pinned here as registry-sourced constants (as_of 2026-08-19) and
+        # asserted against the customer copy. These are the ONLY IBM i numbers
+        # any surface may state.
+        for surface, text in (
+            ("README.md", readme),
+            ("llms.txt", llms),
+            ("aixray.jsonld", jsonld),
+        ):
+            for fragment in (
+                "CIS IBM i V7R4M0 / V7R5M0 Benchmark v2.1.0",
+                "76 of 89",
+                "73 of 88",
+            ):
+                with self.subTest(surface=surface, fragment=fragment):
+                    self.assertIn(
+                        fragment,
+                        text,
+                        f"{surface} is missing sourced IBM i claim: {fragment}",
+                    )
+            with self.subTest(surface=surface, contract="ibmi releases"):
+                self.assertRegex(text, r"7\.4 and 7\.5|7\.4/7\.5|7\.5.*7\.4")
+            with self.subTest(surface=surface, contract="no ibmi stig"):
+                self.assertRegex(text, r"(?i)no DISA STIG for IBM i")
+            with self.subTest(surface=surface, contract="no unsourced ibmi count"):
+                # Guard against any IBM i coverage number other than the two
+                # sourced pairs. Every "N of M" claim in the copy must be one of
+                # the sanctioned pairs.
+                for pair in re.findall(r"\b\d{2,} of \d{2,}\b", text):
+                    self.assertIn(
+                        pair,
+                        {"76 of 89", "73 of 88"},
+                        f"{surface} states an unsourced coverage pair: {pair}",
+                    )
 
     def test_license_is_apache_2_0(self) -> None:
         catalog = json.loads((ROOT / "catalog.json").read_text())
@@ -1634,7 +1710,8 @@ START_HERE_ITEMS=""
         self.assertIn("python3 tools/sync-release-shape.py --check", workflow)
         self.assertIn("sh tests/run-tests.sh", workflow)
         self.assertIn(
-            "set -- ptxray-aix.sh ptxray-review-pack.sh checks/*/*.ksh",
+            "set -- ptxray-aix.sh ptxray-ibmi.sh ptxray-review-pack.sh "
+            "checks/*/*.ksh",
             workflow,
         )
         self.assertIn("if [ -f ptxray-review-validate.awk ]; then", workflow)

@@ -6,7 +6,7 @@
   "alternateName": "PTxray AIX and IBM i posture assessment",
   "description": "An open-source, read-only IBM AIX and IBM i posture assessment delivered as a single ksh88-compatible shell file with zero egress during assessment execution and explicit NOT_ASSESSED results when evidence is unavailable.",
   "url": "https://powertruesystems.com/aixray",
-  "codeRepository": "https://github.com/PowerTrueSYS/aixray-public",
+  "codeRepository": "https://github.com/PowerTrueSYS/ptxray-public",
   "downloadUrl": "https://powertruesystems.com/aixray/",
   "softwareVersion": "1.3.0",
   "applicationCategory": "System administration and security assessment",
@@ -34,7 +34,7 @@
     "Explicit NOT_ASSESSED status for unavailable evidence",
     "DISA STIG for IBM AIX 7.x coverage is partial: 66 distinct rule V-IDs receive an engine verdict; this count is not a single-release coverage fraction; V-215399 covers only the clean_partial_conns tunable, not its package-commit condition; deferred V-215429 is not counted",
     "260 CIS L1-aligned checks across NFS exports, password hashing, file ownership and permissions, and network tunables, plus login policy, auditing, cron and at, home directories, system accounts and the r-command services, resolving to 209 distinct Level 1 control numbers of the 212 in CIS IBM AIX 7 Benchmark v1.2.0; 5.1.4, 5.1.5 and 7.1 are not claimed; alignment only",
-    "IBM i edition aligns to the CIS IBM i v2.1.0 benchmark on IBM i 7.4 and 7.5; there is no DISA STIG for IBM i",
+    "IBM i edition (ptxray-ibmi.sh) is graded against the CIS IBM i V7R4M0 / V7R5M0 Benchmark v2.1.0 on IBM i 7.4 and 7.5: 76 of 89 CIS Level 1 controls receive an automated verdict on 7.5, and 73 of 88 on 7.4. Uncovered Level 1 controls are CIS-manual or not-yet-implemented and are disclosed rather than silently dropped (registry as_of 2026-08-19). There is no DISA STIG for IBM i",
     "388 standalone check tools with machine-readable manifests"
   ],
   "keywords": "IBM AIX health check, IBM i assessment, IBM i posture assessment, IBM Power security audit, AIX posture assessment, AIX risk scanner, DISA STIG IBM AIX 7.x, CIS IBM AIX 7, CIS IBM i, CIS L1-aligned checks, ksh88, read-only, zero egress",
